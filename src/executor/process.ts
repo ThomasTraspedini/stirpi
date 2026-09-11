@@ -7,12 +7,29 @@ export interface ProcessConfig {
   args?: string[];
   id?: string;
 }
+export interface ProcessObservation {
+  startedAt: string;
+  completedAt: string;
+  stdout: string;
+  stderr: string;
+  status: number | null;
+  signal: string | null;
+  error: string | null;
+}
+export interface ProcessOptions {
+  environment?: NodeJS.ProcessEnv;
+  timeoutMs?: number;
+  observe?: (observation: ProcessObservation) => void;
+}
 // Trusted local programs. cwd is assignment, not a filesystem sandbox.
 export class ProcessExecutor implements Executor {
   readonly protocol = 1;
   readonly id: string;
   private readonly config: ProcessConfig;
-  constructor(config: ProcessConfig) {
+  constructor(
+    config: ProcessConfig,
+    private readonly options: ProcessOptions = {},
+  ) {
     if (
       !config ||
       typeof config.executable !== "string" ||
@@ -36,16 +53,31 @@ export class ProcessExecutor implements Executor {
         code: "WORKSPACE_REQUIRED",
         message: "Process executor requires an assigned active workspace",
       });
+    const startedAt = new Date().toISOString();
     const result = spawnSync(this.config.executable, this.config.args ?? [], {
       cwd: workspace.worktree,
       input: JSON.stringify({ version: 1, context }) + "\n",
       encoding: "utf8",
       shell: false,
       maxBuffer: 1024 * 1024,
+      ...(this.options.timeoutMs === undefined
+        ? {}
+        : { timeout: this.options.timeoutMs }),
       // Do not pass inherited Git overrides that could redirect artifact work.
       env: Object.fromEntries(
-        Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
+        Object.entries(this.options.environment ?? process.env).filter(
+          ([key]) => !key.startsWith("GIT_"),
+        ),
       ),
+    });
+    this.options.observe?.({
+      startedAt,
+      completedAt: new Date().toISOString(),
+      stdout: result.stdout ?? "",
+      stderr: result.stderr ?? "",
+      status: result.status,
+      signal: result.signal,
+      error: result.error?.message ?? null,
     });
     if (result.error)
       throw new OperationalFailure({

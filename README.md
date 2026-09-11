@@ -208,3 +208,11 @@ with COMPLETE. The result has two new commits and one unchanged lineage. The
 external invocation log records the assigned cwd and local context. Changing the
 fixture mode from `progress` to `fork` demonstrates two isolated alternative
 worlds, one of which spawns same-lineage work. Use a fresh run ID and log path.
+
+## Experimental pilot harness
+
+`strpi experiment` prepares isolated frozen-input H/S/T pilot runs through M2,
+records auditable evidence, and separates public runtime completion from optional
+post-run private evaluation. See [harness usage](src/experiments/README.md).
+Deterministic fixtures validate the infrastructure; the real D032 pilot and its
+public evaluator configuration are separate, deferred work.

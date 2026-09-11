@@ -5,7 +5,8 @@ import {
   type ExecutorOperation,
 } from "../executor/protocol.js";
 import { simulate } from "../engine/index.js";
-export function replay(original: State): State {
+import type { Evaluator } from "../evaluation/index.js";
+export function replay(original: State, evaluator?: Evaluator): State {
   let cursor = 0;
   let invocation = 0;
   const executor = (
@@ -39,7 +40,7 @@ export function replay(original: State): State {
           },
         }
       : undefined,
-    undefined,
+    evaluator,
     {
       taskId: original.taskId,
       runId: original.runId,

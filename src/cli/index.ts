@@ -14,7 +14,10 @@ import { ProcessExecutor, type ProcessConfig } from "../executor/process.js";
 import { GitWorkspaceBackend } from "../artifacts/workspaces.js";
 import { demoWork } from "../artifacts/demo.js";
 import type { Scenario } from "../domain/index.js";
+import { experimentCli } from "../experiments/cli.js";
 function main(): void {
+  if (process.argv[2] === "experiment")
+    return experimentCli(process.argv.slice(3));
   const { values, positionals } = parseArgs({
     allowPositionals: true,
     options: {
