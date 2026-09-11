@@ -645,3 +645,31 @@ Experiment-specific rules belong in that experiment's own documentation.
 
 A temporary experiment may inform a later global Stirpi decision, but that
 decision must be generalized before being added here.
+
+## D044 — Runtime completion is governed only by the public evaluation contract
+
+Status: accepted
+
+A COMPLETE action requests evaluation against the evaluation contract available
+to the running problem-solving process.
+
+Only that runtime/public evaluator may authorize the transition to COMPLETED.
+
+Hidden, retrospective, benchmark, research, or experimental evaluators do not
+participate in the runtime completion transition.
+
+They may later classify, compare, or criticize a completed artifact without
+rewriting the historical Stirpi runtime status.
+
+Therefore:
+
+- COMPLETED means that the work satisfied its runtime evaluation contract;
+- COMPLETED does not imply universal semantic correctness or optimality;
+- hidden evaluation may subsequently discover failures not represented by the
+  public contract;
+- hidden evaluator results remain separate observations rather than retroactive
+  lineage transitions.
+
+The runtime evaluator must not receive information intentionally hidden from the
+executor unless a future explicitly defined evaluation contract permits such a
+boundary.
