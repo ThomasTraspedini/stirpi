@@ -1,0 +1,17 @@
+{
+  "id": "d032-T001",
+  "class": "pilot",
+  "testcase": "booking-invariants-d032-001",
+  "condition": "T",
+  "stirpiCommit": "23f5e58618403c2b1a7d1d054b7c917e00aa85cd",
+  "executor": {
+    "adapter": "codex",
+    "executableVersion": "0.153.4",
+    "model": "gpt-6-astra"
+  },
+  "limits": {
+    "maxSteps": 20,
+    "maxExecutorInvocations": 20
+  },
+  "hiddenEvaluationDuringRun": false
+}
