@@ -8,6 +8,7 @@ import {
   writeFileSync,
   rmSync,
   realpathSync,
+  symlinkSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -230,7 +231,7 @@ test("CLI uses assigned cwd, separate unchanged task, fresh homes, structured ou
     const observed = JSON.parse(
       readFileSync(join(f.dir, "observed.json"), "utf8"),
     );
-    assert.equal(observed.cwd, f.workspace);
+    assert.equal(realpathSync(observed.cwd), realpathSync(f.workspace));
     assert.equal(observed.task, "edit");
     assert.ok(observed.args.includes("--ephemeral"));
     assert.ok(observed.args.includes("--ignore-user-config"));
@@ -244,6 +245,40 @@ test("CLI uses assigned cwd, separate unchanged task, fresh homes, structured ou
     assert.equal(evidence.monetaryCost, null);
     assert.equal(result.stderr.includes("secret"), false);
     assert.equal(f.git("rev-list", "--all", "--count"), "1"); // Agent edits never commit.
+  } finally {
+    f.close();
+  }
+});
+
+test("workspace aliases are accepted, but a different linked worktree is rejected", () => {
+  const f = fixture();
+  try {
+    const alias = join(f.dir, "workspace-alias");
+    const other = join(f.dir, "other-workspace");
+    symlinkSync(f.workspace, alias, "junction");
+    f.git("worktree", "add", "-b", "other-assignment", other);
+    f.input.context.work.artifact.worktree = alias;
+    for (const cwd of [f.workspace, alias, other]) {
+      const result = spawnSync(process.execPath, [adapter, "--codex", fake], {
+        cwd,
+        input: JSON.stringify(f.input),
+        encoding: "utf8",
+      });
+      if (cwd === other) {
+        assert.equal(result.status, 1);
+        assert.equal(result.stdout, "");
+        assert.equal(
+          JSON.parse(result.stderr).failure.code,
+          "INVALID_WORKSPACE",
+        );
+      } else {
+        assert.equal(result.status, 0, result.stderr);
+        assert.equal(
+          validateResponse(JSON.parse(result.stdout)).action.type,
+          "COMPLETE",
+        );
+      }
+    }
   } finally {
     f.close();
   }

@@ -9,6 +9,7 @@ import {
   readdirSync,
   rmSync,
   existsSync,
+  symlinkSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -326,6 +327,33 @@ test("artifact failures stay local and blocked SPAWN outcomes reach the parent",
 test("database and export destinations must remain outside target", () => {
   const f = fixture();
   try {
+    const alias = join(f.dir, "repo-alias");
+    const externalAlias = join(f.dir, "external-alias");
+    const external = join(f.dir, "external");
+    mkdirSync(external);
+    symlinkSync(f.repo, alias, "junction");
+    symlinkSync(external, externalAlias, "junction");
+    for (const repository of [f.repo, alias]) {
+      for (const target of [f.repo, alias]) {
+        assert.throws(
+          () => assertExternalGitState(repository, [target]),
+          /outside/,
+        );
+        assert.throws(
+          () =>
+            assertExternalGitState(repository, [
+              join(target, "new", "state.sqlite"),
+            ]),
+          /outside/,
+        );
+      }
+      assert.doesNotThrow(() =>
+        assertExternalGitState(repository, [
+          join(externalAlias, "new", "state.sqlite"),
+        ]),
+      );
+    }
+
     assert.doesNotThrow(() =>
       assertExternalGitState(f.repo, [join(f.dir, "state.sqlite")]),
     );

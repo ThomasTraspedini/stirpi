@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   mkdtempSync,
+  mkdirSync,
+  symlinkSync,
   realpathSync,
   readFileSync,
   rmSync,
@@ -69,18 +71,24 @@ test("structured public configuration validates; incomplete frozen D032 config i
     );
 });
 
-test("external JSON evaluator receives structured context and uses candidate cwd", () => {
+test("external JSON evaluator compares canonical candidate paths and rejects different paths", () => {
   const directory = realpathSync(
     mkdtempSync(join(tmpdir(), "stirpi-evaluation-")),
   );
   try {
+    const workspace = join(directory, "workspace");
+    const alias = join(directory, "alias");
+    const other = join(directory, "other");
+    mkdirSync(workspace);
+    mkdirSync(other);
+    symlinkSync(workspace, alias, "junction");
     const context: EvaluationContext = {
       result: "not a path",
       criteria,
       workId: "w1",
       lineageId: "l1",
       artifactRef: "canonical",
-      workspacePath: directory,
+      workspacePath: alias,
     };
     const evaluator = new ProcessEvaluator(
       {
@@ -88,18 +96,30 @@ test("external JSON evaluator receives structured context and uses candidate cwd
         args: [
           "-e",
           `
-      const c = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-      console.log(JSON.stringify({passed: process.cwd() === c.workspacePath, reason: JSON.stringify(c)}));
+      const { readFileSync, realpathSync } = require('node:fs');
+      const c = JSON.parse(readFileSync(0, 'utf8'));
+      console.log(JSON.stringify({passed: realpathSync(process.cwd()) === realpathSync(c.workspacePath ?? c.result), reason: JSON.stringify(c)}));
     `,
         ],
       },
-      "/unrelated-fallback",
+      other,
       { PATH: process.env.PATH },
       5000,
     );
     const outcome = evaluator.evaluate(context);
     assert.equal(outcome.passed, true);
     assert.deepEqual(JSON.parse(outcome.reason), context);
+    // Compare an independently supplied path against the fallback cwd.
+    const withoutWorkspace = { ...context };
+    delete withoutWorkspace.workspacePath;
+    assert.equal(
+      evaluator.evaluate({ ...withoutWorkspace, result: alias }).passed,
+      false,
+    );
+    assert.equal(
+      evaluator.evaluate({ ...withoutWorkspace, result: other }).passed,
+      true,
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

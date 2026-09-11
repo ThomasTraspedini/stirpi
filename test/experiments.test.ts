@@ -470,12 +470,12 @@ test("artifact-aware checks target each candidate, preserve evidence, and replay
     writeFileSync(
       script,
       `
-      import { readFileSync } from 'node:fs';
+      import { readFileSync, realpathSync } from 'node:fs';
       import { execFileSync } from 'node:child_process';
       import assert from 'node:assert/strict';
       const context = JSON.parse(readFileSync(0, 'utf8'));
       assert.deepEqual(Object.keys(context).sort(), ['artifactRef','criteria','lineageId','result','workId','workspacePath']);
-      assert.equal(process.cwd(), context.workspacePath);
+      assert.equal(realpathSync(process.cwd()), realpathSync(context.workspacePath));
       assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim(), context.artifactRef);
       const name = context.result.slice(5);
       assert.equal(readFileSync(name + '.txt', 'utf8'), name + ' fixture result\\n');
