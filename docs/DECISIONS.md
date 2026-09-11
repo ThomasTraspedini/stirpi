@@ -618,3 +618,30 @@ become the canonical artifact.
 
 Cleanup must not destroy dirty workspace state that may be useful for diagnosis
 unless an explicit future cleanup policy permits it.
+
+## D043 — Global decisions exclude experiment-specific protocol
+
+Status: accepted
+
+`docs/DECISIONS.md` contains only durable human-owned decisions that constrain
+Stirpi itself.
+
+These may include decisions about:
+- architecture;
+- domain semantics;
+- execution contracts;
+- evaluation contracts;
+- algorithms;
+- persistence;
+- artifact handling;
+- scheduling;
+- stack;
+- governance and development rules.
+
+Constraints that apply only to a specific experiment, benchmark, testcase, or
+temporary development exercise must not be added to the global decision log.
+
+Experiment-specific rules belong in that experiment's own documentation.
+
+A temporary experiment may inform a later global Stirpi decision, but that
+decision must be generalized before being added here.
