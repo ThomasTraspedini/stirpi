@@ -703,3 +703,40 @@ produced artifact rather than trusting claims in executor-authored text.
 
 The exact public evaluation contract is task-specific configuration and does not
 change Stirpi's core completion semantics.
+
+## D046 — Runtime evaluation receives authoritative artifact context
+
+Status: accepted
+
+When completion depends on produced artifacts, the runtime/public evaluator must
+receive authoritative artifact context for the work unit being evaluated.
+
+The evaluator must not infer the candidate artifact or workspace from
+executor-authored result text.
+
+The runtime evaluation context may include:
+
+- canonical artifact reference;
+- assigned artifact workspace when it still exists;
+- lineage/work identity;
+- public evaluation criteria;
+- executor result;
+- public verification evidence produced for that work.
+
+For software tasks, independently executed checks must run against the exact
+candidate artifact/workspace associated with the COMPLETE request.
+
+Artifact context is evaluation evidence, not hidden benchmark information.
+
+The evaluator must still not receive:
+
+- private experimental oracle material;
+- future historical information unavailable to the running process;
+- sibling-lineage private state;
+- unrelated host filesystem paths.
+
+A task-specific evaluator may execute multiple independent checks and preserve
+their individual outcomes.
+
+Failure of an individual public check is a normal negative evaluation result,
+not an operational evaluator-process failure.
