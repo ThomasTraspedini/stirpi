@@ -8,7 +8,17 @@ export interface Artifact {
   worktree?: string;
   cleaned?: boolean;
 }
+export type WorkspaceRequest = {
+  type: "OPEN" | "CHECK" | "RELEASE" | "COMMIT";
+  taskId: string;
+  runId: string;
+  lineageId: string;
+  workId: string;
+  base: string;
+  message?: string;
+};
 export type ArtifactRequest =
+  | WorkspaceRequest
   | ({ type: "INITIALIZE" } & RunIdentity)
   | ({
       type: "EXECUTE";

@@ -1,6 +1,6 @@
 # Stirpi
 
-Stirpi is a lineage-engine simulation with a Git artifact backend. The CLI is `strpi`. M0 explores conditional lineages with a deterministic fake executor; M1 adds isolated artifact work without LLM integration.
+Stirpi is a lineage runtime with a Git artifact backend. The CLI is `strpi`. M0 explores conditional lineages with a deterministic executor; M1 adds isolated artifact work; M2 adds a provider-neutral external process executor. There is no Codex, Claude, or other provider integration.
 
 ## Quick start
 
@@ -40,7 +40,7 @@ The run becomes COMPLETED when quiescent with no blocked work, otherwise BLOCKED
 
 SQLite stores tasks, runs, lineages with parent ancestry, one assumption per child, work units with spawn parents, evaluator payloads, and ordered events. Status, priority, reasons and resources are queryable alongside JSON entity records. Evaluation payloads live in a separate table and never enter executor contexts or ordinary inspection. This is an interface boundary, not access control against readers of the database. Artifact references are opaque strings.
 
-Normal tables are authoritative; this is not event sourcing. M0 persists final state and the complete transition log in one transaction. Replay reruns the saved scenario and configuration and compares the entire semantic state and ordered event sequence; it does not append another run. Replay retains the original Task and Run identities. IDs, queue counters and synthetic usage are deterministic. Persisted custom executors are outside replay support: reproducible CLI runs use scenario scripts and the fake evaluator.
+Normal tables are authoritative; this is not event sourcing. M0 persists final state and the complete transition log in one transaction. Replay reruns the saved scenario and configuration and compares the entire semantic state and ordered event sequence; it does not append another run. Replay retains the original Task and Run identities. IDs, queue counters and synthetic usage are deterministic. Legacy custom action executors remain outside replay support; structured protocol executors record their invocation outcomes for replay. CLI runs use the deterministic fake evaluator.
 
 ## Development
 
@@ -78,4 +78,133 @@ Configure a Git author in the test target before running this example. `git-refe
 
 Lineage/work JSON state stores artifact refs and operational metadata. An `artifact_operations` state table stores ordered structured requests and outcomes, also copied to the append-only event log for JSONL export. No Git blobs or diffs are stored in SQLite. Replay compares each generated artifact request with its recorded request and returns the recorded outcome without invoking the backend. It rejects missing, extra, or mismatched operations and compares the full resulting state/event sequence. Replay works even if the target repository is unavailable; it does not verify that commits still exist (D031).
 
-The existing M0 path remains available without an artifact backend. Persisted custom decision executors are still outside replay support; the M1 callback's artifact outcomes are recorded, while decision actions use the saved scenario scripts. Crash recovery across external effects and SQLite persistence, artifact integrity verification, result integration, and real coding-agent execution remain deferred.
+The existing M0 path remains available without an artifact backend. Legacy custom decision executors remain outside replay support; the M1 callback's artifact outcomes are recorded, while decision actions use the saved scenario scripts. Crash recovery across external effects and SQLite persistence, artifact integrity verification, result integration, and provider-specific coding-agent integrations remain deferred.
+
+## M2 external process protocol
+
+Use `ProcessExecutor` with `GitWorkspaceBackend` in `simulate`, or pass
+`--executor process-config.json --repo /path/to/clean/target` to `run`.
+The process config contains `executable`, optional `args` (an array of strings),
+and an optional executor `id`. Use absolute paths for executable scripts and
+arguments referring to files: every invocation runs in its assigned worktree.
+The executor ID is operational metadata and does not define lineage identity.
+
+The adapter starts one process per scheduled invocation, without a shell. It
+writes one JSON object plus a newline to stdin, closes stdin, and reads one JSON
+object from stdout after process exit. Diagnostics belong on stderr. Output is
+bounded to 1 MiB. Version 1 input has this shape:
+
+```json
+{
+  "version": 1,
+  "context": {
+    "identity": { "taskId": "task", "runId": "run" },
+    "work": {},
+    "dna": [],
+    "publicEvaluation": {},
+    "results": []
+  }
+}
+```
+
+`work` contains the assigned work's objective, status, iteration cursor, resource
+usage and artifact metadata, including its `artifact.worktree`. `dna` contains
+only that lineage's ancestry assumptions. `results` contains only this work's
+own spawned child outcomes, with immutable artifact refs rather than child
+workspace paths. The full typed shape is `ExecutorContext`. Hidden evaluator
+material, sibling assumptions, sibling rationale, sibling results and sibling
+workspace paths are absent. Contexts are copied; changing received JSON cannot
+mutate engine state. FORK children see their own assumption path; SPAWN children
+retain their parent's lineage/DNA and receive distinct workspaces.
+
+A response explicitly separates the action, artifact requests and optional text:
+
+```json
+{
+  "version": 1,
+  "action": { "type": "CONTINUE" },
+  "effects": [{ "type": "COMMIT", "message": "Fix empty input handling" }],
+  "text": "Implemented the empty input case."
+}
+```
+
+`effects` is required (use `[]` for no requests). Only `COMMIT` with a nonempty
+message is supported; executors cannot select paths, branches or canonical refs
+through effects. Actions are CONTINUE, FORK, SPAWN, COMPLETE and BLOCK, using the
+existing action fields; COMPLETE contains a string `result` and cannot supply
+`artifacts`. Text never controls transitions. Unsupported versions, malformed
+responses and forbidden actions fail locally as structured BLOCKED outcomes.
+
+Stirpi validates the envelope and action, including FORK eligibility and name
+uniqueness, before applying requested commits in order. It then checks committed
+state for FORK, SPAWN and artifact-bearing COMPLETE, and evaluates COMPLETE
+before allowing successful completion. A failed commit prevents the transition;
+previous successful commits remain canonical. File changes or exit status alone
+never imply any action. Launch/exit/JSON failures also block only the assigned
+work; a failed spawned child returns its outcome to its waiting parent.
+
+Under D042, each work unit keeps the same workspace across invocations, including
+uncommitted changes on CONTINUE and while waiting for spawned children. Commits
+stage the assigned workspace's tracked and untracked changes, skip unchanged
+trees, and advance the canonical full commit SHA without ending the work unit.
+Dirty state is transient, not an artifact. Dirty FORK, SPAWN or COMPLETE is
+blocked without an implicit commit. At run end, clean worktrees are removed;
+dirty or ignored files are retained for inspection. Branches and commits remain.
+Git's normal ignore rules apply; ignored files are not included in commit requests.
+
+This is **trusted local executor infrastructure**. Worktree isolation is artifact
+and work isolation, **not security sandboxing**. Stirpi assigns separate paths,
+uses those paths as process cwd, and routes commit operations through its artifact
+layer. An arbitrary local process still has the operating system permissions of
+the invoking user and must obey the workspace boundary. It must not perform
+unmanaged Git history operations. M2 adds no containers or filesystem access
+controls. The database, exports and invocation logs belong outside the target.
+
+Process execution is synchronous, matching the existing scheduler. Resource
+accounting remains synthetic except for enforced step counts. There is no process
+timeout or retry policy; wall-time enforcement, crash recovery and live checkpoint
+resumption remain deferred. COMPLETE currently uses the existing required-text
+fake evaluator, so demo success is not a claim of code correctness.
+
+Executor identity, local input context and response/failure are recorded as
+`EXECUTOR_OPERATION` events; workspace requests/outcomes use the existing artifact
+operation table and event log. Replay supplies those observations, verifies
+requests and contexts, and compares final state/events without relaunching
+processes or repeating Git mutations. It does not verify artifact integrity.
+
+### Small process demonstration
+
+With the repository built, run this from the Stirpi checkout (requires Git author
+configuration for the temporary target):
+
+```sh
+demo=$(mktemp -d)
+git init -b main "$demo/target"
+git -C "$demo/target" config user.name "Stirpi Demo"
+git -C "$demo/target" config user.email "demo@example.invalid"
+printf 'base\n' > "$demo/target/base.txt"
+git -C "$demo/target" add base.txt
+git -C "$demo/target" -c commit.gpgsign=false commit -m "Add base file"
+node --input-type=module - "$demo" "$PWD/test/fixtures/executor.mjs" <<'JS'
+import { writeFileSync } from 'node:fs';
+const [dir, fixture] = process.argv.slice(2);
+writeFileSync(`${dir}/executor.json`, JSON.stringify({
+  executable: process.execPath, args: [fixture, 'progress', `${dir}/calls.jsonl`]
+}));
+writeFileSync(`${dir}/scenario.json`, JSON.stringify({
+  name: 'process-demo', objective: 'Produce coherent progress', scripts: {},
+  publicEvaluation: { description: 'Return done', criteria: ['Include done'] },
+  hiddenEvaluation: { requiredText: 'done' }
+}));
+JS
+node dist/cli/index.js run "$demo/scenario.json" --executor "$demo/executor.json" --repo "$demo/target" --db "$demo/state.sqlite" --id m2
+node dist/cli/index.js inspect m2 --db "$demo/state.sqlite"
+node dist/cli/index.js replay m2 --db "$demo/state.sqlite"
+```
+
+The tiny fixture makes four invocations in one workspace: an uncommitted edit,
+a commit of accumulated progress, another commit, and a no-change commit request
+with COMPLETE. The result has two new commits and one unchanged lineage. The
+external invocation log records the assigned cwd and local context. Changing the
+fixture mode from `progress` to `fork` demonstrates two isolated alternative
+worlds, one of which spawns same-lineage work. Use a fresh run ID and log path.

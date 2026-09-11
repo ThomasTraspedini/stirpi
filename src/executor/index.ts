@@ -7,6 +7,7 @@ import type {
   WorkUnitStatus,
 } from "../domain/index.js";
 export interface ExecutorContext {
+  identity?: { taskId: string; runId: string };
   work: Readonly<WorkUnit>;
   dna: readonly string[];
   publicEvaluation: PublicCriteria;
@@ -20,6 +21,8 @@ export interface ExecutorContext {
   }[];
 }
 export interface Executor {
+  readonly protocol?: 1;
+  readonly id?: string;
   execute(context: ExecutorContext): unknown;
 }
 export class ScriptedExecutor implements Executor {

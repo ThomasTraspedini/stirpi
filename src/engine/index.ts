@@ -1,6 +1,5 @@
-import type { ArtifactBackend, ArtifactRequest } from "../artifacts/index.js";
+import type { ArtifactBackend } from "../artifacts/index.js";
 import {
-  dna,
   sumResources,
   zero,
   type Config,
@@ -16,6 +15,13 @@ import {
   type Executor,
 } from "../executor/index.js";
 import { FakeEvaluator, type Evaluator } from "../evaluation/index.js";
+import {
+  invoke,
+  validateResponse,
+  OperationalFailure,
+} from "../executor/protocol.js";
+import { artifactEffects } from "./artifact-effects.js";
+import { executorContext } from "../executor/context.js";
 import { select } from "../scheduler/index.js";
 export function simulate(
   scenario: Scenario,
@@ -113,6 +119,14 @@ export function simulate(
   const root = addLineage("root", scenario.objective, null, null, null, 0);
   emit("RUN_STARTED", state.runId, {
     taskId: state.taskId,
+    ...(executor.protocol
+      ? {
+          executor: {
+            protocol: executor.protocol,
+            id: executor.id ?? "external",
+          },
+        }
+      : {}),
     config,
     root: root.id,
     objective: scenario.objective,
@@ -131,17 +145,11 @@ export function simulate(
     sync(w);
     emit("BLOCKED", w.id, w.reason);
   };
-  const effect = (request: ArtifactRequest) => {
-    const outcome = artifactBackend!.perform(structuredClone(request));
-    const operation = structuredClone({ request, outcome });
-    (state.artifactOperations ??= []).push(operation);
-    emit(
-      "ARTIFACT_OPERATION",
-      request.type === "INITIALIZE" ? state.runId : request.workId,
-      operation,
-    );
-    return outcome;
-  };
+  const { effect, workspaceEffect } = artifactEffects(
+    state,
+    artifactBackend,
+    emit,
+  );
   if (artifactBackend) {
     const outcome = effect({ type: "INITIALIZE", ...identity });
     if (outcome.ok) {
@@ -192,7 +200,12 @@ export function simulate(
       w.resources.cost += 1;
       w.resources.wallTimeMs += 1;
       state.resources = sumResources(state.work);
-      if (artifactBackend && w.artifact && !artifactAttempted.has(w.id)) {
+      if (
+        !executor.protocol &&
+        artifactBackend &&
+        w.artifact &&
+        !artifactAttempted.has(w.id)
+      ) {
         artifactAttempted.add(w.id);
         const outcome = effect({
           type: "EXECUTE",
@@ -216,29 +229,32 @@ export function simulate(
         }
       }
       try {
-        const action = validateAction(
-          executor.execute(
-            structuredClone({
-              work: w,
-              dna: dna(state, w.lineageId),
-              publicEvaluation: scenario.publicEvaluation,
-              results: state.work
-                .filter((c) => c.parentId === w.id)
-                .map((c) => ({
-                  name: c.name,
-                  status: c.status,
-                  result: c.result,
-                  reason: c.reason,
-                  ...(artifactBackend
-                    ? {
-                        artifacts: c.artifacts,
-                        ...(c.artifact ? { artifact: c.artifact } : {}),
-                      }
-                    : {}),
-                })),
-            }),
-          ),
+        if (
+          executor.protocol &&
+          artifactBackend &&
+          w.artifact &&
+          !artifactAttempted.has(w.id)
+        ) {
+          artifactAttempted.add(w.id);
+          workspaceEffect(w, "OPEN");
+        }
+        const context = executorContext(
+          state,
+          w,
+          !!artifactBackend,
+          !!executor.protocol,
         );
+        const operation = executor.protocol
+          ? invoke(executor, context)
+          : undefined;
+        if (operation) emit("EXECUTOR_OPERATION", w.id, operation);
+        if (operation && !operation.outcome.ok)
+          throw new OperationalFailure(operation.outcome.reason);
+        const response = operation?.outcome.ok
+          ? validateResponse(operation.outcome.response)
+          : undefined;
+        const action =
+          response?.action ?? validateAction(executor.execute(context));
         if (action.type === "FORK" && w.parentId !== null)
           throw new Error("Only lineage main work may FORK");
         const names =
@@ -252,6 +268,12 @@ export function simulate(
           names.some((name) => state.work.some((w) => w.name === name))
         )
           throw new Error("Work names must be unique within a run");
+        if (response) {
+          for (const request of response.effects)
+            workspaceEffect(w, "COMMIT", request.message);
+          if (w.artifact && ["FORK", "SPAWN", "COMPLETE"].includes(action.type))
+            workspaceEffect(w, "CHECK");
+        }
         const evaluation =
           action.type === "COMPLETE"
             ? evaluator.evaluate(
@@ -318,12 +340,30 @@ export function simulate(
         w.cursor++;
         block(
           w,
-          "INVALID_EXECUTOR_ACTION",
+          error instanceof OperationalFailure
+            ? error.reason.code
+            : "INVALID_EXECUTOR_ACTION",
           error instanceof Error ? error.message : String(error),
         );
       }
       emit("RESOURCES", w.id, w.resources);
     }
+  }
+  if (executor.protocol && artifactBackend) {
+    for (const w of state.work)
+      if (w.artifact?.worktree && !w.artifact.cleaned) {
+        try {
+          workspaceEffect(w, "RELEASE");
+        } catch (error) {
+          emit(
+            "ARTIFACT_RELEASE_FAILURE",
+            w.id,
+            error instanceof OperationalFailure
+              ? error.reason
+              : { code: "ARTIFACT_RELEASE_FAILED", message: String(error) },
+          );
+        }
+      }
   }
   state.resources = sumResources(state.work);
   state.status = state.work.some((w) => w.status === "BLOCKED")

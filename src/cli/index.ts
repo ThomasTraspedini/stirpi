@@ -10,12 +10,15 @@ import {
   GitArtifactBackend,
   assertExternalGitState,
 } from "../artifacts/git.js";
+import { ProcessExecutor, type ProcessConfig } from "../executor/process.js";
+import { GitWorkspaceBackend } from "../artifacts/workspaces.js";
 import { demoWork } from "../artifacts/demo.js";
 import type { Scenario } from "../domain/index.js";
 function main(): void {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
     options: {
+      executor: { type: "string" },
       repo: { type: "string" },
       db: { type: "string", default: "stirpi.sqlite" },
       task: { type: "string" },
@@ -29,7 +32,7 @@ function main(): void {
   const [command, target] = positionals;
   if (values.help || !command) {
     console.log(
-      "strpi run <reference|git-reference|scenario.json> [--id run-1] [--task task-id] [--db stirpi.sqlite] [--repo target-repository] [--concurrency 1] [--steps 100]\nstrpi tree <run> [--db path]\nstrpi inspect <run|run:lineage> [--db path]\nstrpi replay <run> [--db path] [--export events.jsonl]",
+      "strpi run <reference|git-reference|scenario.json> [--id run-1] [--task task-id] [--db stirpi.sqlite] [--repo target-repository] [--executor process-config.json] [--concurrency 1] [--steps 100]\nstrpi tree <run> [--db path]\nstrpi inspect <run|run:lineage> [--db path]\nstrpi replay <run> [--db path] [--export events.jsonl]",
     );
     return;
   }
@@ -44,6 +47,8 @@ function main(): void {
       values.db!,
       ...(values.export ? [values.export] : []),
     ]);
+  if (command === "run" && values.executor && !values.repo)
+    throw new Error("--executor requires --repo");
   const store = new Store(values.db!);
   try {
     if (command === "run") {
@@ -57,17 +62,25 @@ function main(): void {
           maxConcurrency: Number(values.concurrency),
           maxSteps: Number(values.steps),
         },
-        undefined,
+        values.executor
+          ? new ProcessExecutor(
+              JSON.parse(
+                readFileSync(values.executor, "utf8"),
+              ) as ProcessConfig,
+            )
+          : undefined,
         undefined,
         {
           runId: values.id!,
           taskId: values.task ?? `task:${scenario.name}`,
         },
         values.repo
-          ? new GitArtifactBackend(
-              values.repo,
-              target === "git-reference" ? demoWork : undefined,
-            )
+          ? values.executor
+            ? new GitWorkspaceBackend(values.repo)
+            : new GitArtifactBackend(
+                values.repo,
+                target === "git-reference" ? demoWork : undefined,
+              )
           : undefined,
       );
       store.save(state);

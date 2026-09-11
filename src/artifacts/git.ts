@@ -21,6 +21,9 @@ function git(path: string, ...args: string[]): string {
   return execFileSync("git", ["-C", path, ...args], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    env: Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
+    ),
   }).trim();
 }
 export interface GitWorkspace {
@@ -77,6 +80,11 @@ export class GitArtifactBackend implements ArtifactBackend {
       return this.failure(
         "ARTIFACT_NOT_INITIALIZED",
         new Error("Repository must be validated before execution"),
+      );
+    if (request.type !== "EXECUTE")
+      return this.failure(
+        "UNSUPPORTED_ARTIFACT_OPERATION",
+        new Error("Use GitWorkspaceBackend for persistent workspaces"),
       );
     let container: string | undefined;
     let artifact: Artifact | undefined;

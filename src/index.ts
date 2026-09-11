@@ -7,3 +7,7 @@ export * from "./replay/index.js";
 export * from "./render/index.js";
 export * from "./artifacts/index.js";
 export * from "./artifacts/git.js";
+
+export * from "./executor/process.js";
+export * from "./executor/protocol.js";
+export * from "./artifacts/workspaces.js";
