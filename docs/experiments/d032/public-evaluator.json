@@ -1,0 +1,22 @@
+{
+  "id": "booking-invariants-d032-public-evaluator-v1",
+  "testcase": "booking-invariants-d032-001",
+  "checks": [
+    {
+      "id": "full-postgres-suite",
+      "type": "command",
+      "command": "npm test"
+    },
+    {
+      "id": "typecheck",
+      "type": "command",
+      "command": "npm run typecheck"
+    },
+    {
+      "id": "diff-check",
+      "type": "command",
+      "command": "git diff --check"
+    }
+  ],
+  "completionPolicy": "all_checks_pass"
+}
