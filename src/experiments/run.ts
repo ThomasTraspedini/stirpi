@@ -22,6 +22,7 @@ import { ExperimentArtifacts } from "./artifacts.js";
 import { control, type Condition } from "./protocol.js";
 import {
   runtimeEvaluator,
+  validatePublicEvaluator,
   type PublicEvaluatorConfig,
   type EvaluationRecord,
 } from "./evaluation.js";
@@ -52,20 +53,20 @@ export function runExperiment(options: RunOptions) {
   if (!["H", "S", "T"].includes(options.condition))
     throw new Error("Condition must be H, S or T");
   const evaluator = options.publicEvaluator;
-  if (
-    !evaluator?.id ||
-    typeof evaluator.criteria?.description !== "string" ||
-    !Array.isArray(evaluator.criteria.criteria) ||
-    !evaluator.criteria.criteria.every((c) => typeof c === "string")
-  )
-    throw new Error(
-      "Explicit public/runtime evaluator and public criteria required",
-    );
-  for (const command of [options.executor, evaluator.command]) {
+  validatePublicEvaluator(evaluator);
+  for (const command of [
+    options.executor,
+    ...(evaluator.checks ?? [evaluator.command]),
+  ]) {
     if (
       !command ||
       Object.keys(command).some(
-        (key) => !["id", "executable", "args"].includes(key),
+        (key) =>
+          !(
+            evaluator.checks?.some((check) => check === command)
+              ? ["id", "executable", "args", "workingDirectory"]
+              : ["id", "executable", "args"]
+          ).includes(key),
       )
     )
       throw new Error("Command configuration contains unsupported fields");
@@ -97,9 +98,9 @@ export function runExperiment(options: RunOptions) {
     throw new Error(
       "Metadata must contain only supported nonsensitive string fields",
     );
-  // Reuse M2 validation for both executable configurations before creating a run.
+  // Validate the executor before creating a run.
   new ProcessExecutor(options.executor);
-  new ProcessExecutor(evaluator.command);
+
   const config = {
     maxSteps: options.maxSteps ?? 100,
     maxConcurrency: options.maxConcurrency ?? 1,

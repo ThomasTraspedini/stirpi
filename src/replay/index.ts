@@ -5,10 +5,14 @@ import {
   type ExecutorOperation,
 } from "../executor/protocol.js";
 import { simulate } from "../engine/index.js";
-import type { Evaluator } from "../evaluation/index.js";
-export function replay(original: State, evaluator?: Evaluator): State {
+import type { EvaluationOperation } from "../evaluation/index.js";
+export function replay(original: State): State {
   let cursor = 0;
   let invocation = 0;
+  let evaluationCursor = 0;
+  const evaluations = original.events
+    .filter((e) => e.type === "EVALUATION_OPERATION")
+    .map((e) => e.data as EvaluationOperation);
   const executor = (
     original.events[0]?.data as { executor?: { protocol: 1; id: string } }
   ).executor;
@@ -40,7 +44,18 @@ export function replay(original: State, evaluator?: Evaluator): State {
           },
         }
       : undefined,
-    evaluator,
+    {
+      evaluate(context) {
+        const operation = evaluations[evaluationCursor++];
+        if (!operation || !isDeepStrictEqual(operation.context, context))
+          throw new Error("Replay evaluation context mismatch");
+        if (!operation.outcome.ok)
+          throw new OperationalFailure(
+            structuredClone(operation.outcome.reason),
+          );
+        return structuredClone(operation.outcome.evaluation);
+      },
+    },
     {
       taskId: original.taskId,
       runId: original.runId,
@@ -59,6 +74,7 @@ export function replay(original: State, evaluator?: Evaluator): State {
       : undefined,
   );
   if (
+    evaluationCursor !== evaluations.length ||
     invocation !== operations.length ||
     cursor !== (original.artifactOperations?.length ?? 0) ||
     !isDeepStrictEqual(original, replayed)

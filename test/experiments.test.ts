@@ -462,3 +462,148 @@ test("unsupported config and credential flags are rejected before evidence creat
     f.close();
   }
 });
+
+test("artifact-aware checks target each candidate, preserve evidence, and replay without programs", () => {
+  const f = fixture();
+  try {
+    const script = join(f.dir, "check.mjs");
+    writeFileSync(
+      script,
+      `
+      import { readFileSync } from 'node:fs';
+      import { execFileSync } from 'node:child_process';
+      import assert from 'node:assert/strict';
+      const context = JSON.parse(readFileSync(0, 'utf8'));
+      assert.deepEqual(Object.keys(context).sort(), ['artifactRef','criteria','lineageId','result','workId','workspacePath']);
+      assert.equal(process.cwd(), context.workspacePath);
+      assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim(), context.artifactRef);
+      const name = context.result.slice(5);
+      assert.equal(readFileSync(name + '.txt', 'utf8'), name + ' fixture result\\n');
+      assert.equal(process.env.PRIVATE_ORACLE_TEST, undefined);
+      process.stdout.write(JSON.stringify(context));
+      process.stderr.write('check diagnostic');
+    `,
+    );
+    const options = f.options("T");
+    const config = {
+      id: "artifact-checks",
+      criteria: options.publicEvaluator.criteria,
+      checks: [
+        { id: "candidate", executable: process.execPath, args: [script] },
+        {
+          id: "independent",
+          executable: process.execPath,
+          args: [
+            "-e",
+            "console.log('second'); console.error('second diagnostic')",
+          ],
+        },
+      ],
+      completionPolicy: "all_checks_pass" as const,
+    };
+    const run = runExperiment({ ...options, publicEvaluator: config });
+    assert.equal(run.result.runtimeOutcome, "COMPLETED");
+    const records = json(join(run.directory, "runtime-evaluations.json"));
+    assert.equal(records.length, 2);
+    for (const record of records) {
+      const work = run.state!.work.find((w) => w.id === record.context.workId)!;
+      assert.equal(record.context.lineageId, work.lineageId);
+      assert.equal(record.context.artifactRef, work.artifact!.ref);
+      assert.equal(record.context.workspacePath, work.artifact!.worktree);
+      assert.equal(record.error, null);
+      assert.equal(record.evaluation.passed, true);
+      assert.deepEqual(record.evaluation.checks, record.checks);
+      assert.deepEqual(
+        record.checks.map((c: { exitStatus: number }) => c.exitStatus),
+        [0, 0],
+      );
+      assert.deepEqual(JSON.parse(record.checks[0].stdout), record.context);
+      assert.equal(record.checks[0].stderr, "check diagnostic");
+      assert.equal(record.checks[1].stdout, "second\n");
+      for (const check of record.checks) {
+        assert.ok(check.startedAt <= check.completedAt);
+        assert.equal(check.processStatus, "exited");
+        assert.equal(check.passed, true);
+        assert.equal(check.error, null);
+      }
+      for (const sibling of run.state!.work.filter((w) => w.id !== work.id)) {
+        if (sibling.artifact?.worktree)
+          assert.equal(
+            JSON.stringify(record.context).includes(sibling.artifact.worktree),
+            false,
+          );
+      }
+      assert.equal(JSON.stringify(record.context).includes(f.source), false);
+    }
+    rmSync(script);
+    rmSync(join(run.directory, "artifacts"), { recursive: true });
+    rmSync(join(run.directory, "worlds"), { recursive: true });
+    assert.deepEqual(replayExperiment(run.directory), run.state);
+    records[0].context.artifactRef = "wrong";
+    writeFileSync(
+      join(run.directory, "runtime-evaluations.json"),
+      JSON.stringify(records),
+    );
+    assert.throws(() => replayExperiment(run.directory), /mismatch/);
+  } finally {
+    f.close();
+  }
+});
+
+test("negative checks and launch errors remain distinct and retain every check outcome", () => {
+  const f = fixture();
+  try {
+    for (const launchFailure of [false, true]) {
+      const options = f.options("S");
+      const run = runExperiment({
+        ...options,
+        publicEvaluator: {
+          id: "failure-checks",
+          criteria: options.publicEvaluator.criteria,
+          completionPolicy: "all_checks_pass",
+          checks: [
+            {
+              id: "fails",
+              executable: launchFailure
+                ? join(f.dir, "missing-executable")
+                : process.execPath,
+              args: [
+                "-e",
+                "console.log('negative stdout'); console.error('negative stderr'); process.exit(7)",
+              ],
+            },
+            {
+              id: "still-runs",
+              executable: process.execPath,
+              args: ["-e", "console.log('independent')"],
+            },
+          ],
+        },
+      });
+      assert.equal(run.result.runtimeOutcome, "BLOCKED");
+      assert.equal(
+        run.state!.work[0]!.reason!.code,
+        launchFailure ? "PUBLIC_EVALUATOR_FAILED" : "EVALUATION_FAILED",
+      );
+      const [record] = json(join(run.directory, "runtime-evaluations.json"));
+      assert.equal(record.checks.length, 2);
+      assert.equal(record.checks[1].passed, true);
+      assert.equal(record.checks[0].passed, false);
+      if (launchFailure) {
+        assert.equal(record.evaluation, null);
+        assert.match(record.error, /ENOENT/);
+        assert.equal(record.checks[0].processStatus, "operational_error");
+        assert.equal(record.checks[0].exitStatus, null);
+      } else {
+        assert.equal(record.error, null);
+        assert.equal(record.evaluation.passed, false);
+        assert.equal(record.checks[0].exitStatus, 7);
+        assert.equal(record.checks[0].stdout, "negative stdout\n");
+        assert.equal(record.checks[0].stderr, "negative stderr\n");
+      }
+      assert.deepEqual(replayExperiment(run.directory), run.state);
+    }
+  } finally {
+    f.close();
+  }
+});

@@ -44,14 +44,57 @@ The public evaluator file is required and has this shape:
 }
 ```
 
-The public evaluator receives `{result, criteria}` on stdin and must return
-`{passed: boolean, reason: string}`. This preserves the current M2 evaluator
-interface: it evaluates the result text and public criteria, not arbitrary
-artifact paths. Its configuration must be public. The same criteria are supplied
-to the solver. Evaluator failures block the current work; passing only authorizes
-runtime completion (D039/D044), without experimental correctness claims.
-The deterministic test evaluator checks a fixture result prefix. It is not the
-D032 runtime contract.
+The external JSON evaluator receives
+`{result, criteria, workId, lineageId, artifactRef?, workspacePath?}` on stdin and
+returns `{passed: boolean, reason: string}`. Result and criteria retain their
+existing names. The TypeScript evaluator interface takes this structured context
+as one argument. Artifact identity comes from engine state after the COMPLETE
+workspace check, never from result text. Only the current candidate's canonical
+ref and active workspace are included; branch metadata, sibling state, hidden
+material and unrelated host paths are excluded. Evaluation precedes workspace
+release. External evaluator processes run in the candidate workspace when present.
+
+Alternatively, configure independent public checks:
+
+```json
+{
+  "id": "software-public-v1",
+  "criteria": {
+    "description": "Public software verification",
+    "criteria": ["Tests and type checking pass"]
+  },
+  "checks": [
+    { "id": "tests", "executable": "npm", "args": ["test"] },
+    { "id": "types", "executable": "npm", "args": ["run", "typecheck"] }
+  ],
+  "completionPolicy": "all_checks_pass"
+}
+```
+
+Checks require unique stable IDs, executable and argument arrays. The optional
+`workingDirectory` accepts only `"candidate"`, which is also the default. Checks
+require an active candidate workspace and canonical artifact; they never fall
+back to the harness directory or parse paths from result text. Commands run
+sequentially with `shell: false`, and every check runs even after another fails.
+A nonzero command exit is a normal negative evaluation. Launch errors, timeouts
+and output-limit errors are operational failures. External JSON evaluator
+process failures retain their existing operational meaning.
+
+`runtime-evaluations.json` records authoritative context, overall timestamps,
+aggregate evaluation, individual checks, process observations and operational
+errors. Each check records ID, timestamps, process status, exit status, signal,
+bounded stdout/stderr, truncation, pass/fail and error. Check output is limited
+to 1 MiB per stream, with a 1 MiB process capture budget; each check uses the
+configured process timeout. An operational failure has a null aggregate evaluation
+and retains all individual check evidence. Ordinary outcomes include
+`{passed, reason, completionPolicy, checks}`. Engine events also record evaluation
+requests and outcomes, including negative and operational outcomes.
+
+Configuration must be public; the same criteria are supplied to the solver.
+Passing authorizes runtime completion (D039/D044), without experimental correctness
+claims. The frozen D032 file currently has command strings instead of executable
+and argument arrays and lacks explicit public criteria. Validation reports that
+incompatibility without rewriting or enriching the frozen file.
 
 The solver receives the ordinary M2 envelope with two additional context fields:
 `task` holds the exact frozen UTF-8 task, and `control` describes the available

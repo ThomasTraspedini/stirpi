@@ -274,13 +274,40 @@ export function simulate(
           if (w.artifact && ["FORK", "SPAWN", "COMPLETE"].includes(action.type))
             workspaceEffect(w, "CHECK");
         }
-        const evaluation =
-          action.type === "COMPLETE"
-            ? evaluator.evaluate(
-                action.result,
-                structuredClone(scenario.publicEvaluation),
-              )
-            : null;
+        let evaluation = null;
+        if (action.type === "COMPLETE") {
+          const evaluationContext = {
+            result: action.result,
+            criteria: structuredClone(scenario.publicEvaluation),
+            workId: w.id,
+            lineageId: w.lineageId,
+            ...(w.artifact ? { artifactRef: w.artifact.ref } : {}),
+            ...(w.artifact?.worktree && !w.artifact.cleaned
+              ? { workspacePath: w.artifact.worktree }
+              : {}),
+          };
+          try {
+            evaluation = evaluator.evaluate(structuredClone(evaluationContext));
+            emit("EVALUATION_OPERATION", w.id, {
+              context: evaluationContext,
+              outcome: { ok: true, evaluation },
+            });
+          } catch (error) {
+            const reason =
+              error instanceof OperationalFailure
+                ? error.reason
+                : {
+                    code: "PUBLIC_EVALUATOR_FAILED",
+                    message:
+                      error instanceof Error ? error.message : String(error),
+                  };
+            emit("EVALUATION_OPERATION", w.id, {
+              context: evaluationContext,
+              outcome: { ok: false, reason },
+            });
+            throw new OperationalFailure(reason);
+          }
+        }
         w.cursor++;
         emit("ACTION", w.id, action);
         switch (action.type) {
