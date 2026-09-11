@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.sqlite*
+.DS_Store
+/tmp/
+
+events.jsonl

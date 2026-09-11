@@ -1,0 +1,7 @@
+node_modules
+dist
+package-lock.json
+docs/01-project-structure-v1.md
+docs/03-m0-lineage-engine-simulation.md
+AGENTS.md
+docs/DECISIONS.md
