@@ -574,3 +574,47 @@ Executor replacement does not create a new lineage by itself.
 
 Lineage continuity is defined by task ancestry, assumptions, state, and
 artifacts—not by continuity of the actor performing the work.
+
+## D042 — A work unit retains its workspace across executor invocations
+
+Status: accepted
+
+An artifact-producing WorkUnit owns one assigned workspace for the duration of
+its active execution.
+
+Executor invocations are not workspace lifetimes.
+
+When an executor returns CONTINUE, the same workspace is retained for the next
+invocation, including any uncommitted changes.
+
+Uncommitted workspace state is transient execution state. It is not a canonical
+Stirpi artifact.
+
+The canonical Git artifact remains the most recent committed artifact identity.
+
+A Stirpi-controlled commit advances that canonical artifact while allowing the
+same WorkUnit and workspace to continue.
+
+Actions that create artifact inheritance or claim a completed artifact require
+a canonical committed state.
+
+Therefore:
+
+- CONTINUE may leave the workspace dirty;
+- FORK must not silently inherit uncommitted workspace state;
+- SPAWN must not silently inherit uncommitted workspace state;
+- COMPLETE must not silently treat uncommitted changes as a canonical final
+  artifact.
+
+Before FORK, SPAWN, or artifact-bearing COMPLETE, relevant changes must already
+be committed through Stirpi-controlled artifact operations.
+
+Stirpi must not silently auto-commit dirty state merely to satisfy this
+requirement.
+
+If a WorkUnit becomes BLOCKED or stops because of an operational failure, a
+dirty workspace may be retained for inspection. Such uncommitted state does not
+become the canonical artifact.
+
+Cleanup must not destroy dirty workspace state that may be useful for diagnosis
+unless an explicit future cleanup policy permits it.
