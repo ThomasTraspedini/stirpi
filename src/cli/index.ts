@@ -6,11 +6,17 @@ import { Store, jsonl } from "../persistence/index.js";
 import { reference } from "../scenarios/index.js";
 import { inspect, tree } from "../render/index.js";
 import { replay } from "../replay/index.js";
+import {
+  GitArtifactBackend,
+  assertExternalGitState,
+} from "../artifacts/git.js";
+import { demoWork } from "../artifacts/demo.js";
 import type { Scenario } from "../domain/index.js";
 function main(): void {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
     options: {
+      repo: { type: "string" },
       db: { type: "string", default: "stirpi.sqlite" },
       task: { type: "string" },
       id: { type: "string", default: "run-1" },
@@ -23,7 +29,7 @@ function main(): void {
   const [command, target] = positionals;
   if (values.help || !command) {
     console.log(
-      "strpi run <reference|scenario.json> [--id run-1] [--task task-id] [--db stirpi.sqlite] [--concurrency 1] [--steps 100]\nstrpi tree <run> [--db path]\nstrpi inspect <run|run:lineage> [--db path]\nstrpi replay <run> [--db path] [--export events.jsonl]",
+      "strpi run <reference|git-reference|scenario.json> [--id run-1] [--task task-id] [--db stirpi.sqlite] [--repo target-repository] [--concurrency 1] [--steps 100]\nstrpi tree <run> [--db path]\nstrpi inspect <run|run:lineage> [--db path]\nstrpi replay <run> [--db path] [--export events.jsonl]",
     );
     return;
   }
@@ -31,11 +37,18 @@ function main(): void {
     throw new Error(
       "Expected run, tree, inspect or replay and a target; use --help",
     );
+  if (command === "run" && target === "git-reference" && !values.repo)
+    throw new Error("git-reference requires --repo");
+  if (command === "run" && values.repo)
+    assertExternalGitState(values.repo, [
+      values.db!,
+      ...(values.export ? [values.export] : []),
+    ]);
   const store = new Store(values.db!);
   try {
     if (command === "run") {
       const scenario: Scenario =
-        target === "reference"
+        target === "reference" || target === "git-reference"
           ? reference
           : JSON.parse(readFileSync(target, "utf8"));
       const state = simulate(
@@ -50,12 +63,34 @@ function main(): void {
           runId: values.id!,
           taskId: values.task ?? `task:${scenario.name}`,
         },
+        values.repo
+          ? new GitArtifactBackend(
+              values.repo,
+              target === "git-reference" ? demoWork : undefined,
+            )
+          : undefined,
       );
       store.save(state);
       if (values.export) writeFileSync(values.export, jsonl(state));
       console.log(
         `${values.id}: ${state.status}; ${state.resources.steps} steps\n${tree(state)}`,
       );
+      if (state.artifactOperations) {
+        console.log(
+          JSON.stringify(
+            {
+              artifacts: state.work.map((w) => ({
+                work: w.name,
+                status: w.status,
+                reason: w.reason,
+                artifact: w.artifact,
+              })),
+            },
+            null,
+            2,
+          ),
+        );
+      }
       return;
     }
     const [id, lineageId] = target.split(":");

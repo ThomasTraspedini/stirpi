@@ -1,3 +1,4 @@
+import type { ArtifactBackend, ArtifactRequest } from "../artifacts/index.js";
 import {
   dna,
   sumResources,
@@ -22,6 +23,7 @@ export function simulate(
   executor: Executor = new ScriptedExecutor(scenario.scripts),
   evaluator: Evaluator = new FakeEvaluator(scenario.hiddenEvaluation),
   identity: RunIdentity = { taskId: `task:${scenario.name}`, runId: "run" },
+  artifactBackend?: ArtifactBackend,
 ): State {
   if (
     !Number.isSafeInteger(config.maxConcurrency) ||
@@ -59,6 +61,11 @@ export function simulate(
     priority: number,
   ) => {
     const w: WorkUnit = {
+      ...(lineage.artifact
+        ? {
+            artifact: { ref: lineage.artifact.ref, base: lineage.artifact.ref },
+          }
+        : {}),
       id: `w${state.work.length + 1}`,
       lineageId: lineage.id,
       parentId,
@@ -84,7 +91,11 @@ export function simulate(
     rationale: string | null,
     priority: number,
   ) => {
+    const inherited = state.lineages.find((l) => l.id === parentId)?.artifact;
     const l: Lineage = {
+      ...(inherited
+        ? { artifact: { ref: inherited.ref, base: inherited.ref } }
+        : {}),
       id: `l${state.lineages.length + 1}`,
       name,
       objective,
@@ -120,6 +131,25 @@ export function simulate(
     sync(w);
     emit("BLOCKED", w.id, w.reason);
   };
+  const effect = (request: ArtifactRequest) => {
+    const outcome = artifactBackend!.perform(structuredClone(request));
+    const operation = structuredClone({ request, outcome });
+    (state.artifactOperations ??= []).push(operation);
+    emit(
+      "ARTIFACT_OPERATION",
+      request.type === "INITIALIZE" ? state.runId : request.workId,
+      operation,
+    );
+    return outcome;
+  };
+  if (artifactBackend) {
+    const outcome = effect({ type: "INITIALIZE", ...identity });
+    if (outcome.ok) {
+      root.artifact = structuredClone(outcome.artifact);
+      state.work[0]!.artifact = structuredClone(outcome.artifact);
+    } else block(state.work[0]!, outcome.reason.code, outcome.reason.message);
+  }
+  const artifactAttempted = new Set<string>();
   const resume = () => {
     for (const w of state.work)
       if (
@@ -162,6 +192,29 @@ export function simulate(
       w.resources.cost += 1;
       w.resources.wallTimeMs += 1;
       state.resources = sumResources(state.work);
+      if (artifactBackend && w.artifact && !artifactAttempted.has(w.id)) {
+        artifactAttempted.add(w.id);
+        const outcome = effect({
+          type: "EXECUTE",
+          ...identity,
+          lineageId: w.lineageId,
+          workId: w.id,
+          name: w.name,
+          base: w.artifact.ref,
+        });
+        if (outcome.artifact) {
+          w.artifact = structuredClone(outcome.artifact);
+          w.artifacts = [w.artifact.ref];
+          if (w.parentId === null)
+            state.lineages.find((l) => l.id === w.lineageId)!.artifact =
+              structuredClone(w.artifact);
+        }
+        if (!outcome.ok) {
+          block(w, outcome.reason.code, outcome.reason.message);
+          emit("RESOURCES", w.id, w.resources);
+          continue;
+        }
+      }
       try {
         const action = validateAction(
           executor.execute(
@@ -176,6 +229,12 @@ export function simulate(
                   status: c.status,
                   result: c.result,
                   reason: c.reason,
+                  ...(artifactBackend
+                    ? {
+                        artifacts: c.artifacts,
+                        ...(c.artifact ? { artifact: c.artifact } : {}),
+                      }
+                    : {}),
                 })),
             }),
           ),
@@ -211,7 +270,9 @@ export function simulate(
             break;
           case "COMPLETE":
             w.result = action.result;
-            w.artifacts = action.artifacts ?? [];
+            w.artifacts = w.artifact
+              ? [w.artifact.ref]
+              : (action.artifacts ?? []);
             if (!evaluation!.passed)
               block(w, "EVALUATION_FAILED", evaluation!.reason);
             else {
@@ -243,6 +304,11 @@ export function simulate(
                 w.id,
                 child.priority ?? w.priority,
               );
+              if (w.artifact)
+                spawned.artifact = {
+                  ref: w.artifact.ref,
+                  base: w.artifact.ref,
+                };
               emit("SPAWN", w.id, { work: spawned });
             }
             break;

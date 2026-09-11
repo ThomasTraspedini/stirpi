@@ -1,3 +1,4 @@
+import type { Artifact, ArtifactOperation } from "../artifacts/index.js";
 export type LineageStatus =
   "ACTIVE" | "WAITING" | "BLOCKED" | "BRANCHED" | "DEAD" | "COMPLETED";
 // M0 run aggregation only produces these states.
@@ -58,6 +59,7 @@ export interface Config {
   maxSteps: number;
 }
 export interface Lineage {
+  artifact?: Artifact;
   id: string;
   parentId: string | null;
   name: string;
@@ -69,6 +71,7 @@ export interface Lineage {
   reason: Reason | null;
 }
 export interface WorkUnit {
+  artifact?: Artifact;
   id: string;
   lineageId: string;
   parentId: string | null;
@@ -90,6 +93,7 @@ export interface Event {
   data: unknown;
 }
 export interface State extends RunIdentity {
+  artifactOperations?: ArtifactOperation[];
   status: RunStatus;
   reason: Reason | null;
   scenario: Scenario;

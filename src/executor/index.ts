@@ -1,3 +1,4 @@
+import type { Artifact } from "../artifacts/index.js";
 import type {
   Action,
   PublicCriteria,
@@ -10,6 +11,8 @@ export interface ExecutorContext {
   dna: readonly string[];
   publicEvaluation: PublicCriteria;
   results: {
+    artifacts?: string[];
+    artifact?: Artifact;
     name: string;
     status: WorkUnitStatus;
     result: string | null;

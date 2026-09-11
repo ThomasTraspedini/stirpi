@@ -1,6 +1,6 @@
 # Stirpi
 
-Stirpi is a deterministic lineage-engine simulation. The CLI is `strpi`. M0 explores conditional lineages and delegates work within them without LLMs or Git.
+Stirpi is a lineage-engine simulation with a Git artifact backend. The CLI is `strpi`. M0 explores conditional lineages with a deterministic fake executor; M1 adds isolated artifact work without LLM integration.
 
 ## Quick start
 
@@ -54,6 +54,28 @@ Tests cover the reference scenario, branch preservation, DNA, scheduling, local 
 
 ## Deferred beyond M0
 
-Crash recovery/checkpointing during a run, migrations between released schemas, true asynchronous workers, stronger token/cost/time budgets, unblocking/resurrection policies, alternative evaluator implementations, secrets/access controls, and real artifact backends are deferred. There is no LLM integration, auto-merge, explicit JOIN, confidence scoring, GUI, semantic search or distributed execution.
+Crash recovery/checkpointing during a run, migrations between released schemas, true asynchronous workers, stronger token/cost/time budgets, unblocking/resurrection policies, alternative evaluator implementations, secrets/access controls, and artifact integration policies are deferred. There is no LLM integration, auto-merge, explicit JOIN, confidence scoring, GUI, semantic search or distributed execution.
 
 Run status is limited to ACTIVE, BLOCKED and COMPLETED, preserving M0 aggregation. Lineage and work status types remain separate names for the existing lifecycle; main work records BRANCHED after FORK, while spawned work is forbidden from forking. DEAD remains representable but has no M0 transition.
+
+## M1 Git artifacts
+
+Requires system Git in addition to Node.js. The engine depends on `ArtifactBackend`, not Git commands or branch names. Pass a `GitArtifactBackend(repository, workCallback)` as the sixth argument to `simulate`. The optional trusted local callback receives a work request and a workspace with `path`, `base`, `branch`, and `commit(message)`. M1 invokes it once, at the work unit's first scheduled step, before its scripted action; the callback may make zero or more coherent commits. This is a small simulation adapter, not a coding-agent protocol. Work after parent resumption remains scripted in M1.
+
+Initialization checks the target for tracked and untracked changes and resolves HEAD to a full commit SHA. Dirty targets produce a structured `DIRTY_REPOSITORY` blocked outcome before any work executes. Each scheduled work unit gets a separate worktree and branch from its saved base, including main work when it executes. FORK copies the current parent artifact to every child before any child executes. SPAWN captures the spawning parent's current artifact for every child, including nested SPAWN; completing a child never replaces the parent's artifact or merges its changes.
+
+The callback's `commit` helper skips unchanged trees and uses ordinary descriptive commit messages. It adds changes within that isolated worktree, so callbacks should make only their intended edits. Canonical refs are full commit SHAs; branches and worktree paths are operational metadata. Clean temporary worktrees are removed after the callback. Dirty worktrees or failed cleanup are retained with structured failure information; branches and commits are preserved for audit. Callbacks are trusted local code and are responsible for coherent edits. M1 adds no sandbox or automatic history cleanup.
+
+A small end-to-end demonstration against a **separate, clean repository with an initial commit**:
+
+```sh
+node dist/cli/index.js run git-reference --repo /path/to/target --db /tmp/stirpi-m1.sqlite --id m1
+node dist/cli/index.js inspect m1 --db /tmp/stirpi-m1.sqlite
+node dist/cli/index.js replay m1 --db /tmp/stirpi-m1.sqlite
+```
+
+Configure a Git author in the test target before running this example. `git-reference` uses the reference control scenario and makes X and Y write different contents to `artifact-example.txt` in their own worktrees. It prints the refs, base commits, branches, cleanup status, and worktree paths. Both results remain on separate branches; the target checkout is unchanged. The final run remains BLOCKED because reference branch B needs input. Ordinary `run reference --repo ...` demonstrates inheritance and no-change work without editing files. Keep the database and exports outside the target; the CLI checks output locations before opening its store.
+
+Lineage/work JSON state stores artifact refs and operational metadata. An `artifact_operations` state table stores ordered structured requests and outcomes, also copied to the append-only event log for JSONL export. No Git blobs or diffs are stored in SQLite. Replay compares each generated artifact request with its recorded request and returns the recorded outcome without invoking the backend. It rejects missing, extra, or mismatched operations and compares the full resulting state/event sequence. Replay works even if the target repository is unavailable; it does not verify that commits still exist (D031).
+
+The existing M0 path remains available without an artifact backend. Persisted custom decision executors are still outside replay support; the M1 callback's artifact outcomes are recorded, while decision actions use the saved scenario scripts. Crash recovery across external effects and SQLite persistence, artifact integrity verification, result integration, and real coding-agent execution remain deferred.
