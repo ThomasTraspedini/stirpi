@@ -1,0 +1,253 @@
+Implement the next narrow slice: provider delivery with HOLD eligibility,
+strong outbound idempotency, and UNKNOWN outcome handling.
+
+Do not implement webhooks yet.
+Do not implement refund execution.
+Do not add HTTP or a real provider SDK.
+
+GOAL
+
+Model the boundary between:
+
+1. provider never contacted;
+2. provider may already have been contacted.
+
+A first provider side effect is allowed only while the associated HOLD is valid.
+
+After a provider call may have happened, external uncertainty must be reconciled,
+not silently converted to failure.
+
+FAKE PROVIDER
+
+Introduce the smallest deterministic fake provider needed for this experiment.
+
+It must support a payment operation keyed by:
+
+PaymentAttempt.id
+
+The fake provider contract for this project is:
+
+same PaymentAttempt.id + same economic request
+=> same external operation / same eventual result
+
+same PaymentAttempt.id + different economic request
+=> explicit provider idempotency mismatch error
+
+No random behavior.
+Tests must control provider outcomes deterministically.
+
+PAYMENT STATE
+
+Extend PaymentAttempt only with states required by this slice.
+
+Use the smallest meaningful model.
+
+At minimum distinguish:
+
+CREATED
+UNKNOWN
+SUCCEEDED
+FAILED
+
+Do not introduce PROCESSING unless a concrete scenario requires it.
+
+FIRST DELIVERY ELIGIBILITY
+
+Before the first provider call:
+
+1. identify the associated Unit;
+2. acquire the Unit serialization boundary;
+3. sample authoritative PostgreSQL clock after Unit lock;
+4. materialize expiry;
+5. verify the associated HOLD is still valid and belongs to the claimant.
+
+If HOLD is expired:
+
+- do not call provider;
+- persist an explicit durable outcome showing delivery was suppressed because
+  inventory rights expired;
+- mark the outbox work as no longer deliverable / completed in the smallest
+  semantically clear way;
+- do not create refund work because no provider side effect occurred.
+
+Choose the smallest state/outcome representation and document it.
+
+Do not overload FAILED if the reason is not a provider payment failure.
+
+IMPORTANT
+
+The HOLD validity gate applies only before the FIRST possible provider side effect.
+
+Once a provider call may have happened, do not suppress reconciliation merely
+because the HOLD has expired.
+
+PROVIDER CALL
+
+Use PaymentAttempt.id as provider idempotency identity.
+
+Do not generate another provider idempotency key.
+
+The economic request sent to provider must correspond exactly to the immutable
+PaymentAttempt intent.
+
+OUTCOME HANDLING
+
+Provider explicit success:
+- persist PaymentAttempt SUCCEEDED;
+- mark outbox delivery resolved.
+
+Provider explicit failure:
+- persist PaymentAttempt FAILED;
+- mark outbox delivery resolved.
+- do not release or extend HOLD.
+
+Provider response loss / timeout after the call may have been issued:
+- persist PaymentAttempt UNKNOWN;
+- keep reconciliation work pending;
+- do not mark it FAILED;
+- do not assume provider side effect did not happen.
+
+RETRY AFTER UNKNOWN
+
+Retry the same PaymentAttempt using the same PaymentAttempt.id and same economic
+request.
+
+Do NOT reapply the "first delivery HOLD must still be valid" gate as a reason to
+abandon reconciliation after UNKNOWN.
+
+The provider may already have charged.
+
+If retry/reconciliation returns:
+
+- SUCCEEDED => persist SUCCEEDED;
+- FAILED => persist FAILED;
+- still unknown => remain UNKNOWN.
+
+An expired HOLD at this stage affects future reservation confirmation, not whether
+the economic outcome must be discovered.
+
+OUTBOX
+
+Keep the existing durable outbox minimal.
+
+Evolve it only as much as needed to distinguish:
+
+- work that still requires first delivery;
+- work that still requires reconciliation after uncertain delivery;
+- work that is resolved / suppressed.
+
+Do not build a generic queue or event framework.
+
+Do not add worker infrastructure beyond a direct service method suitable for
+deterministic tests.
+
+CONCURRENCY / IDEMPOTENCY
+
+Provider delivery of one PaymentAttempt must not create duplicate provider
+operations under concurrent/retried execution.
+
+Use PostgreSQL/local serialization only where needed.
+
+Do not introduce a new global bottleneck.
+
+Preserve existing inventory lock-order discipline.
+
+Think carefully about any lock ordering involving:
+- command receipt;
+- Unit;
+- PaymentAttempt/outbox.
+
+If a new lock-order protocol is required, stop and report the concrete issue
+before implementing broadly.
+
+SCENARIOS
+
+Add deterministic coverage for at least:
+
+1. HOLD valid at first delivery
+   -> provider called once
+   -> SUCCEEDED
+   -> outbox resolved.
+
+2. HOLD expired before provider ever contacted
+   -> provider never called
+   -> explicit durable delivery-suppressed outcome
+   -> no pending external work.
+
+3. Provider call issued, response lost
+   -> PaymentAttempt UNKNOWN
+   -> HOLD later expires
+   -> retry/reconciliation still calls provider with same PaymentAttempt.id
+   -> provider reports SUCCEEDED
+   -> PaymentAttempt becomes SUCCEEDED.
+
+4. Same as above but provider reports FAILED
+   -> PaymentAttempt becomes FAILED.
+
+5. Repeated UNKNOWN
+   -> remains UNKNOWN
+   -> no duplicate external operation.
+
+6. Concurrent delivery/retry for same PaymentAttempt
+   -> no duplicate provider operation / inconsistent terminal state.
+
+7. Provider idempotency key reused with different immutable economic payload
+   -> explicit provider mismatch error in fake provider.
+
+8. Provider explicit FAILED does not release or extend HOLD.
+
+9. First delivery waiting on Unit contention until after HOLD expiry
+   -> provider is never contacted
+   -> suppressed outcome.
+
+IMPORTANT BOUNDARY
+
+Do not implement reservation confirmation yet.
+
+A PaymentAttempt may become SUCCEEDED while its HOLD is expired.
+
+That is intentional and will be handled in the next slice as:
+
+SUCCEEDED + valid HOLD -> CONFIRMED
+SUCCEEDED + expired HOLD -> REFUND_REQUIRED
+
+Do not implement that transition yet.
+
+DOCUMENTATION
+
+Update README / architecture / scenario catalog to explain:
+
+- first-delivery eligibility gate;
+- provider-never-contacted vs provider-may-have-been-contacted distinction;
+- UNKNOWN != FAILED;
+- same PaymentAttempt.id is reused for reconciliation;
+- expired HOLD cannot suppress reconciliation after possible external side effect;
+- payment success still does not imply reservation confirmation.
+
+VERIFICATION
+
+Run:
+- focused provider-delivery tests;
+- full PostgreSQL suite;
+- typecheck;
+- git diff --check.
+
+Refresh temp review packet.
+
+In review.md report:
+- PaymentAttempt/outbox state changes;
+- exact first-delivery eligibility path;
+- how the system knows provider may have been contacted;
+- provider idempotency behavior;
+- UNKNOWN recovery evidence;
+- HOLD-expired-before-first-send evidence;
+- concurrent delivery evidence;
+- lock ordering;
+- results;
+- ambiguities/deferred work.
+
+Do not commit.
+Do not implement webhooks.
+Do not implement reservation confirmation or refund execution.
+
+Stop.
