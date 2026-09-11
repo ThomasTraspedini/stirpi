@@ -673,3 +673,33 @@ Therefore:
 The runtime evaluator must not receive information intentionally hidden from the
 executor unless a future explicitly defined evaluation contract permits such a
 boundary.
+
+## D045 — Runtime evaluation may inspect public work evidence
+
+Status: accepted
+
+Runtime evaluation is not limited to executor-authored result text.
+
+A runtime/public evaluator may inspect evidence that legitimately belongs to the
+current work unit and is part of the solver-visible/public problem contract.
+
+Such evidence may include:
+
+- the executor's structured result;
+- the current canonical artifact;
+- lineage-local public state;
+- declared or independently executed verification results;
+- other public evidence explicitly defined by the runtime evaluation contract.
+
+Runtime evaluation must not receive:
+
+- private experimental oracle material;
+- hidden benchmark outcomes not included in the runtime contract;
+- sibling-lineage private state;
+- future historical information unavailable to the running process.
+
+For software tasks, runtime completion may require independently verifying the
+produced artifact rather than trusting claims in executor-authored text.
+
+The exact public evaluation contract is task-specific configuration and does not
+change Stirpi's core completion semantics.
