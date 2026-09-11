@@ -235,3 +235,158 @@ For development of Stirpi:
 5. agents integrate the new decision.
 
 This avoids circularly using an immature system to define its own semantics.
+
+## D019 — FORK children inherit the same parent artifact
+
+Status: accepted
+
+When a lineage FORKs, every child lineage starts from the same artifact state
+owned by the parent at the fork point.
+
+The children diverge semantically through their distinct assumptions, not
+because they receive different starting artifacts.
+
+---
+
+## D020 — SPAWN creates isolated artifact descendants
+
+Status: accepted
+
+Each SPAWNed work unit operates on an isolated descendant of the current
+lineage artifact.
+
+For the Git backend, each work unit receives its own worktree/branch derived
+from the same parent artifact state.
+
+SPAWN isolation must not create new lineage identity or alter lineage DNA.
+
+---
+
+## D021 — M1 does not automatically merge SPAWN results
+
+Status: accepted
+
+M1 does not automatically merge artifact changes produced by SPAWNed work.
+
+SPAWN completion returns artifact references and outcomes to the parent lineage.
+
+How those artifacts are later integrated is a separate concern and must not be
+silently defined by the Git backend.
+
+---
+
+## D022 — Artifact conflicts are not lineage conflicts
+
+Status: accepted
+
+A Git merge conflict or other artifact-level integration conflict is not an
+epistemic FORK by itself.
+
+Artifact incompatibility and lineage incompatibility are distinct concepts.
+
+A later integration step may expose a semantic contradiction that requires a
+FORK, but the artifact conflict alone does not imply one.
+
+---
+
+## D023 — Git identity is not lineage identity
+
+Status: accepted
+
+Git branches, commits, and worktrees are artifact representations.
+
+They are not authoritative identities for Stirpi lineages or work units.
+
+Lineage/work identity remains in Stirpi's own state.
+
+---
+
+## D024 — M1 uses Git worktrees for isolated work
+
+Status: accepted
+
+The first Git artifact backend uses Git worktrees to isolate concurrent or
+serial SPAWN work without repeatedly mutating the target repository checkout.
+
+This is an M1 implementation decision, not a universal requirement for future
+artifact backends.
+
+---
+
+## D025 — Work units may create commits
+
+Status: accepted
+
+A work unit may create zero or more coherent commits in its isolated artifact
+branch.
+
+Commits should represent understandable implementation progress.
+
+A work unit that makes no artifact change must not create an empty commit
+merely to prove that it ran.
+
+---
+
+## D026 — Target repository must start clean
+
+Status: accepted
+
+For M1, Stirpi refuses to start artifact execution against a target repository
+with uncommitted tracked or untracked changes.
+
+Supporting intentionally dirty starting states is deferred.
+
+---
+
+## D027 — Branch names are readable references, not genealogy
+
+Status: accepted
+
+Git branch names may include readable Stirpi run, lineage, or work references.
+
+Branch naming must not become the authoritative storage of lineage ancestry,
+assumptions, or semantic state.
+
+The database remains authoritative.
+
+---
+
+## D028 — Temporary worktrees are cleaned up; branches and commits may remain
+
+Status: accepted
+
+Temporary Git worktrees created by Stirpi should be removed when they are no
+longer needed.
+
+Branches and commits produced by execution may remain available for inspection
+and audit unless an explicit cleanup policy says otherwise.
+
+M1 must not silently delete potentially useful execution history.
+
+---
+
+## D029 — Git history remains useful without Stirpi metadata
+
+Status: accepted
+
+Commit history should remain understandable to humans and ordinary Git tooling
+without Stirpi.
+
+Do not require proprietary Stirpi trailers, assumption blobs, or internal IDs
+inside commit messages.
+
+Stirpi enriches commits externally by storing mappings from artifact references
+to lineage/work state in its own database.
+
+Commit messages should describe the code change itself rather than duplicate
+the lineage assumption.
+
+## D030 — Git artifact references are immutable commit identities
+
+Status: accepted
+
+For the Git backend, the canonical artifact reference returned to Stirpi is an
+immutable commit identity, not a mutable branch name or worktree path.
+
+Branches/worktrees may be used operationally, but persisted artifact identity
+must remain stable over time.
