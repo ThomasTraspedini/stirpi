@@ -414,3 +414,163 @@ later verify properties such as whether a recorded Git commit still exists or
 has the expected ancestry.
 
 Replay must not require external side effects to be deterministic.
+
+## D032 — Executors are not necessarily agents
+
+Status: accepted
+
+Stirpi manages problem-solving processes rather than a specific class of AI agents.
+
+An executor is any actor capable of consuming an assigned lineage/work context
+and returning structured actions and results.
+
+Executors may later include:
+- coding agents;
+- human operators or teams;
+- deterministic services;
+- other software systems.
+
+M2 may implement a coding-agent executor first, but core protocol semantics
+must not require the executor to be an LLM.
+
+---
+
+## D033 — Executors operate only inside assigned artifact workspaces
+
+Status: accepted
+
+An executor that performs artifact work receives an isolated workspace assigned
+by Stirpi.
+
+The executor must not modify sibling lineage/work artifacts or the target
+repository outside its assigned workspace.
+
+Artifact isolation is enforced by the artifact layer, not by trusting executor
+intent alone.
+
+---
+
+## D034 — Stirpi controls artifact commit operations
+
+Status: accepted
+
+Executors may modify files inside their assigned workspace.
+
+Canonical Git commits are created through Stirpi-controlled artifact operations
+rather than arbitrary unmanaged Git history manipulation by the executor.
+
+Executors may request multiple coherent commits during a work unit.
+
+Commit creation must remain compatible with D025 and D029.
+
+---
+
+## D035 — Executor communication uses a structured protocol
+
+Status: accepted
+
+Executor-to-Stirpi control flow uses structured actions rather than free-text
+interpretation.
+
+At minimum the protocol represents:
+- CONTINUE
+- FORK
+- SPAWN
+- COMPLETE
+- BLOCK
+
+Free text may accompany structured actions as rationale, explanation, or result,
+but must not be the authoritative control signal.
+
+---
+
+## D036 — Executors see only their own lineage world
+
+Status: accepted
+
+An executor receives only the context necessary for its assigned lineage/work.
+
+This includes:
+- current task/objective;
+- inherited assumption path;
+- artifacts belonging to that lineage/work;
+- public evaluation information;
+- relevant outcomes of its own spawned descendants.
+
+The executor must not receive sibling-lineage assumptions, artifacts, results,
+or rationale by default.
+
+Sibling lineages represent alternative conditional worlds and must remain
+epistemically isolated unless an explicit future mechanism introduces
+cross-lineage observation.
+
+---
+
+## D037 — Fork children do not see sibling alternatives
+
+Status: accepted
+
+A fork child receives its own newly inherited assumption and ancestral context.
+
+It does not receive the assumptions, rationale, progress, or artifacts of
+sibling fork children.
+
+The existence of alternative siblings is not part of the child's default
+problem-solving context.
+
+---
+
+## D038 — Executor output separates control actions from artifact effects
+
+Status: accepted
+
+Executor execution may produce both:
+- artifact mutations/results;
+- a structured Stirpi control action.
+
+Artifact mutation alone does not define a lineage transition.
+
+A control action must be explicitly returned and validated by Stirpi before the
+corresponding semantic transition occurs.
+
+---
+
+## D039 — COMPLETE requires evaluation
+
+Status: accepted
+
+An executor cannot make a lineage/work successfully complete merely by
+declaring COMPLETE.
+
+A COMPLETE action is a request to evaluate the produced result/artifact against
+the relevant evaluation contract.
+
+Only evaluation success may transition the target to COMPLETED.
+
+Evaluation failure must remain distinguishable from executor declaration of
+completion.
+
+---
+
+## D040 — Human executors are first-class future participants
+
+Status: accepted
+
+The executor abstraction must remain capable of representing human or
+human-team participation in the same process model used by automated executors.
+
+M2 does not need to implement a human UI or collaborative workflow.
+
+This decision exists to prevent the protocol and persistence model from
+assuming that executor interactions are necessarily model/API calls.
+
+## D041 — Executor identity is not lineage identity
+
+Status: accepted
+
+A lineage may be advanced by different executors over time.
+
+Executor replacement does not create a new lineage by itself.
+
+Lineage continuity is defined by task ancestry, assumptions, state, and
+artifacts—not by continuity of the actor performing the work.
