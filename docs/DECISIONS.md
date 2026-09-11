@@ -390,3 +390,27 @@ immutable commit identity, not a mutable branch name or worktree path.
 
 Branches/worktrees may be used operationally, but persisted artifact identity
 must remain stable over time.
+
+## D031 — Replay does not repeat external artifact side effects
+
+Status: accepted
+
+Replay verifies Stirpi's semantic engine transitions using the artifact-operation
+outcomes recorded during the original Run.
+
+Replay must not recreate Git worktrees, commits, branches, or other external
+artifact mutations.
+
+Artifact backends are effect boundaries. During replay, previously recorded
+artifact outcomes are supplied back to the engine as the observations that were
+produced by those effects during the original execution.
+
+This preserves the distinction between:
+- deterministic replay of Stirpi's decision and transition logic;
+- verification of external artifact availability or integrity.
+
+Artifact availability/integrity verification is a separate operation and may
+later verify properties such as whether a recorded Git commit still exists or
+has the expected ancestry.
+
+Replay must not require external side effects to be deterministic.
