@@ -740,3 +740,52 @@ their individual outcomes.
 
 Failure of an individual public check is a normal negative evaluation result,
 not an operational evaluator-process failure.
+
+## D047 — Operational supervision is progress- and resource-aware
+
+Status: accepted
+
+Stirpi must not use elapsed wall-clock time as a generic proxy for executor
+failure or lack of progress when more specific observable information is
+available.
+
+Operational supervision distinguishes:
+
+- activity: observable execution activity;
+- progress: transition to a new operational state;
+- resource consumption: measurable work/cost;
+- budget exhaustion: reaching an explicitly configured resource limit.
+
+Supervision should be applied to the smallest observable execution scope.
+
+Examples of scopes may include:
+
+- Run;
+- ExecutorInvocation;
+- executor turn;
+- tool/item execution;
+- command/subprocess.
+
+Where structured progress is observable, stopping should prefer explicit
+mechanisms such as:
+
+- resource budgets;
+- iteration limits;
+- repeated-cycle detection;
+- repeated-failure detection;
+- scope-specific no-progress detection.
+
+Time remains a valid measurable resource.
+
+A wall-time limit may be configured explicitly as a resource budget, including
+for experiments where total execution time is part of the comparison.
+
+Reaching such a limit is resource exhaustion, not evidence that the executor is
+incorrect or stalled.
+
+Elapsed time may also be used as a local no-progress watchdog when an execution
+scope is genuinely opaque and no stronger progress signal is available.
+
+Activity alone must not necessarily reset a progress watchdog.
+
+Operational stopping must not imply semantic falsification of a lineage.
