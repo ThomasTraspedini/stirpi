@@ -1,3 +1,4 @@
+import { sha256 } from "./inputs.js";
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -112,6 +113,27 @@ export function runtimeEvaluator(
   };
 }
 export function replayExperiment(directory: string) {
+  const metadata = JSON.parse(
+    readFileSync(join(directory, "metadata.json"), "utf8"),
+  );
+  if (metadata.preflight?.runtime) {
+    const evidence = JSON.parse(
+      readFileSync(join(directory, "preflight.json"), "utf8"),
+    );
+    const registration = evidence.preregistration;
+    if (
+      !isDeepStrictEqual(metadata.preflight, evidence) ||
+      evidence.runtime.actualCommit !== evidence.runtime.pinnedCommit ||
+      evidence.runtime.pinnedCommit !== registration.document.stirpiCommit ||
+      !/^[a-f0-9]{40}$/.test(registration.containingCommit) ||
+      sha256(registration.contents) !== registration.sha256 ||
+      !isDeepStrictEqual(
+        JSON.parse(registration.contents),
+        registration.document,
+      )
+    )
+      throw new Error("Replay experiment/runtime identity mismatch");
+  }
   const state: State = JSON.parse(
     readFileSync(join(directory, "state.json"), "utf8"),
   );

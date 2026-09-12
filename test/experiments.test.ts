@@ -1,7 +1,9 @@
+import { assertRuntimeCheckout } from "../src/experiments/runtime-identity.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   mkdtempSync,
+  cpSync,
   writeFileSync,
   readFileSync,
   rmSync,
@@ -857,5 +859,144 @@ test("CLI consumes a pilot file without manual limit mapping and leaves omission
     );
   } finally {
     f.close();
+  }
+});
+
+test("committed later preregistration executes pinned runtime and retains both identities", async () => {
+  const f = fixture();
+  const repository = join(f.dir, "runtime");
+  try {
+    initRepository(repository);
+    cpSync(resolve("src"), join(repository, "src"), { recursive: true });
+    for (const name of ["package.json", "tsconfig.json"])
+      cpSync(resolve(name), join(repository, name));
+    const runFile = join(repository, "src/experiments/run.ts");
+    // Preserve compatibility with runtime revisions predating this launcher.
+    const source = readFileSync(runFile, "utf8");
+    const wrapperStart = source.indexOf("export async function runExperiment(");
+    const localStart = source.indexOf(
+      "export async function runExperimentLocally(",
+    );
+    writeFileSync(
+      runFile,
+      (source.slice(0, wrapperStart) + source.slice(localStart))
+        .replace(
+          'import { runPinnedRuntime } from "./runtime-identity.js";\n',
+          "",
+        )
+        .replace(
+          "export async function runExperimentLocally(",
+          "export async function runExperiment(",
+        ),
+    );
+    rmSync(join(repository, "src/experiments/runtime-identity.ts"));
+    writeFileSync(
+      runFile,
+      readFileSync(runFile, "utf8").replace(
+        "return { directory, result, state };",
+        'writeFileSync(join(directory, "pinned-marker"), "pinned runtime executed");\n  return { directory, result, state };',
+      ),
+    );
+    git(repository, "add", ".");
+    git(repository, "commit", "-m", "Pinned fixture runtime");
+    const pin = git(repository, "rev-parse", "HEAD");
+    const preregistration = join(repository, "pilot.json");
+    const pilot = {
+      id: "fixture-pinned",
+      class: "pilot",
+      testcase: "fixture",
+      condition: "T",
+      stirpiCommit: pin,
+      hiddenEvaluationDuringRun: false,
+      limits: { maxSteps: 12 },
+    };
+    const contents = JSON.stringify(pilot);
+    writeFileSync(preregistration, contents);
+    writeFileSync(
+      runFile,
+      'throw new Error("NEWER RUNTIME MUST NEVER EXECUTE");',
+    );
+    git(repository, "add", ".");
+    git(
+      repository,
+      "commit",
+      "-m",
+      "Later preregistration and incompatible runtime",
+    );
+    const containingCommit = git(repository, "rev-parse", "HEAD");
+    const base: RunOptions = f.options("T");
+    delete base.maxSteps;
+    const run = await runExperiment({ ...base, preregistration });
+    assert.equal(run.result.error, null);
+    assert.ok(run.result.resources.executorInvocations > 0);
+    assert.equal(
+      readFileSync(join(run.directory, "pinned-marker"), "utf8"),
+      "pinned runtime executed",
+    );
+    const evidence = json(join(run.directory, "preflight.json"));
+    assert.equal(evidence.preregistration.sha256, sha256(contents));
+    assert.equal(evidence.preregistration.contents, contents);
+    assert.equal(evidence.preregistration.containingCommit, containingCommit);
+    assert.equal(evidence.runtime.pinnedCommit, pin);
+    assert.equal(evidence.runtime.actualCommit, pin);
+    assert.notEqual(containingCommit, pin);
+    assert.deepEqual(
+      json(join(run.directory, "metadata.json")).preflight,
+      evidence,
+    );
+    replayExperiment(run.directory);
+    evidence.runtime.actualCommit = containingCommit;
+    writeFileSync(
+      join(run.directory, "preflight.json"),
+      JSON.stringify(evidence),
+    );
+    assert.throws(() => replayExperiment(run.directory), /identity/);
+    for (const badPin of ["0".repeat(40), "HEAD", 42]) {
+      writeFileSync(
+        preregistration,
+        JSON.stringify({ ...pilot, stirpiCommit: badPin }),
+      );
+      git(repository, "add", "pilot.json");
+      git(repository, "commit", "-m", "Invalid fixture pin");
+      await assert.rejects(
+        runExperiment({
+          ...base,
+          output: join(f.dir, "bad-runs"),
+          preregistration,
+        }),
+        /Preflight/,
+      );
+      assert.equal(existsSync(join(f.dir, "bad-runs")), false);
+    }
+    writeFileSync(preregistration, contents);
+    await assert.rejects(
+      runExperiment({ ...base, preregistration }),
+      /Preflight/,
+    );
+  } finally {
+    f.close();
+  }
+});
+
+test("runtime checkout verification rejects wrong identity and dirty files", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stirpi-runtime-check-"));
+  try {
+    initRepository(dir);
+    writeFileSync(join(dir, "tracked"), "clean");
+    git(dir, "add", ".");
+    git(dir, "commit", "-m", "fixture");
+    const pin = git(dir, "rev-parse", "HEAD");
+    assertRuntimeCheckout(dir, pin);
+    assert.throws(
+      () => assertRuntimeCheckout(dir, "0".repeat(40)),
+      /Preflight/,
+    );
+    writeFileSync(join(dir, "untracked"), "dirty");
+    assert.throws(() => assertRuntimeCheckout(dir, pin), /Preflight/);
+    rmSync(join(dir, "untracked"));
+    writeFileSync(join(dir, "tracked"), "dirty");
+    assert.throws(() => assertRuntimeCheckout(dir, pin), /Preflight/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

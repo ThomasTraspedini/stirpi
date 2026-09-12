@@ -18,6 +18,7 @@ import {
   rmSync,
   existsSync,
   cpSync,
+  readFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
@@ -39,6 +40,7 @@ import {
   type EvaluationRecord,
 } from "./evaluation.js";
 
+import { runPinnedRuntime } from "./runtime-identity.js";
 import { preregisteredOptions } from "./preregistration.js";
 
 export interface RunOptions {
@@ -68,7 +70,18 @@ export interface RunOptions {
 }
 const save = (path: string, value: unknown) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
-export async function runExperiment(options: RunOptions) {
+export async function runExperiment(
+  options: RunOptions,
+): Promise<Awaited<ReturnType<typeof runExperimentLocally>>> {
+  if (
+    options.preregistration &&
+    "stirpiCommit" in JSON.parse(readFileSync(options.preregistration, "utf8"))
+  )
+    return runPinnedRuntime(options);
+  return runExperimentLocally(options);
+}
+
+export async function runExperimentLocally(options: RunOptions) {
   const frozen = frozenInput(options.manifest);
   const preflight = preregisteredOptions(options, frozen.manifest.id);
   const { signal, observeEvent, ...configuration } = preflight.options;

@@ -211,9 +211,27 @@ Pass `--preregistration /absolute/path/to/pilot.json` to `experiment run`, or se
 `RunOptions.preregistration`. Keep supplying the manifest, condition, source,
 executor command, public evaluator and output paths; no manual limit translation
 is needed. The accepted pilot document uses `id`, `class: "pilot"`, `testcase`,
-`condition`, `limits`, and `hiddenEvaluationDuringRun: false`. Existing descriptive
-`stirpiCommit` and `executor` metadata are accepted and preserved (not resolved
-into an executable or used to check installed versions). Optional `publicEvaluator`
+`condition`, `limits`, and `hiddenEvaluationDuringRun: false`. `executor` metadata is descriptive. When `stirpiCommit` is present it must be an
+exact, available commit in the repository containing the committed pilot file.
+The pilot bytes must match that repository's HEAD; HEAD need not equal the pin.
+The launcher transfers the pinned revision into a fresh clean repository,
+compiles its TypeScript outside that checkout, and invokes its experiment harness
+in a separate Node process. No built code, package scripts, or Node loaders from
+the launching HEAD are executed in that process. The installed TypeScript compiler
+and Node type declarations are build tools; compilation failure stops preflight.
+The pinned revision must provide the experiment run API. Its policy validation
+and execution semantics remain authoritative. Unpinned fixture pilots retain the
+local execution path.
+
+The original preregistration is snapshotted as external input, along with its
+explicitly referenced public evaluator file (which must stay within the input
+repository). It need not exist in the runtime checkout. Testcase source Git
+isolation is unchanged. Successful run evidence independently records exact
+preregistration contents and SHA-256, `preregistration.containingCommit`,
+`runtime.pinnedCommit`, and `runtime.actualCommit`. Replay checks consistency of
+these identities against the embedded metadata and document without Git effects.
+
+Optional `publicEvaluator`
 contains `file` relative to the pilot file and `sha256`; its bytes and parsed
 configuration must match the supplied evaluator. Testcase and condition must match
 the run. Unknown pilot fields and unknown limits fail preflight.
