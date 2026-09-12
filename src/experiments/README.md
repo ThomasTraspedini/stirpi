@@ -116,10 +116,13 @@ No rationale is parsed to choose a transition or infer a semantic conclusion.
 
 `--metadata` accepts executorVersion, model, modelVersion, effort, sampling, and
 baselinePolicy strings. Missing values are null. Command/scaffold/limit metadata
-is hashed into an executor configuration identity. `--steps` and `--concurrency`
-default to 100 and 1. Executor invocations have no implicit timeout;
-`--timeout-ms`, when supplied, explicitly limits invocation wall time. Evaluators
-retain their existing 60000 ms default and configured behavior. Output is limited
+is hashed into an executor configuration identity. Steps and executor supervision
+are unbounded when omitted; concurrency defaults to 1. `--timeout-ms` is a legacy
+executor-only invocation wall-time option. Public evaluator timing is independent:
+`--evaluator-wall-time-ms N` explicitly bounds each public evaluator process
+(each check separately). Omission disables the wall-time limit for experiment
+runs, including both JSON evaluators and command checks.
+Output is limited
 to 1 MiB per process. Execution awaits each invocation asynchronously; concurrency
 remains the M0 batch setting, with unchanged serial scheduling order.
 
@@ -201,3 +204,44 @@ workspaces are retained, including pending-workspace copies. Cancellation record
 `EXECUTOR_CANCELLED`, explicit invocation wall-time exhaustion records
 `EXECUTOR_WALL_TIME_EXHAUSTED`; neither is semantic falsification or no-progress.
 Telemetry does not select actions or alter H/S/T evaluation semantics.
+
+## Executable preregistration
+
+Pass `--preregistration /absolute/path/to/pilot.json` to `experiment run`, or set
+`RunOptions.preregistration`. Keep supplying the manifest, condition, source,
+executor command, public evaluator and output paths; no manual limit translation
+is needed. The accepted pilot document uses `id`, `class: "pilot"`, `testcase`,
+`condition`, `limits`, and `hiddenEvaluationDuringRun: false`. Existing descriptive
+`stirpiCommit` and `executor` metadata are accepted and preserved (not resolved
+into an executable or used to check installed versions). Optional `publicEvaluator`
+contains `file` relative to the pilot file and `sha256`; its bytes and parsed
+configuration must match the supplied evaluator. Testcase and condition must match
+the run. Unknown pilot fields and unknown limits fail preflight.
+
+| Preregistered limit                 | Runtime field                    |
+| ----------------------------------- | -------------------------------- |
+| `limits.maxSteps`                   | `budgets.steps`                  |
+| `limits.maxExecutorInvocations`     | `budgets.invocations`            |
+| `limits.maxLineages`                | `budgets.lineages`               |
+| `limits.maxItemsPerInvocation`      | `supervision.budgets.items`      |
+| `limits.maxCommandsPerInvocation`   | `supervision.budgets.commands`   |
+| `limits.maxWallTimePerInvocationMs` | `supervision.budgets.wallTimeMs` |
+| `limits.noProgressMs`               | `supervision.noProgressMs`       |
+| `limits.maxEvaluatorWallTimeMs`     | `evaluatorWallTimeMs`            |
+
+Limits are nonnegative safe integers; no-progress and evaluator durations must
+be positive. Evaluator duration is at most 2147483647 ms. Omitted entries stay
+absent and disabled, with no inherited defaults. An empty `limits` object is
+valid. New derived configuration contains no compatibility aliases. Supplying
+`maxSteps`/`timeoutMs` (CLI `--steps`/`--timeout-ms`) alongside preregistration is
+an error, even when equal. Structured overrides must exactly equal the derived
+policy; they cannot add undeclared limits.
+
+Before invoking any executor, preflight validates the document and agreement.
+`preflight.json` records the original public document, its SHA-256, declared limits,
+derived budgets, supervision, and evaluator policy (`null` means unbounded).
+`metadata.json` embeds that evidence and the effective runtime configuration;
+engine state retains run budgets and invocation records retain supervision
+observations. Configuration is snapshotted before execution so caller mutation
+cannot change the applied policy. Invalid preregistration throws before output
+creation or executor invocation. No private evaluation input is read by preflight.

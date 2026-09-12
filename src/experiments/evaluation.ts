@@ -64,7 +64,7 @@ export function runtimeEvaluator(
   config: PublicEvaluatorConfig,
   cwd: string,
   env: NodeJS.ProcessEnv,
-  timeout: number,
+  timeout: number | undefined,
   records: EvaluationRecord[],
   save: () => void,
 ): Evaluator {

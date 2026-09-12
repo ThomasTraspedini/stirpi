@@ -64,11 +64,14 @@ export class CommandChecksEvaluator implements Evaluator {
     private readonly environment: NodeJS.ProcessEnv = {
       PATH: process.env.PATH,
     },
-    private readonly timeoutMs = 60000,
+    private readonly timeoutMs: number | undefined = undefined,
     private readonly observe: (result: CheckResult) => void = () => {},
   ) {
     validateChecks(config);
-    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1)
+    if (
+      timeoutMs !== undefined &&
+      (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1)
+    )
       throw new Error("Invalid check timeout");
     this.config = structuredClone(config);
   }

@@ -9,7 +9,7 @@ export class ProcessEvaluator implements Evaluator {
     private readonly command: ProcessConfig,
     private readonly cwd: string,
     private readonly environment: NodeJS.ProcessEnv,
-    private readonly timeoutMs: number,
+    private readonly timeoutMs: number | undefined,
     private readonly observe: (result: ProcessObservation) => void = () => {},
   ) {}
   evaluate(context: EvaluationContext): Evaluation {

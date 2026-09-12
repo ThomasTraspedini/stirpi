@@ -10,6 +10,8 @@ export async function experimentCli(args: string[]) {
     allowPositionals: true,
     options: {
       condition: { type: "string" },
+      preregistration: { type: "string" },
+      "evaluator-wall-time-ms": { type: "string" },
       source: { type: "string" },
       executor: { type: "string" },
       output: { type: "string" },
@@ -28,7 +30,7 @@ export async function experimentCli(args: string[]) {
   const [command, target] = positionals;
   if (values.help || !command) {
     console.log(
-      "strpi experiment run <manifest> --condition H|S|T --source <local-repo|URL> --executor <config.json> --public-evaluator <config.json> --output <directory> [--metadata config.json] [--steps N] [--budgets config.json] [--supervision config.json] [--concurrency 1] [--timeout-ms 60000]\nstrpi experiment replay <run-directory>\nstrpi experiment evaluate <run-directory> --private-data <path> --hook <command.json>",
+      "strpi experiment run <manifest> --condition H|S|T --source <local-repo|URL> --executor <config.json> --public-evaluator <config.json> --output <directory> [--preregistration pilot.json] [--evaluator-wall-time-ms N] [--metadata config.json] [--steps N] [--budgets config.json] [--supervision config.json] [--concurrency 1] [--timeout-ms 60000]\nstrpi experiment replay <run-directory>\nstrpi experiment evaluate <run-directory> --private-data <path> --hook <command.json>",
     );
     return;
   }
@@ -55,6 +57,10 @@ export async function experimentCli(args: string[]) {
       output: values.output,
       publicEvaluator: read(values["public-evaluator"]),
     };
+    if (values.preregistration)
+      options.preregistration = values.preregistration;
+    if (values["evaluator-wall-time-ms"])
+      options.evaluatorWallTimeMs = Number(values["evaluator-wall-time-ms"]);
     if (values.budgets) options.budgets = read(values.budgets);
     if (values.supervision) options.supervision = read(values.supervision);
     if (values.metadata) options.metadata = read(values.metadata);

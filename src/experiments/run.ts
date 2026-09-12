@@ -39,7 +39,11 @@ import {
   type EvaluationRecord,
 } from "./evaluation.js";
 
+import { preregisteredOptions } from "./preregistration.js";
+
 export interface RunOptions {
+  preregistration?: string;
+  evaluatorWallTimeMs?: number;
   manifest: string;
   condition: Condition;
   source: string;
@@ -66,6 +70,13 @@ const save = (path: string, value: unknown) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
 export async function runExperiment(options: RunOptions) {
   const frozen = frozenInput(options.manifest);
+  const preflight = preregisteredOptions(options, frozen.manifest.id);
+  const { signal, observeEvent, ...configuration } = preflight.options;
+  options = {
+    ...structuredClone(configuration),
+    ...(signal ? { signal } : {}),
+    ...(observeEvent ? { observeEvent } : {}),
+  };
   if (!["H", "S", "T"].includes(options.condition))
     throw new Error("Condition must be H, S or T");
   const evaluator = options.publicEvaluator;
@@ -124,7 +135,14 @@ export async function runExperiment(options: RunOptions) {
     maxConcurrency: options.maxConcurrency ?? 1,
   };
   const timeoutMs = options.timeoutMs;
-  const evaluatorTimeoutMs = options.timeoutMs ?? 60000;
+  const evaluatorTimeoutMs = options.evaluatorWallTimeMs;
+  if (
+    evaluatorTimeoutMs !== undefined &&
+    (!Number.isSafeInteger(evaluatorTimeoutMs) ||
+      evaluatorTimeoutMs < 1 ||
+      evaluatorTimeoutMs > 2147483647)
+  )
+    throw new Error("Invalid evaluator wall-time budget");
   if (
     (config.maxSteps !== undefined &&
       (!Number.isSafeInteger(config.maxSteps) || config.maxSteps < 0)) ||
@@ -161,11 +179,15 @@ export async function runExperiment(options: RunOptions) {
         config,
         timeoutMs,
         supervision: options.supervision,
+        evaluatorWallTimeMs: evaluatorTimeoutMs,
         control: control(options.condition),
       }),
     ),
   };
+  if (preflight.evidence)
+    save(join(directory, "preflight.json"), preflight.evidence);
   save(join(directory, "metadata.json"), {
+    preflight: preflight.evidence,
     ...identity,
     executor: options.executor,
     executorVersion: options.metadata?.executorVersion ?? null,
@@ -183,7 +205,7 @@ export async function runExperiment(options: RunOptions) {
       ...config,
       supervision: options.supervision ?? {},
       executorWallTimeMs: timeoutMs ?? null,
-      evaluatorTimeoutMs,
+      evaluatorWallTimeMs: evaluatorTimeoutMs ?? null,
       processOutputBytes: 1048576,
     },
     publicEvaluator: evaluator,
@@ -485,6 +507,7 @@ export async function runExperiment(options: RunOptions) {
       supplied: 0,
     },
     evidence: {
+      preflight: preflight.evidence ? "preflight.json" : null,
       invocations: "invocations.jsonl",
       operational: "operational.jsonl",
       runtimeEvaluations: "runtime-evaluations.json",

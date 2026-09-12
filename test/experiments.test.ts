@@ -11,7 +11,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { runExperiment } from "../src/experiments/run.js";
+import { experimentCli } from "../src/experiments/cli.js";
+import { runExperiment, type RunOptions } from "../src/experiments/run.js";
 import {
   frozenInput,
   git,
@@ -685,8 +686,8 @@ test("cancellation persists ordered incremental evidence and an inspectable dirt
       null,
     );
     assert.equal(
-      json(join(run.directory, "metadata.json")).limits.evaluatorTimeoutMs,
-      60000,
+      json(join(run.directory, "metadata.json")).limits.evaluatorWallTimeMs,
+      null,
     );
     rmSync(script);
     assert.deepEqual(replayExperiment(run.directory), run.state);
@@ -698,6 +699,161 @@ test("cancellation persists ordered incremental evidence and an inspectable dirt
     assert.throws(
       () => replayExperiment(run.directory),
       /operational evidence mismatch/,
+    );
+  } finally {
+    f.close();
+  }
+});
+
+test("preregistered fixture preflight and runtime retain exactly the declared envelope", async () => {
+  const f = fixture();
+  try {
+    const preregistration = join(f.dir, "pilot.json");
+    const pilot = {
+      id: "fixture-pilot",
+      class: "pilot",
+      testcase: "fixture",
+      condition: "T",
+      hiddenEvaluationDuringRun: false,
+      limits: {
+        maxSteps: 2,
+        maxExecutorInvocations: 0,
+        maxLineages: 4,
+        maxItemsPerInvocation: 9,
+        maxCommandsPerInvocation: 8,
+        maxWallTimePerInvocationMs: 700,
+        noProgressMs: 600,
+        maxEvaluatorWallTimeMs: 500,
+      },
+    };
+    writeFileSync(preregistration, JSON.stringify(pilot));
+    const base: RunOptions = f.options("T");
+    delete base.maxSteps;
+    const run = await runExperiment({ ...base, preregistration });
+    assert.equal(run.result.error, null);
+    assert.equal(run.result.resources.executorInvocations, 0);
+    const evidence = json(join(run.directory, "preflight.json"));
+    const metadata = json(join(run.directory, "metadata.json"));
+    assert.equal(evidence.verified, true);
+    assert.deepEqual(evidence.preregisteredLimits, pilot.limits);
+    assert.deepEqual(evidence.budgets, {
+      steps: 2,
+      invocations: 0,
+      lineages: 4,
+    });
+    assert.deepEqual(evidence.supervision, {
+      budgets: { items: 9, commands: 8, wallTimeMs: 700 },
+      noProgressMs: 600,
+    });
+    assert.equal(evidence.evaluator.wallTimeMs, 500);
+    assert.deepEqual(metadata.preflight, evidence);
+    assert.deepEqual(metadata.limits.budgets, evidence.budgets);
+    assert.deepEqual(metadata.limits.supervision, evidence.supervision);
+    assert.equal(metadata.limits.evaluatorWallTimeMs, 500);
+    assert.equal("maxSteps" in metadata.limits, false);
+    assert.deepEqual(run.state?.config.budgets, evidence.budgets);
+  } finally {
+    f.close();
+  }
+});
+
+test("unsupported and contradictory preregistrations fail before executor or output creation", async () => {
+  const f = fixture();
+  try {
+    const preregistration = join(f.dir, "pilot.json");
+    const pilot = {
+      id: "fixture-pilot",
+      class: "pilot",
+      testcase: "fixture",
+      condition: "T",
+      hiddenEvaluationDuringRun: false,
+      limits: { maxSteps: 2 },
+    };
+    const base: RunOptions = f.options("T");
+    delete base.maxSteps;
+    for (const change of [
+      { limits: { unsupported: 1 } },
+      { condition: "S" },
+      { budgets: { steps: 2 } },
+      { testcase: "other" },
+    ]) {
+      writeFileSync(preregistration, JSON.stringify({ ...pilot, ...change }));
+      await assert.rejects(
+        runExperiment({ ...base, preregistration }),
+        /Preflight/,
+      );
+    }
+    writeFileSync(preregistration, JSON.stringify(pilot));
+    for (const override of [
+      { maxSteps: 2 },
+      { timeoutMs: 1 },
+      { budgets: { steps: 3 } },
+      { supervision: { noProgressMs: 1 } },
+      { evaluatorWallTimeMs: 60000 },
+    ])
+      await assert.rejects(
+        runExperiment({ ...base, preregistration, ...override }),
+        /Preflight/,
+      );
+    assert.equal(existsSync(join(f.dir, "runs")), false);
+  } finally {
+    f.close();
+  }
+});
+
+test("CLI consumes a pilot file without manual limit mapping and leaves omissions disabled", async (t) => {
+  const f = fixture();
+  try {
+    const preregistration = join(f.dir, "pilot.json");
+    const executor = join(f.dir, "executor.json");
+    const evaluator = join(f.dir, "evaluator.json");
+    writeFileSync(
+      preregistration,
+      JSON.stringify({
+        id: "fixture-pilot",
+        class: "pilot",
+        testcase: "fixture",
+        condition: "T",
+        hiddenEvaluationDuringRun: false,
+        limits: { maxExecutorInvocations: 0 },
+      }),
+    );
+    writeFileSync(executor, JSON.stringify(f.options("T").executor));
+    writeFileSync(evaluator, JSON.stringify(f.options("T").publicEvaluator));
+    const logs: string[] = [];
+    t.mock.method(console, "log", (line: string) => logs.push(line));
+    await experimentCli([
+      "run",
+      f.path,
+      "--condition",
+      "T",
+      "--source",
+      f.source,
+      "--executor",
+      executor,
+      "--public-evaluator",
+      evaluator,
+      "--output",
+      join(f.dir, "runs"),
+      "--preregistration",
+      preregistration,
+    ]);
+    const { directory, error } = JSON.parse(logs[0]!);
+    assert.equal(error, null);
+    const evidence = json(join(directory, "preflight.json"));
+    assert.deepEqual(evidence.budgets, { invocations: 0 });
+    assert.deepEqual(evidence.supervision, { budgets: {} });
+    assert.equal(evidence.evaluator.wallTimeMs, null);
+    const metadata = json(join(directory, "metadata.json"));
+    assert.equal(metadata.limits.evaluatorWallTimeMs, null);
+    assert.equal("maxSteps" in metadata.limits, false);
+    assert.equal("timeoutMs" in metadata.limits, false);
+    assert.deepEqual(json(join(directory, "state.json")).config.budgets, {
+      invocations: 0,
+    });
+    assert.deepEqual(
+      calls(directory).filter((call) => call.type === "started"),
+      [],
     );
   } finally {
     f.close();
