@@ -830,3 +830,38 @@ Operational events may be used for:
 
 Executor implementations may expose different levels of telemetry.
 Stirpi must not infer unobservable internal structure merely for uniformity.
+
+## D049 — Executor cancellation is explicit and distinct from implicit timeout
+
+Status: accepted
+
+Executor invocations must not be terminated by hidden or implicit wall-clock
+limits.
+
+A wall-time limit may exist when it is explicitly configured as part of the
+execution/resource policy.
+
+An explicitly configured wall-time limit represents resource exhaustion, not
+evidence that the executor is stalled or semantically incorrect.
+
+The caller may explicitly request cancellation of an active executor invocation.
+
+Caller-requested cancellation is an operational termination condition.
+
+It must:
+
+- terminate the owned execution scope as safely as the executor boundary allows;
+- preserve operational events already observed;
+- preserve partial run evidence;
+- preserve dirty workspaces/artifacts when they may be useful for inspection;
+- avoid silently converting cancellation into semantic falsification or
+  completion.
+
+Cancellation, no-progress detection, resource exhaustion, and semantic outcomes
+are distinct concepts.
+
+No-progress supervision is defined separately and must not be simulated through
+an implicit invocation timeout.
+
+Timeout/cancellation policies for evaluators are outside this decision unless
+explicitly configured by their own execution contract.
