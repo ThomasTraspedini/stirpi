@@ -737,6 +737,13 @@ test("preregistered fixture preflight and runtime retain exactly the declared en
     const evidence = json(join(run.directory, "preflight.json"));
     const metadata = json(join(run.directory, "metadata.json"));
     assert.equal(evidence.verified, true);
+    assert.deepEqual(evidence.executor, {
+      executablePath: process.execPath,
+      executableVersion: process.version,
+      executableSha256: sha256(readFileSync(process.execPath)),
+    });
+    assert.deepEqual(metadata.executorIdentity, evidence.executor);
+    assert.equal(metadata.executorVersion, process.version);
     assert.deepEqual(evidence.preregisteredLimits, pilot.limits);
     assert.deepEqual(evidence.budgets, {
       steps: 2,
@@ -1033,6 +1040,48 @@ test("sanitized adapter failure survives process and experiment evidence", async
     assert.equal(bytes.includes("sensitive-stderr-sentinel"), false);
     assert.equal(processRecord.stderr, undefined);
     assert.ok(json(join(run.directory, "metadata.json")).diagnosticEnvironment);
+  } finally {
+    f.close();
+  }
+});
+
+test("executor identity pins gate experiment launch before output creation", async () => {
+  const f = fixture();
+  try {
+    const preregistration = join(f.dir, "pilot.json");
+    const base: RunOptions = f.options("T");
+    delete base.maxSteps;
+    const executor = {
+      executableVersion: process.version,
+      executableSha256: sha256(readFileSync(process.execPath)),
+    };
+    const pilot = {
+      id: "fixture-executor-identity",
+      class: "pilot",
+      testcase: "fixture",
+      condition: "T",
+      hiddenEvaluationDuringRun: false,
+      limits: { maxExecutorInvocations: 0 },
+      executor,
+    };
+    for (const [pin, error] of [
+      [{ ...executor, executableSha256: "0".repeat(64) }, /SHA256 mismatch/],
+      [{ ...executor, executableVersion: "wrong-version" }, /version mismatch/],
+    ] as const) {
+      writeFileSync(
+        preregistration,
+        JSON.stringify({ ...pilot, executor: pin }),
+      );
+      await assert.rejects(runExperiment({ ...base, preregistration }), error);
+      assert.equal(existsSync(base.output), false);
+    }
+    writeFileSync(preregistration, JSON.stringify(pilot));
+    const run = await runExperiment({ ...base, preregistration });
+    assert.equal(run.result.error, null);
+    assert.deepEqual(json(join(run.directory, "preflight.json")).executor, {
+      executablePath: process.execPath,
+      ...executor,
+    });
   } finally {
     f.close();
   }

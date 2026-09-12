@@ -215,7 +215,11 @@ export async function runExperimentLocally(options: RunOptions) {
     preflight: preflight.evidence,
     ...identity,
     executor: options.executor,
-    executorVersion: options.metadata?.executorVersion ?? null,
+    executorIdentity: preflight.evidence?.executor ?? null,
+    executorVersion:
+      preflight.evidence?.executor.executableVersion ??
+      options.metadata?.executorVersion ??
+      null,
     model: options.metadata?.model ?? null,
     modelVersion: options.metadata?.modelVersion ?? null,
     effort: options.metadata?.effort ?? null,

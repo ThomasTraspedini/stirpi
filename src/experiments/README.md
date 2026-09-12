@@ -211,7 +211,7 @@ Pass `--preregistration /absolute/path/to/pilot.json` to `experiment run`, or se
 `RunOptions.preregistration`. Keep supplying the manifest, condition, source,
 executor command, public evaluator and output paths; no manual limit translation
 is needed. The accepted pilot document uses `id`, `class: "pilot"`, `testcase`,
-`condition`, `limits`, and `hiddenEvaluationDuringRun: false`. `executor` metadata is descriptive. When `stirpiCommit` is present it must be an
+`condition`, `limits`, and `hiddenEvaluationDuringRun: false`. When `stirpiCommit` is present it must be an
 exact, available commit in the repository containing the committed pilot file.
 The pilot bytes must match that repository's HEAD; HEAD need not equal the pin.
 The launcher transfers the pinned revision into a fresh clean repository,
@@ -263,3 +263,22 @@ engine state retains run budgets and invocation records retain supervision
 observations. Configuration is snapshotted before execution so caller mutation
 cannot change the applied policy. Invalid preregistration throws before output
 creation or executor invocation. No private evaluation input is read by preflight.
+
+Preregistration `executor.executableVersion` pins the reported executable version.
+Optional `executor.executableSha256` pins its exact bytes as 64 lowercase hex
+characters. Before launching experiment work, preflight resolves the configured
+executable, verifies it is an accessible executable file, hashes its bytes, and
+runs `--version`. Version or pinned hash mismatches fail preflight. For
+`executor.adapter: "codex"`, these checks target the configured `--codex` binary,
+not the Node adapter launcher; the version pin omits the reported `codex-cli `
+prefix. Direct process executors pin the complete trimmed `--version` output.
+
+Preflight records `executor.executablePath`, `executor.executableVersion` (the
+actual reported string), and `executor.executableSha256`; run metadata retains
+these as `executorIdentity` and in its preflight evidence. The resolved absolute
+path is used for launch. Paths are deployment evidence: identical bytes at a
+different path pass the same version/hash pins. Historical preregistrations may
+omit the hash (and existing fixtures may omit executor pins); actual identity is
+still measured and recorded. No executable is installed, copied, or repaired.
+As with other runtime behavior, D054 applies: a pinned older runtime retains its
+historical preflight behavior; new byte pins require a runtime supporting D055.

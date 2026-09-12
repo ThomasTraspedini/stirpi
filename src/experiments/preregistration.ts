@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import type { RunOptions } from "./run.js";
 import { sha256 } from "./inputs.js";
+import { verifyExecutor } from "./executor-identity.js";
 import {
   validatePolicy,
   type RunBudgets,
@@ -130,9 +131,11 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
     )
       throw new Error("Preflight: public evaluator pin mismatch");
   }
-  const effective = { ...options, ...derived };
+  const executor = verifyExecutor(options.executor, pilot.executor);
+  const effective = { ...options, ...derived, executor: executor.command };
   const evidence = {
     verified: true,
+    executor: executor.evidence,
     preregistration: {
       path: resolve(options.preregistration),
       sha256: sha256(bytes),
