@@ -1,3 +1,4 @@
+import { environmentEvidence } from "../operational/diagnostics.js";
 import {
   validatePolicy,
   type InvocationPolicy,
@@ -197,9 +198,20 @@ export async function runExperimentLocally(options: RunOptions) {
       }),
     ),
   };
+  const diagnosticEnvironment = environmentEvidence(process.env, {
+    PATH: process.env.PATH,
+    LANG: "C.UTF-8",
+    TZ: "UTC",
+    HOME: "experiment-local",
+    TMPDIR: "experiment-local",
+  });
+  if (preflight.evidence)
+    Object.assign(preflight.evidence, { diagnosticEnvironment });
   if (preflight.evidence)
     save(join(directory, "preflight.json"), preflight.evidence);
   save(join(directory, "metadata.json"), {
+    diagnosticEnvironment,
+    statePlacement: "experiment_local",
     preflight: preflight.evidence,
     ...identity,
     executor: options.executor,

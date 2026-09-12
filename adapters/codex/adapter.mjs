@@ -22,6 +22,11 @@ import {
   responseFrom,
 } from "./contract.mjs";
 
+import {
+  environmentEvidence,
+  permissions,
+  statePlacement,
+} from "./diagnostics.mjs";
 import { CodexEvents } from "./events.mjs";
 
 const operationalOutput =
@@ -168,6 +173,21 @@ try {
     throw new Error("INVALID_CONFIGURATION");
   record.tool = values.codex;
   record.model = values.model ?? null;
+  record.configuration = {
+    auth: {
+      kind: values["auth-file"] ? "explicit_file" : "none",
+      ...permissions(values["auth-file"]),
+    },
+    config: {
+      present: permissions(
+        join(
+          process.env.CODEX_HOME ?? join(process.env.HOME ?? "", ".codex"),
+          "config.toml",
+        ),
+      ).exists,
+      policy: "ignored",
+    },
+  };
   let invocation;
   try {
     invocation = invocationFrom(readFileSync(0, "utf8"));
@@ -214,6 +234,16 @@ try {
     HOME: home,
     TMPDIR: temporary,
     CODEX_HOME: codexHome,
+  };
+  record.configuration.environment = environmentEvidence(process.env, env);
+  record.configuration.state = {
+    ...permissions(temporary),
+    placement: statePlacement(tempRoot),
+  };
+  record.configuration.placements = {
+    HOME: "adapter_state",
+    CODEX_HOME: "adapter_state",
+    TMPDIR: "adapter_state",
   };
   const git = (...args) => {
     const result = spawnSync(
@@ -314,6 +344,10 @@ try {
     stderrBytes: result.stderrBytes,
     stderrSha256: result.stderrSha256,
     eventTypes: events.eventTypes,
+    counts: events.counts,
+    errors: events.errors,
+    lastNativeType: events.lastNativeType,
+    lifecycle: events.lifecycle,
   };
   record.usage = events.usage;
   if (result.error) throw new Error(result.error);

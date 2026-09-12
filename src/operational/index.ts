@@ -1,3 +1,4 @@
+import { diagnosticMetadata } from "./diagnostics.js";
 import { createHash } from "node:crypto";
 
 export const hash = (value: string | Buffer) =>
@@ -30,7 +31,7 @@ export interface OperationalInput {
   kind: (typeof kinds)[number];
   scope?: string;
   status?: (typeof statuses)[number];
-  metadata?: Record<string, string | number>;
+  metadata?: Record<string, string | number | boolean>;
 }
 export interface OperationalEvent extends OperationalInput {
   sequence: number;
@@ -66,9 +67,11 @@ const digests = new Set([
 // become persisted telemetry. Provider identities use stable SHA-256 digests.
 export function sanitize(input: unknown): OperationalInput {
   const v = input as OperationalInput;
-  if (!v || !kinds.includes(v.kind)) return { kind: "diagnostic" };
-  const metadata: Record<string, string | number> = {};
+  if (!v || !kinds.includes(v.kind))
+    return { kind: "diagnostic", metadata: { eventClass: "normalized" } };
+  const metadata: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(v.metadata ?? {})) {
+    if (diagnosticMetadata(key, value)) metadata[key] = value;
     if (
       numeric.has(key) &&
       typeof value === "number" &&
@@ -83,6 +86,8 @@ export function sanitize(input: unknown): OperationalInput {
     )
       metadata[key] = value;
   }
+  if (v.kind === "diagnostic" && !metadata.eventClass)
+    metadata.eventClass = "normalized";
   return {
     kind: v.kind,
     ...(typeof v.scope === "string" && /^[a-f0-9]{64}$/.test(v.scope)

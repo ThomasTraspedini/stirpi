@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { StringDecoder } from "node:string_decoder";
+import { nativeType, errorFields } from "./diagnostics.mjs";
 const hash = (s) => createHash("sha256").update(s).digest("hex");
 const nativeTypes = new Set([
   "thread.started",
@@ -26,8 +27,22 @@ export class CodexEvents {
   decoder = new StringDecoder("utf8");
   pending = "";
   dropping = false;
-  eventTypes = {};
+  eventTypes = Object.create(null);
   usage = null;
+  counts = { recognized: 0, unknown: 0, malformed: 0 };
+  lifecycle = {};
+  errors = [];
+  lastNativeType;
+  malformed(type) {
+    this.counts.malformed++;
+    this.emit({
+      kind: "diagnostic",
+      metadata: {
+        eventClass: "malformed",
+        ...(type ? { nativeType: type } : {}),
+      },
+    });
+  }
   threadHash;
   turn = 0;
   turnOpen = false;
@@ -48,7 +63,7 @@ export class CodexEvents {
         if (Buffer.byteLength(this.pending) > this.limit) {
           this.pending = "";
           this.dropping = true;
-          this.emit({ kind: "diagnostic" });
+          this.malformed();
         }
       }
       if (i < parts.length - 1) {
@@ -70,18 +85,43 @@ export class CodexEvents {
     try {
       event = JSON.parse(line);
     } catch {
-      this.emit({ kind: "diagnostic" });
+      this.malformed();
       return;
     }
     this.map(event);
   }
   map(event) {
-    if (!event || !nativeTypes.has(event.type)) {
-      this.emit({ kind: "diagnostic" });
+    const type = nativeType(event?.type);
+    if (!event || Array.isArray(event) || !type) {
+      this.malformed();
       return;
     }
-    this.eventTypes[event.type] = (this.eventTypes[event.type] ?? 0) + 1;
-    const metadata = {};
+    this.lastNativeType = type;
+    if (Object.keys(this.eventTypes).length < 64 || type in this.eventTypes)
+      this.eventTypes[type] = (this.eventTypes[type] ?? 0) + 1;
+    if (!nativeTypes.has(type)) {
+      this.counts.unknown++;
+      this.emit({
+        kind: "diagnostic",
+        metadata: { nativeType: type, eventClass: "unknown" },
+      });
+      return;
+    }
+    if (
+      type.startsWith("item.") &&
+      (!event.item || typeof event.item.id !== "string")
+    ) {
+      this.malformed(type);
+      return;
+    }
+    this.counts.recognized++;
+    const metadata = { nativeType: type, eventClass: "recognized" };
+    if (type === "error" || type === "turn.failed")
+      Object.assign(metadata, errorFields(event));
+    if ((type === "error" || type === "turn.failed") && this.errors.length < 32)
+      this.errors.push({ ...metadata });
+    if (/^(thread|turn|item)\./.test(type))
+      this.lifecycle[type.split(".")[0]] = type.split(".")[1];
     if (event.type === "thread.started" && typeof event.thread_id === "string")
       this.threadHash = hash(event.thread_id);
     if (this.threadHash) metadata.threadHash = this.threadHash;
@@ -133,12 +173,16 @@ export class CodexEvents {
           ),
         );
         if (Object.keys(usage).length)
-          this.emit({ kind: "usage", scope: turnScope, metadata: usage });
+          this.emit({
+            kind: "usage",
+            scope: turnScope,
+            metadata: { ...usage, nativeType: type, eventClass: "recognized" },
+          });
       }
     } else if (event.type.startsWith("item.")) {
       const item = event.item;
       if (!item || typeof item.id !== "string") {
-        this.emit({ kind: "diagnostic" });
+        this.malformed();
         return;
       }
       metadata.itemHash = hash(item.id);

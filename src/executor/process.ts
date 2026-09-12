@@ -1,4 +1,9 @@
 import {
+  adapterEvidence,
+  environmentEvidence,
+  pathEvidence,
+} from "../operational/diagnostics.js";
+import {
   InvocationSupervisor,
   type InvocationPolicy,
   type SupervisionObserver,
@@ -23,6 +28,9 @@ export interface ProcessConfig {
   id?: string;
 }
 export interface ProcessObservation {
+  adapterDiagnostics?: ReturnType<typeof adapterEvidence>;
+  environment?: ReturnType<typeof environmentEvidence>;
+  stateDirectory?: ReturnType<typeof pathEvidence>;
   supervision?: SupervisionObservation;
   startedAt: string;
   completedAt: string;
@@ -343,6 +351,16 @@ export class ProcessExecutor implements Executor {
     }
     record();
     this.options.observe?.({
+      adapterDiagnostics: adapterEvidence(stderr.toString("utf8")),
+      environment: environmentEvidence(process.env, {
+        ...Object.fromEntries(
+          Object.entries(this.options.environment ?? process.env).filter(
+            ([k]) => !k.startsWith("GIT_"),
+          ),
+        ),
+        STIRPI_OPERATIONAL_FD: "3",
+      }),
+      stateDirectory: pathEvidence(this.options.environment?.TMPDIR),
       supervision: supervisor.snapshot(),
       startedAt,
       completedAt: new Date().toISOString(),

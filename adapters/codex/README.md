@@ -143,3 +143,31 @@ unchanged source checkout, and replay. It retains task, report and state outside
 the target, prints the evidence directory, and fails if completion fails. It is
 not part of `npm test` and does not run any historical experiment. A larger or
 ambiguity smoke is unnecessary for the deterministic FORK schema round trip.
+
+### Safe diagnostics
+
+Native JSON events carry `metadata.nativeType` and `eventClass` (`recognized`,
+`unknown`, or `malformed`) through operational normalization. Generic normalized
+protocol diagnostics use `normalized`. Event type labels must be bounded protocol
+identifiers; invalid labels are classified as malformed and never copied verbatim.
+These fields do not change event progress classification or supervision timing.
+
+Error and failed-turn records project only explicitly present, validated fields:
+a closed error-category vocabulary, integer HTTP status 100–599, booleans for
+retry/retryable, and nonnegative safe integer attempt/retry counts. Provider/model
+identifiers and messages use SHA-256 fingerprints; messages also retain byte size.
+`structuredCategoryAvailable: false` explicitly records the message-only case.
+No app-server fields are inferred. Error summaries are capped at 32 and distinct
+native event counters at 64. Raw messages, nested details, URLs and headers are
+excluded. Unrecognized category strings are dropped.
+
+The process boundary independently projects adapter stderr into
+`adapterDiagnostics`, which the experiment harness retains alongside stderr
+size/hash. This includes failure code, child status/signal, event counts,
+lifecycle state, validated executable version and configuration metadata.
+Environment evidence uses fixed relevant variable names and presence/policy only.
+Auth files are only stat/access checked: their contents and hashes are never
+recorded. Config presence and ignored policy, state permissions (mode and access
+checks), and placement categories are retained before adapter state cleanup.
+Placement is unchanged. Requested GPT model names are retained when validated;
+other model identifiers are omitted at the process boundary.

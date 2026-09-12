@@ -1000,3 +1000,40 @@ test("runtime checkout verification rejects wrong identity and dirty files", () 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("sanitized adapter failure survives process and experiment evidence", async () => {
+  const f = fixture();
+  try {
+    const run = await runExperiment({
+      ...f.options("S"),
+      executor: {
+        executable: process.execPath,
+        args: [
+          "-e",
+          `process.stdin.resume(); process.stdin.on('end', () => { process.stderr.write(JSON.stringify({ adapter: 'codex-m2-v1', failure: { code: 'AGENT_EXIT_FAILED', message: 'sensitive-stderr-sentinel' }, status: 7, diagnostics: { eventTypes: { error: 1 }, counts: { recognized: 1, unknown: 0, malformed: 0 }, lastNativeType: 'error', lifecycle: { turn: 'failed' } } })); process.exitCode = 7; });`,
+        ],
+      },
+    });
+    const bytes = readFileSync(
+      join(run.directory, "invocations.jsonl"),
+      "utf8",
+    );
+    const records = bytes
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    const processRecord = records.find((r) => r.type === "process");
+    assert.deepEqual(processRecord.adapterDiagnostics.failure, {
+      code: "AGENT_EXIT_FAILED",
+    });
+    assert.equal(processRecord.adapterDiagnostics.lastNativeType, "error");
+    assert.equal(processRecord.stateDirectory.exists, true);
+    assert.equal(processRecord.stateDirectory.readable, true);
+    assert.equal(processRecord.stateDirectory.writable, true);
+    assert.equal(bytes.includes("sensitive-stderr-sentinel"), false);
+    assert.equal(processRecord.stderr, undefined);
+    assert.ok(json(join(run.directory, "metadata.json")).diagnosticEnvironment);
+  } finally {
+    f.close();
+  }
+});
