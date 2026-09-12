@@ -789,3 +789,44 @@ scope is genuinely opaque and no stronger progress signal is available.
 Activity alone must not necessarily reset a progress watchdog.
 
 Operational stopping must not imply semantic falsification of a lineage.
+
+## D048 — Operational events are separate from semantic executor actions
+
+Status: accepted
+
+An executor may emit incremental operational events while an invocation is in
+progress.
+
+Operational events may describe:
+
+- lifecycle transitions;
+- activity;
+- tool/item execution;
+- command execution;
+- file changes;
+- resource usage;
+- other observable execution state.
+
+Operational events are telemetry and supervision input.
+
+They do not directly produce Stirpi semantic transitions such as:
+
+- CONTINUE;
+- FORK;
+- SPAWN;
+- COMPLETE;
+- BLOCK.
+
+Exactly one final structured executor response remains authoritative for the
+semantic action of an invocation.
+
+Operational events may be used for:
+
+- progress detection;
+- resource accounting;
+- cycle detection;
+- liveness supervision;
+- audit evidence.
+
+Executor implementations may expose different levels of telemetry.
+Stirpi must not infer unobservable internal structure merely for uniformity.
