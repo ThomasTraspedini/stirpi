@@ -82,7 +82,7 @@ The existing M0 path remains available without an artifact backend. Legacy custo
 
 ## M2 external process protocol
 
-Use `ProcessExecutor` with `GitWorkspaceBackend` in `simulate`, or pass
+Use `ProcessExecutor` with `GitWorkspaceBackend` in `await simulateAsync(...)`, or pass
 `--executor process-config.json --repo /path/to/clean/target` to `run`.
 The process config contains `executable`, optional `args` (an array of strings),
 and an optional executor `id`. Use absolute paths for executable scripts and
@@ -91,7 +91,7 @@ The executor ID is operational metadata and does not define lineage identity.
 
 The adapter starts one process per scheduled invocation, without a shell. It
 writes one JSON object plus a newline to stdin, closes stdin, and reads one JSON
-object from stdout after process exit. Diagnostics belong on stderr. Output is
+object from incrementally collected stdout after process exit. Diagnostics belong on stderr. Output is
 bounded to 1 MiB. Version 1 input has this shape:
 
 ```json
@@ -160,13 +160,18 @@ the invoking user and must obey the workspace boundary. It must not perform
 unmanaged Git history operations. M2 adds no containers or filesystem access
 controls. The database, exports and invocation logs belong outside the target.
 
-Process execution is synchronous, matching the existing scheduler. Resource
-accounting remains synthetic except for enforced step counts. There is no process
-timeout or retry policy; wall-time enforcement, crash recovery and live checkpoint
-resumption remain deferred. COMPLETE currently uses the existing required-text
+Process execution is asynchronous; scheduler selection and serial invocation order
+remain unchanged. `simulate` remains synchronous for deterministic executors and
+replay; use `simulateAsync` for process executors and async wrappers. Optional
+operational JSONL on descriptor 3 is independent of the final stdout response.
+`ProcessOptions.observeEvent` receives bounded, sanitized observations during
+execution; `signal` supports caller cancellation. There is no implicit executor
+timeout. Explicit `timeoutMs` means wall-time resource exhaustion (D049).
+Legacy engine resource counters remain synthetic; actual telemetry is separate.
+Crash recovery and live checkpoint resumption remain deferred. COMPLETE currently uses the existing required-text
 fake evaluator, so demo success is not a claim of code correctness.
 
-Executor identity, local input context and response/failure are recorded as
+Executor identity, local input context, ordered operational observations and response/failure are recorded as
 `EXECUTOR_OPERATION` events; workspace requests/outcomes use the existing artifact
 operation table and event log. Replay supplies those observations, verifies
 requests and contexts, and compares final state/events without relaunching
@@ -216,3 +221,6 @@ records auditable evidence, and separates public runtime completion from optiona
 post-run private evaluation. See [harness usage](src/experiments/README.md).
 Deterministic fixtures validate the infrastructure; the real D032 pilot and its
 public evaluator configuration are separate, deferred work.
+
+See [operational events](docs/operational-events.md) for transport, classification,
+evidence, cancellation and replay details.

@@ -1,4 +1,9 @@
 import {
+  OperationalChannel,
+  hash,
+  type OperationalEvent,
+} from "../operational/index.js";
+import {
   validateAction,
   type ExecutorContext,
   type Executor,
@@ -17,22 +22,23 @@ export interface ExecutorResponse {
   text?: string;
 }
 export interface ExecutorOperation {
+  observations?: OperationalEvent[];
   executorId: string;
   context: ExecutorContext;
   outcome: { ok: true; response: unknown } | { ok: false; reason: Reason };
 }
-export function invoke(
-  executor: Executor,
-  context: ExecutorContext,
-): ExecutorOperation {
-  let outcome: ExecutorOperation["outcome"];
-  try {
-    outcome = {
-      ok: true,
-      response: executor.execute(structuredClone(context)),
-    };
-  } catch (error) {
-    outcome = {
+function operation(executor: Executor, context: ExecutorContext) {
+  const observations: OperationalEvent[] = [];
+  let channel: OperationalChannel | undefined;
+  const finish = (outcome: ExecutorOperation["outcome"]): ExecutorOperation =>
+    structuredClone({
+      executorId: executor.id ?? "external",
+      context,
+      outcome,
+      ...(observations.length ? { observations } : {}),
+    });
+  const fail = (error: unknown) =>
+    finish({
       ok: false,
       reason:
         error instanceof OperationalFailure
@@ -41,13 +47,58 @@ export function invoke(
               code: "EXECUTOR_FAILED",
               message: error instanceof Error ? error.message : String(error),
             },
-    };
+    });
+  const execute = () =>
+    executor.execute(structuredClone(context), (event) => {
+      const id =
+        typeof event?.invocationId === "string"
+          ? event.invocationId
+          : "unspecified";
+      const safeId =
+        /^(?:[a-f0-9]{64}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/.test(
+          id,
+        )
+          ? id
+          : hash(id);
+      channel ??= new OperationalChannel(safeId, (value) =>
+        observations.push(value),
+      );
+      const timestamp =
+        typeof event?.timestamp === "string" &&
+        event.timestamp.length <= 32 &&
+        Number.isFinite(Date.parse(event.timestamp))
+          ? new Date(event.timestamp).toISOString()
+          : new Date().toISOString();
+      channel.emit(event, timestamp);
+    });
+  return { finish, fail, execute };
+}
+export function invoke(
+  executor: Executor,
+  context: ExecutorContext,
+): ExecutorOperation {
+  const op = operation(executor, context);
+  try {
+    const response = op.execute();
+    if (response instanceof Promise) {
+      void response.catch(() => {});
+      throw new Error("Async executor requires simulateAsync");
+    }
+    return op.finish({ ok: true, response });
+  } catch (error) {
+    return op.fail(error);
   }
-  return structuredClone({
-    executorId: executor.id ?? "external",
-    context,
-    outcome,
-  });
+}
+export async function invokeAsync(
+  executor: Executor,
+  context: ExecutorContext,
+): Promise<ExecutorOperation> {
+  const op = operation(executor, context);
+  try {
+    return op.finish({ ok: true, response: await op.execute() });
+  } catch (error) {
+    return op.fail(error);
+  }
 }
 export function validateResponse(value: unknown): ExecutorResponse {
   const fail = (message: string): never => {

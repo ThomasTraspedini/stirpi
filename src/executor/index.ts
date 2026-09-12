@@ -1,3 +1,4 @@
+import type { OperationalObserver } from "../operational/index.js";
 import type { Artifact } from "../artifacts/index.js";
 import type {
   Action,
@@ -22,8 +23,9 @@ export interface ExecutorContext {
 }
 export interface Executor {
   readonly protocol?: 1;
+  readonly asynchronous?: boolean;
   readonly id?: string;
-  execute(context: ExecutorContext): unknown;
+  execute(context: ExecutorContext, observe?: OperationalObserver): unknown;
 }
 export class ScriptedExecutor implements Executor {
   constructor(private readonly scripts: Record<string, unknown[]>) {}

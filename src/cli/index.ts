@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
 import { readFileSync, writeFileSync } from "node:fs";
-import { simulate } from "../engine/index.js";
+import { simulateAsync } from "../engine/index.js";
 import { Store, jsonl } from "../persistence/index.js";
 import { reference } from "../scenarios/index.js";
 import { inspect, tree } from "../render/index.js";
@@ -15,7 +15,7 @@ import { GitWorkspaceBackend } from "../artifacts/workspaces.js";
 import { demoWork } from "../artifacts/demo.js";
 import type { Scenario } from "../domain/index.js";
 import { experimentCli } from "../experiments/cli.js";
-function main(): void {
+async function main(): Promise<void> {
   if (process.argv[2] === "experiment")
     return experimentCli(process.argv.slice(3));
   const { values, positionals } = parseArgs({
@@ -52,6 +52,10 @@ function main(): void {
     ]);
   if (command === "run" && values.executor && !values.repo)
     throw new Error("--executor requires --repo");
+  const cancellation = new AbortController();
+  const cancel = () => cancellation.abort();
+  process.on("SIGINT", cancel);
+  process.on("SIGTERM", cancel);
   const store = new Store(values.db!);
   try {
     if (command === "run") {
@@ -59,7 +63,7 @@ function main(): void {
         target === "reference" || target === "git-reference"
           ? reference
           : JSON.parse(readFileSync(target, "utf8"));
-      const state = simulate(
+      const state = await simulateAsync(
         scenario,
         {
           maxConcurrency: Number(values.concurrency),
@@ -70,6 +74,7 @@ function main(): void {
               JSON.parse(
                 readFileSync(values.executor, "utf8"),
               ) as ProcessConfig,
+              { signal: cancellation.signal },
             )
           : undefined,
         undefined,
@@ -123,10 +128,12 @@ function main(): void {
     if (values.export) writeFileSync(values.export, jsonl(state));
   } finally {
     store.close();
+    process.off("SIGINT", cancel);
+    process.off("SIGTERM", cancel);
   }
 }
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;

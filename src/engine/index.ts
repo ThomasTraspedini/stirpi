@@ -17,20 +17,26 @@ import {
 import { FakeEvaluator, type Evaluator } from "../evaluation/index.js";
 import {
   invoke,
+  invokeAsync,
+  type ExecutorOperation,
   validateResponse,
   OperationalFailure,
 } from "../executor/protocol.js";
 import { artifactEffects } from "./artifact-effects.js";
 import { executorContext } from "../executor/context.js";
 import { select } from "../scheduler/index.js";
-export function simulate(
+function* simulation(
   scenario: Scenario,
   config: Config = { maxConcurrency: 1, maxSteps: 100 },
   executor: Executor = new ScriptedExecutor(scenario.scripts),
   evaluator: Evaluator = new FakeEvaluator(scenario.hiddenEvaluation),
   identity: RunIdentity = { taskId: `task:${scenario.name}`, runId: "run" },
   artifactBackend?: ArtifactBackend,
-): State {
+): Generator<
+  import("../executor/index.js").ExecutorContext,
+  State,
+  ExecutorOperation
+> {
   if (
     !Number.isSafeInteger(config.maxConcurrency) ||
     config.maxConcurrency < 1 ||
@@ -244,9 +250,7 @@ export function simulate(
           !!artifactBackend,
           !!executor.protocol,
         );
-        const operation = executor.protocol
-          ? invoke(executor, context)
-          : undefined;
+        const operation = executor.protocol ? yield context : undefined;
         if (operation) emit("EXECUTOR_OPERATION", w.id, operation);
         if (operation && !operation.outcome.ok)
           throw new OperationalFailure(operation.outcome.reason);
@@ -406,4 +410,23 @@ export function simulate(
     resources: state.resources,
   });
   return state;
+}
+
+// Both drivers execute the same transition machine in the same scheduling order.
+export function simulate(...args: Parameters<typeof simulation>): State {
+  if (args[2]?.asynchronous)
+    throw new Error("Async executor requires simulateAsync");
+  const machine = simulation(...args);
+  let next = machine.next();
+  while (!next.done) next = machine.next(invoke(args[2]!, next.value));
+  return next.value;
+}
+export async function simulateAsync(
+  ...args: Parameters<typeof simulation>
+): Promise<State> {
+  const machine = simulation(...args);
+  let next = machine.next();
+  while (!next.done)
+    next = machine.next(await invokeAsync(args[2]!, next.value));
+  return next.value;
 }

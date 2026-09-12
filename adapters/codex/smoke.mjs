@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { parseArgs } from "node:util";
 import {
-  simulate,
+  simulateAsync,
   ProcessExecutor,
   GitWorkspaceBackend,
   replay,
@@ -66,11 +66,16 @@ for (const key of ["auth-file", "model"])
   if (values[key]) args.push(`--${key}`, values[key]);
 const observations = [],
   evaluations = [];
+const operational = [];
+let processCompleted = false;
 const executor = new ProcessExecutor(
   { executable: process.execPath, args, id: "codex-adapter-smoke" },
   {
-    timeoutMs: 200000,
+    observeEvent(event) {
+      operational.push({ event, beforeProcessCompletion: !processCompleted });
+    },
     observe(o) {
+      processCompleted = true;
       observations.push(o);
     },
   },
@@ -78,7 +83,7 @@ const executor = new ProcessExecutor(
 const backend = new GitWorkspaceBackend(repo);
 let workspace, canonical;
 const started = Date.now();
-const state = simulate(
+const state = await simulateAsync(
   {
     name: "pure-function-smoke",
     objective: task,
@@ -166,6 +171,10 @@ const report = {
   usage: evidence[0]?.usage ?? null,
   monetaryCost: evidence[0]?.monetaryCost ?? null,
   adapterEvidence: evidence,
+  operational,
+  eventsBeforeCompletion: operational.filter(
+    (o) => o.beforeProcessCompletion && o.event.kind !== "process",
+  ).length,
 };
 writeFileSync(
   join(directory, "report.json"),

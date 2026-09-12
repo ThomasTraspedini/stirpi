@@ -22,6 +22,7 @@ import {
 } from "../evaluation/commands.js";
 import { ProcessEvaluator } from "../evaluation/process.js";
 import { OperationalFailure } from "../executor/protocol.js";
+import type { ExecutorOperation } from "../executor/protocol.js";
 import { replay } from "../replay/index.js";
 
 export type PublicEvaluatorConfig = {
@@ -136,6 +137,28 @@ export function replayExperiment(directory: string) {
     )
       throw new Error("Replay public evaluation mismatch");
   }
+  const operationalPath = join(directory, "operational.jsonl");
+  const expected = state.events
+    .filter((e) => e.type === "EXECUTOR_OPERATION")
+    .flatMap((e, index) =>
+      ((e.data as ExecutorOperation).observations ?? []).map((event) => ({
+        index: index + 1,
+        event,
+      })),
+    );
+  if (existsSync(operationalPath)) {
+    const recorded = readFileSync(operationalPath, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+    const ordered = expected.map((entry, index) => ({
+      sequence: index + 1,
+      ...entry,
+    }));
+    if (!isDeepStrictEqual(recorded, ordered))
+      throw new Error("Replay operational evidence mismatch");
+  } else if (expected.length)
+    throw new Error("Replay operational evidence missing");
   return replay(state);
 }
 // Separate command, invoked only after the solver phase. Private input is never

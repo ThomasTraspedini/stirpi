@@ -1,3 +1,9 @@
+import {
+  hash,
+  summarize,
+  type OperationalEvent,
+  type OperationalObserver,
+} from "../operational/index.js";
 import { randomUUID } from "node:crypto";
 import {
   mkdirSync,
@@ -9,7 +15,7 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
-import { simulate } from "../engine/index.js";
+import { simulateAsync } from "../engine/index.js";
 import { ProcessExecutor, type ProcessConfig } from "../executor/process.js";
 import { OperationalFailure, validateResponse } from "../executor/protocol.js";
 import type { ExecutorContext } from "../executor/index.js";
@@ -45,10 +51,12 @@ export interface RunOptions {
   maxSteps?: number;
   maxConcurrency?: number;
   timeoutMs?: number;
+  signal?: AbortSignal;
+  observeEvent?: OperationalObserver;
 }
 const save = (path: string, value: unknown) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
-export function runExperiment(options: RunOptions) {
+export async function runExperiment(options: RunOptions) {
   const frozen = frozenInput(options.manifest);
   if (!["H", "S", "T"].includes(options.condition))
     throw new Error("Condition must be H, S or T");
@@ -105,14 +113,17 @@ export function runExperiment(options: RunOptions) {
     maxSteps: options.maxSteps ?? 100,
     maxConcurrency: options.maxConcurrency ?? 1,
   };
-  const timeoutMs = options.timeoutMs ?? 60000;
+  const timeoutMs = options.timeoutMs;
+  const evaluatorTimeoutMs = options.timeoutMs ?? 60000;
   if (
     !Number.isSafeInteger(config.maxSteps) ||
     config.maxSteps < 0 ||
     !Number.isSafeInteger(config.maxConcurrency) ||
     config.maxConcurrency < 1 ||
-    !Number.isSafeInteger(timeoutMs) ||
-    timeoutMs < 1
+    (timeoutMs !== undefined &&
+      (!Number.isSafeInteger(timeoutMs) ||
+        timeoutMs < 1 ||
+        timeoutMs > 2147483647))
   )
     throw new Error("Invalid resource limits");
   const output = resolve(options.output);
@@ -157,7 +168,12 @@ export function runExperiment(options: RunOptions) {
       platform: process.platform,
       architecture: process.arch,
     },
-    limits: { ...config, timeoutMs, processOutputBytes: 1048576 },
+    limits: {
+      ...config,
+      executorWallTimeMs: timeoutMs ?? null,
+      evaluatorTimeoutMs,
+      processOutputBytes: 1048576,
+    },
     publicEvaluator: evaluator,
     control: control(options.condition),
     environment:
@@ -170,6 +186,9 @@ export function runExperiment(options: RunOptions) {
   save(evaluationPath, evaluations);
   const invocationPath = join(directory, "invocations.jsonl");
   writeFileSync(invocationPath, "", { mode: 0o600 });
+  const operationalEvents: OperationalEvent[] = [];
+  const operationalPath = join(directory, "operational.jsonl");
+  writeFileSync(operationalPath, "", { mode: 0o600 });
   let invocations = 0;
   let humanGate = false;
   let state: State | undefined;
@@ -189,7 +208,7 @@ export function runExperiment(options: RunOptions) {
     const executor = {
       protocol: 1 as const,
       id: options.executor.id ?? options.executor.executable,
-      execute(context: ExecutorContext) {
+      async execute(context: ExecutorContext, observe?: OperationalObserver) {
         if (humanGate)
           throw new OperationalFailure({
             code: "HUMAN_GATE_CLOSED",
@@ -222,16 +241,39 @@ export function runExperiment(options: RunOptions) {
         );
         const processExecutor = new ProcessExecutor(options.executor, {
           environment: { ...environment, HOME: localHome, TMPDIR: localHome },
-          timeoutMs,
+          ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+          ...(options.signal ? { signal: options.signal } : {}),
+          observeEvent(event) {
+            operationalEvents.push(structuredClone(event));
+            appendFileSync(
+              operationalPath,
+              JSON.stringify({
+                sequence: operationalEvents.length,
+                index,
+                event,
+              }) + "\n",
+            );
+            options.observeEvent?.(structuredClone(event));
+          },
           observe(observation) {
             appendFileSync(
               invocationPath,
-              JSON.stringify({ type: "process", index, ...observation }) + "\n",
+              JSON.stringify({
+                type: "process",
+                index,
+                ...observation,
+                stdout: undefined,
+                stderr: undefined,
+                stdoutBytes: Buffer.byteLength(observation.stdout),
+                stdoutHash: hash(observation.stdout),
+                stderrBytes: Buffer.byteLength(observation.stderr),
+                stderrHash: hash(observation.stderr),
+              }) + "\n",
             );
           },
         });
         try {
-          const response = processExecutor.execute(local);
+          const response = await processExecutor.execute(local, observe);
           const validated = validateResponse(response);
           if (options.condition !== "T" && validated.action.type === "FORK")
             throw new OperationalFailure({
@@ -274,7 +316,7 @@ export function runExperiment(options: RunOptions) {
       join(directory, "worlds"),
       frozen.manifest.sourceCommit,
     );
-    state = simulate(
+    state = await simulateAsync(
       {
         name: frozen.manifest.id,
         objective: frozen.task,
@@ -288,7 +330,7 @@ export function runExperiment(options: RunOptions) {
         evaluator,
         home,
         environment,
-        timeoutMs,
+        evaluatorTimeoutMs,
         evaluations,
         () => save(evaluationPath, evaluations),
       ),
@@ -404,6 +446,7 @@ export function runExperiment(options: RunOptions) {
       ).size,
       humanInterventions: 0,
       tokens: null,
+      operational: summarize(operationalEvents),
       monetaryCost: null,
     },
     humanIntervention: {
@@ -413,6 +456,7 @@ export function runExperiment(options: RunOptions) {
     },
     evidence: {
       invocations: "invocations.jsonl",
+      operational: "operational.jsonl",
       runtimeEvaluations: "runtime-evaluations.json",
       events: state ? "events.jsonl" : null,
       state: state ? "state.json" : null,

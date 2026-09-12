@@ -31,9 +31,11 @@ Use the existing M2 process configuration, with absolute paths:
 ```
 
 `--codex` is required. `--model` is optional; omission uses the CLI default,
-not the user's config. `--timeout-ms` defaults to 180000; configure the outer
-process timeout longer (e.g. 200000). Combined agent output is limited to 1 MiB.
-Timeout and termination kill the agent process group on this POSIX interface.
+not the user's config. There is no implicit invocation timeout. An explicitly
+supplied `--timeout-ms` is a wall-time resource limit. Exhaustion reports
+`AGENT_WALL_TIME_EXHAUSTED`; caller termination reports `AGENT_CANCELLED`.
+Both terminate the owned agent process group on this POSIX interface. The existing
+1 MiB combined agent-output safety limit remains; it is not a token/command budget.
 
 `--auth-file` optionally selects an existing CLI login file. The adapter never
 reads or copies its contents: a temporary symlink allows the CLI to use and
@@ -59,8 +61,9 @@ its authoritative semantic validation and public evaluation.
 
 Failure writes no stdout and exits nonzero, with a structured failure in the
 stderr evidence record. M2 v1 has no process-level operational-error envelope;
-the existing ProcessExecutor records `PROCESS_EXIT_FAILED`, including the adapter
-diagnostic. It never receives an invented BLOCK or falsification action.
+ProcessExecutor records `PROCESS_EXIT_FAILED` for ordinary adapter failures.
+Explicit resource exhaustion and cancellation have distinct generic failure codes.
+Raw stderr is excluded from generic failure messages. It never receives an invented BLOCK or falsification action.
 
 ## Workspace and commits
 
@@ -94,7 +97,27 @@ context and prompt SHA-256, start/end, exit status/signal, structured response,
 safe event counts, stderr byte count/hash, and native usage counters. Missing
 usage/cost is null. Arbitrary raw command output and stderr are deliberately not
 persisted because they can contain credentials. No environment dump is recorded.
-M2 observers can retain this stderr alongside the response.
+M2 observers can retain this sanitized adapter record alongside the response.
+The experiment harness stores only hashes/sizes for process stdout/stderr.
+
+When `STIRPI_OPERATIONAL_FD=3` is supplied by ProcessExecutor, descriptor 3 carries
+incremental generic operational JSONL. Standalone use still needs only stdin,
+stdout and stderr. `events.mjs` frames UTF-8 across chunks and maps complete lines
+immediately. A complete final JSON value without a newline is accepted; malformed
+or oversized lines produce diagnostic activity and never select an action.
+
+Thread/turn lifecycle, item lifecycle (including updates), commands, file changes,
+MCP/web tool items, agent messages, reasoning and turn-completed usage are mapped
+conservatively. Provider identities, commands, tool names and outputs are hashed;
+command identity trims surrounding whitespace and normalizes CRLF, preserving
+whitespace inside shell syntax. Durations measure receipt intervals, not native
+command timings. File hashes describe notifications, not filesystem state.
+
+The public CLI usage fields used here are input, cached input, output and reasoning
+output tokens. Missing counters stay absent; cache-write and total tokens are not
+estimated. The CLI does not promise a turn ID, command cwd or intermediate token
+updates. A local turn ordinal provides scope only. Native type counts remain in
+the final sanitized adapter record. See the [operational contract](../../docs/operational-events.md).
 
 Deterministic tests (no paid calls):
 

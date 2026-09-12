@@ -119,7 +119,7 @@ function calls(directory: string) {
     .map((line) => JSON.parse(line));
 }
 
-test("frozen public D032 identity and bytes match the manifest", () => {
+test("frozen public D032 identity and bytes match the manifest", async () => {
   const input = frozenInput("docs/experiments/d032/manifest.json");
   assert.equal(input.manifest.id, "booking-invariants-d032-001");
   assert.equal(
@@ -129,32 +129,35 @@ test("frozen public D032 identity and bytes match the manifest", () => {
   assert.deepEqual(Buffer.from(input.task), input.bytes);
 });
 
-test("hash mismatch aborts before execution or output creation", () => {
+test("hash mismatch aborts before execution or output creation", async () => {
   const f = fixture();
   try {
     writeFileSync(join(f.dir, "task.txt"), "changed");
-    assert.throws(() => runExperiment(f.options("H")), /SHA-256 mismatch/);
+    await assert.rejects(
+      () => runExperiment(f.options("H")),
+      /SHA-256 mismatch/,
+    );
     assert.equal(existsSync(join(f.dir, "runs")), false);
   } finally {
     f.close();
   }
 });
 
-test("unavailable source commit and wrong repository identity abort without invoking executor", () => {
+test("unavailable source commit and wrong repository identity abort without invoking executor", async () => {
   const f = fixture();
   try {
     writeFileSync(
       f.path,
       JSON.stringify({ ...f.manifest, sourceCommit: "0".repeat(40) }),
     );
-    const badCommit = runExperiment(f.options("S"));
+    const badCommit = await runExperiment(f.options("S"));
     assert.equal(badCommit.result.runtimeOutcome, "OPERATIONAL_FAILURE");
     assert.equal(badCommit.result.resources.executorInvocations, 0);
     writeFileSync(
       f.path,
       JSON.stringify({ ...f.manifest, sourceRepository: "other/repo" }),
     );
-    const badIdentity = runExperiment(f.options("S"));
+    const badIdentity = await runExperiment(f.options("S"));
     assert.match(badIdentity.result.error!, /identity mismatch/);
     assert.equal(badIdentity.result.resources.executorInvocations, 0);
     assert.throws(() => verifyStart(f.source, f.base), /commit mismatch/);
@@ -163,13 +166,13 @@ test("unavailable source commit and wrong repository identity abort without invo
   }
 });
 
-test("H/S/T deterministic pilots: identical input, isolated T0 history and siblings, evidence and effect-free replay", () => {
+test("H/S/T deterministic pilots: identical input, isolated T0 history and siblings, evidence and effect-free replay", async () => {
   const f = fixture();
   const previous = process.env.PRIVATE_ORACLE_TEST;
   process.env.PRIVATE_ORACLE_TEST = "private-environment-sentinel";
   try {
     for (const condition of ["H", "S", "T"] as const) {
-      const run = runExperiment(f.options(condition));
+      const run = await runExperiment(f.options(condition));
       assert.equal(run.result.error, null);
       assert.equal(run.result.kind, "pilot");
       assert.equal(run.result.sourceCommit, f.base);
@@ -284,11 +287,11 @@ test("H/S/T deterministic pilots: identical input, isolated T0 history and sibli
   }
 });
 
-test("H and S reject FORK before applying artifact effects", () => {
+test("H and S reject FORK before applying artifact effects", async () => {
   const f = fixture();
   try {
     for (const condition of ["H", "S"] as const) {
-      const run = runExperiment(f.options(condition, "forbidden"));
+      const run = await runExperiment(f.options(condition, "forbidden"));
       assert.equal(run.state!.lineages.length, 1);
       assert.equal(run.state!.work[0]!.reason!.code, "ACTION_UNAVAILABLE");
       assert.equal(run.result.resources.artifactCommits, 0);
@@ -299,12 +302,12 @@ test("H and S reject FORK before applying artifact effects", () => {
   }
 });
 
-test("public evaluator can reject COMPLETE; post-run hook never changes runtime outcome", () => {
+test("public evaluator can reject COMPLETE; post-run hook never changes runtime outcome", async () => {
   const f = fixture();
   try {
     const options = f.options("S");
     options.publicEvaluator.command = f.command("reject");
-    const run = runExperiment(options);
+    const run = await runExperiment(options);
     assert.equal(run.state!.work[0]!.reason!.code, "EVALUATION_FAILED");
     assert.deepEqual(replayExperiment(run.directory), run.state);
     const before = readFileSync(join(run.directory, "result.json"));
@@ -354,10 +357,10 @@ test("public evaluator can reject COMPLETE; post-run hook never changes runtime 
   }
 });
 
-test("dirty blocked work, process failures and budgets remain observable", () => {
+test("dirty blocked work, process failures and budgets remain observable", async () => {
   const f = fixture();
   try {
-    const dirty = runExperiment(f.options("S", "dirty"));
+    const dirty = await runExperiment(f.options("S", "dirty"));
     assert.equal(dirty.state!.work[0]!.artifact!.cleaned, false);
     assert.equal(
       readFileSync(
@@ -370,21 +373,21 @@ test("dirty blocked work, process failures and budgets remain observable", () =>
       readFileSync(join(dirty.directory, "w1.status.txt"), "utf8"),
       /pending.txt/,
     );
-    const failed = runExperiment(f.options("S", "exit"));
+    const failed = await runExperiment(f.options("S", "exit"));
     assert.equal(failed.state!.work[0]!.reason!.code, "PROCESS_EXIT_FAILED");
     assert.ok(
       calls(failed.directory).some(
         (e) => e.type === "process" && e.status === 7,
       ),
     );
-    const timeout = runExperiment({
+    const timeout = await runExperiment({
       ...f.options("S", "timeout"),
       timeoutMs: 100,
     });
     assert.ok(
       calls(timeout.directory).some((e) => e.type === "process" && e.error),
     );
-    const budget = runExperiment({ ...f.options("T"), maxSteps: 1 });
+    const budget = await runExperiment({ ...f.options("T"), maxSteps: 1 });
     assert.equal(budget.result.resources.logicalLineages, 3);
     assert.equal(budget.result.resources.scheduledLineages, 1);
     for (const run of [dirty, failed, timeout, budget])
@@ -394,10 +397,10 @@ test("dirty blocked work, process failures and budgets remain observable", () =>
   }
 });
 
-test("output state cannot be placed in source repository", () => {
+test("output state cannot be placed in source repository", async () => {
   const f = fixture();
   try {
-    assert.throws(
+    await assert.rejects(
       () =>
         runExperiment({
           ...f.options("H"),
@@ -421,10 +424,10 @@ test("output state cannot be placed in source repository", () => {
   }
 });
 
-test("single-path SPAWN returns inspectable child artifacts and public evaluator process errors replay", () => {
+test("single-path SPAWN returns inspectable child artifacts and public evaluator process errors replay", async () => {
   const f = fixture();
   try {
-    const spawned = runExperiment(f.options("S", "spawn"));
+    const spawned = await runExperiment(f.options("S", "spawn"));
     assert.equal(spawned.result.error, null);
     assert.equal(spawned.result.runtimeOutcome, "COMPLETED");
     assert.equal(spawned.state!.lineages.length, 1);
@@ -432,7 +435,7 @@ test("single-path SPAWN returns inspectable child artifacts and public evaluator
     assert.deepEqual(replayExperiment(spawned.directory), spawned.state);
     const options = f.options("S");
     options.publicEvaluator.command = f.command("evaluate-error");
-    const failed = runExperiment(options);
+    const failed = await runExperiment(options);
     assert.equal(
       failed.state!.work[0]!.reason!.code,
       "PUBLIC_EVALUATOR_FAILED",
@@ -443,10 +446,10 @@ test("single-path SPAWN returns inspectable child artifacts and public evaluator
   }
 });
 
-test("unsupported config and credential flags are rejected before evidence creation", () => {
+test("unsupported config and credential flags are rejected before evidence creation", async () => {
   const f = fixture();
   try {
-    assert.throws(
+    await assert.rejects(
       () =>
         runExperiment({
           ...f.options("S"),
@@ -463,7 +466,7 @@ test("unsupported config and credential flags are rejected before evidence creat
   }
 });
 
-test("artifact-aware checks target each candidate, preserve evidence, and replay without programs", () => {
+test("artifact-aware checks target each candidate, preserve evidence, and replay without programs", async () => {
   const f = fixture();
   try {
     const script = join(f.dir, "check.mjs");
@@ -501,7 +504,7 @@ test("artifact-aware checks target each candidate, preserve evidence, and replay
       ],
       completionPolicy: "all_checks_pass" as const,
     };
-    const run = runExperiment({ ...options, publicEvaluator: config });
+    const run = await runExperiment({ ...options, publicEvaluator: config });
     assert.equal(run.result.runtimeOutcome, "COMPLETED");
     const records = json(join(run.directory, "runtime-evaluations.json"));
     assert.equal(records.length, 2);
@@ -550,12 +553,12 @@ test("artifact-aware checks target each candidate, preserve evidence, and replay
   }
 });
 
-test("negative checks and launch errors remain distinct and retain every check outcome", () => {
+test("negative checks and launch errors remain distinct and retain every check outcome", async () => {
   const f = fixture();
   try {
     for (const launchFailure of [false, true]) {
       const options = f.options("S");
-      const run = runExperiment({
+      const run = await runExperiment({
         ...options,
         publicEvaluator: {
           id: "failure-checks",
@@ -603,6 +606,99 @@ test("negative checks and launch errors remain distinct and retain every check o
       }
       assert.deepEqual(replayExperiment(run.directory), run.state);
     }
+  } finally {
+    f.close();
+  }
+});
+
+test("cancellation persists ordered incremental evidence and an inspectable dirty workspace", async () => {
+  const f = fixture();
+  const controller = new AbortController();
+  let observedBeforeCompletion = false;
+  try {
+    const script = join(f.dir, "cancel.mjs");
+    writeFileSync(
+      script,
+      `
+      import { writeFileSync, writeSync } from 'node:fs';
+      writeFileSync('pending.txt', 'retained cancellation evidence');
+      writeSync(3, JSON.stringify({ kind: 'command', scope: '${sha256("command")}', status: 'started' }) + '\\n');
+      setInterval(() => {}, 100);
+    `,
+    );
+    const run = await runExperiment({
+      ...f.options("S"),
+      executor: { executable: process.execPath, args: [script] },
+      signal: controller.signal,
+      observeEvent(event) {
+        if (event.kind !== "command") return;
+        const directory = join(
+          f.dir,
+          "runs",
+          readdirSync(join(f.dir, "runs"))[0]!,
+        );
+        const records = readFileSync(
+          join(directory, "operational.jsonl"),
+          "utf8",
+        )
+          .trim()
+          .split("\n")
+          .map((line) => JSON.parse(line));
+        assert.equal(records.at(-1).event.kind, "command");
+        assert.equal(existsSync(join(directory, "running")), true);
+        observedBeforeCompletion = true;
+        controller.abort();
+      },
+    });
+    assert.equal(observedBeforeCompletion, true);
+    assert.equal(run.state!.work[0]!.reason!.code, "EXECUTOR_CANCELLED");
+    assert.equal(run.state!.work[0]!.status, "BLOCKED");
+    assert.equal(
+      run.state!.events.some((e) => e.type === "ACTION"),
+      false,
+    );
+    const workspace = run.state!.work[0]!.artifact!;
+    assert.equal(workspace.cleaned, false);
+    assert.equal(
+      readFileSync(join(workspace.worktree!, "pending.txt"), "utf8"),
+      "retained cancellation evidence",
+    );
+    assert.equal(
+      readFileSync(
+        join(run.directory, "pending-workspaces", "w1", "pending.txt"),
+        "utf8",
+      ),
+      "retained cancellation evidence",
+    );
+    const path = join(run.directory, "operational.jsonl");
+    const records = readFileSync(path, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    assert.deepEqual(
+      records.map((r) => r.sequence),
+      records.map((_, i) => i + 1),
+    );
+    assert.equal(run.result.resources.operational.commandCount, 1);
+    assert.equal(
+      json(join(run.directory, "metadata.json")).limits.executorWallTimeMs,
+      null,
+    );
+    assert.equal(
+      json(join(run.directory, "metadata.json")).limits.evaluatorTimeoutMs,
+      60000,
+    );
+    rmSync(script);
+    assert.deepEqual(replayExperiment(run.directory), run.state);
+    records.reverse();
+    writeFileSync(
+      path,
+      records.map((r) => JSON.stringify(r)).join("\n") + "\n",
+    );
+    assert.throws(
+      () => replayExperiment(run.directory),
+      /operational evidence mismatch/,
+    );
   } finally {
     f.close();
   }

@@ -1,3 +1,4 @@
+import { verifyObservations } from "../operational/index.js";
 import { isDeepStrictEqual } from "node:util";
 import type { State } from "../domain/index.js";
 import {
@@ -30,12 +31,23 @@ export function replay(original: State): State {
               ? executor.id
               : (operations[invocation - 1]?.executorId ?? executor.id);
           },
-          execute(context) {
+          execute(context, observe) {
             const operation = operations[invocation++];
             if (!operation || !isDeepStrictEqual(operation.context, context))
               throw new Error(
                 "Replay mismatch: executor context or outcome missing",
               );
+            if (operation.observations) {
+              if (
+                !isDeepStrictEqual(
+                  verifyObservations(operation.observations),
+                  operation.observations,
+                )
+              )
+                throw new Error("Replay operational sequence mismatch");
+              for (const event of operation.observations)
+                observe?.(structuredClone(event));
+            }
             if (!operation.outcome.ok)
               throw new OperationalFailure(
                 structuredClone(operation.outcome.reason),

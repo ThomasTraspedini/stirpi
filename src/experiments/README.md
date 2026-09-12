@@ -116,9 +116,12 @@ No rationale is parsed to choose a transition or infer a semantic conclusion.
 
 `--metadata` accepts executorVersion, model, modelVersion, effort, sampling, and
 baselinePolicy strings. Missing values are null. Command/scaffold/limit metadata
-is hashed into an executor configuration identity. `--steps`, `--concurrency`,
-and `--timeout-ms` default to 100, 1, and 60000; output is limited to 1 MiB per
-process. Scheduling remains synchronous; concurrency is the M0 batch setting.
+is hashed into an executor configuration identity. `--steps` and `--concurrency`
+default to 100 and 1. Executor invocations have no implicit timeout;
+`--timeout-ms`, when supplied, explicitly limits invocation wall time. Evaluators
+retain their existing 60000 ms default and configured behavior. Output is limited
+to 1 MiB per process. Execution awaits each invocation asynchronously; concurrency
+remains the M0 batch setting, with unchanged serial scheduling order.
 
 ## Input and Git isolation
 
@@ -157,8 +160,11 @@ only PATH, LANG and TZ are carried into the process environment.
 Each UUID directory has `metadata.json`, exact `task.txt`, `result.json`, ordered
 `invocations.jsonl`, `runtime-evaluations.json`, `state.json`, `state.sqlite`,
 `events.jsonl`, `tree.txt`, and Git `artifacts`/`worlds` databases. Invocation
-records include input, action/text, raw stdout/stderr, timestamps, exit status,
-signal and process errors. Interleaved artifact records provide requested effects
+records include input, action/text, stdout/stderr hashes and captured sizes,
+timestamps, exit status, signal and process errors. Raw process output is omitted.
+`operational.jsonl` is appended during execution with a run-wide sequence,
+invocation index, and sanitized event with its own invocation sequence. Events
+are also retained in recorded executor operations in state/SQLite. Interleaved artifact records provide requested effects
 and before/after immutable refs. Initialization and cleanup also appear there;
 use their request work IDs, not the most recent invocation index, for ownership.
 Final committed diffs are saved per work. Dirty/ignored workspaces remain available
@@ -169,14 +175,18 @@ The result reports runtime observations and evidence paths, not semantic scores.
 Resources aggregate all work: invocations, engine steps, measured wall time,
 logical/scheduled lineages, unique new artifact commits, and actual supplied human
 interventions (zero for these unattended runs). Required human decisions are
-recorded separately from supplied interventions. Tokens and monetary cost are
-null because M2 v1 has no reliable reporting fields. Legacy synthetic engine
+recorded separately from supplied interventions. Legacy token and monetary-cost totals remain null. `resources.operational`
+reports activity/progress/resource counts, unique command/tool/item counts,
+first/last activity and progress timestamps, and the latest available usage
+observation. Missing provider usage stays absent; no costs or totals are estimated. Legacy synthetic engine
 counters remain in raw state/events for replay and are not reported as real usage.
 
 Replay uses recorded public evaluator outcomes as well as the existing recorded
 executor/artifact boundaries. It requires no repository, solver, public evaluator
 process or private material, and verifies the resulting engine state/events.
-It does not verify external artifact integrity (D031).
+It also verifies operational chronology and consistency between the incremental
+file and recorded operations. It does not deliver observations to live external
+observers or verify external artifact integrity (D031).
 
 Chronological files are written during execution; final state is saved after the
 engine returns. A process killed mid-run leaves the `running` marker and partial
@@ -184,3 +194,10 @@ evidence. Recovery/resumption is deferred. Post-run hooks have a 60-second limit
 and may be invoked only once per run directory. Real coding-agent adapters,
 D032 public evaluator freezing, private semantic evaluation and repeated-run
 scheduling remain separate work.
+
+`runExperiment` now returns a Promise. Callers may supply an AbortSignal; CLI
+SIGINT/SIGTERM request cancellation. Collected events, failure records and dirty
+workspaces are retained, including pending-workspace copies. Cancellation records
+`EXECUTOR_CANCELLED`, explicit invocation wall-time exhaustion records
+`EXECUTOR_WALL_TIME_EXHAUSTED`; neither is semantic falsification or no-progress.
+Telemetry does not select actions or alter H/S/T evaluation semantics.

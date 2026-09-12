@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
-  simulate,
+  simulateAsync as simulate,
   replay,
   Store,
   ProcessExecutor,
@@ -64,12 +64,12 @@ function fixture() {
         id: "fixture",
       });
     },
-    run(
+    async run(
       mode = "progress",
       definition = scenario,
       backend: ArtifactBackend = new GitWorkspaceBackend(repo),
     ) {
-      return simulate(
+      return await simulate(
         definition,
         undefined,
         this.executor(mode),
@@ -95,13 +95,13 @@ function operations(state: State) {
     .map((e) => e.data as ExecutorOperation);
 }
 
-test("external round trip: dirty CONTINUE, same workspace, two commits, no empty commit, evaluation and effect-free persisted replay", () => {
+test("external round trip: dirty CONTINUE, same workspace, two commits, no empty commit, evaluation and effect-free persisted replay", async () => {
   const f = fixture();
   let state: State | undefined;
   const store = new Store(join(f.dir, "state.sqlite"));
   try {
     assert.equal(git(f.repo, "status", "--porcelain"), "");
-    state = f.run();
+    state = await f.run();
     assert.equal(state.status, "COMPLETED");
     assert.equal(state.lineages.length, 1);
     assert.equal(state.work.length, 1);
@@ -163,11 +163,11 @@ test("external round trip: dirty CONTINUE, same workspace, two commits, no empty
   }
 });
 
-test("FORK worlds and SPAWN contexts stay local; hidden evaluator material never crosses process boundary", () => {
+test("FORK worlds and SPAWN contexts stay local; hidden evaluator material never crosses process boundary", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
-    state = f.run("fork", {
+    state = await f.run("fork", {
       ...scenario,
       hiddenEvaluation: { requiredText: "secret-evaluator-sentinel" },
     });
@@ -218,11 +218,11 @@ for (const [mode, code] of [
   ["version", "UNSUPPORTED_PROTOCOL_VERSION"],
   ["exit", "PROCESS_EXIT_FAILED"],
 ])
-  test(`${mode} produces a recorded local operational failure`, () => {
+  test(`${mode} produces a recorded local operational failure`, async () => {
     const f = fixture();
     let state: State | undefined;
     try {
-      state = f.run(mode);
+      state = await f.run(mode);
       assert.equal(state.work[0]!.status, "BLOCKED");
       assert.equal(state.work[0]!.reason!.code, code);
       assert.equal(state.lineages[0]!.status, "BLOCKED");
@@ -234,11 +234,11 @@ for (const [mode, code] of [
   });
 
 for (const type of ["FORK", "SPAWN", "COMPLETE", "BLOCK"])
-  test(`dirty ${type} retains edits without publishing them`, () => {
+  test(`dirty ${type} retains edits without publishing them`, async () => {
     const f = fixture();
     let state: State | undefined;
     try {
-      state = f.run(`dirty-${type}`);
+      state = await f.run(`dirty-${type}`);
       assert.equal(state.work.length, 1);
       assert.equal(state.work[0]!.status, "BLOCKED");
       assert.equal(
@@ -261,11 +261,11 @@ for (const type of ["FORK", "SPAWN", "COMPLETE", "BLOCK"])
     }
   });
 
-test("launch failure and missing workspace are local; commit failure prevents transition", () => {
+test("launch failure and missing workspace are local; commit failure prevents transition", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
-    state = simulate(
+    state = await simulate(
       scenario,
       undefined,
       new ProcessExecutor({ executable: join(f.dir, "missing") }),
@@ -275,11 +275,11 @@ test("launch failure and missing workspace are local; commit failure prevents tr
     );
     assert.equal(state.work[0]!.reason!.code, "PROCESS_LAUNCH_FAILED");
     assert.deepEqual(replay(state), state);
-    const missing = simulate(scenario, undefined, f.executor());
+    const missing = await simulate(scenario, undefined, f.executor());
     assert.equal(missing.work[0]!.reason!.code, "WORKSPACE_REQUIRED");
     assert.deepEqual(replay(missing), missing);
     const backend = new GitWorkspaceBackend(f.repo);
-    state = f.run("progress", scenario, {
+    state = await f.run("progress", scenario, {
       perform(request) {
         if (request.type === "COMMIT")
           return {
@@ -301,18 +301,18 @@ test("launch failure and missing workspace are local; commit failure prevents tr
   }
 });
 
-test("invalid action is validated before requested commit; step budget retains dirty workspace", () => {
+test("invalid action is validated before requested commit; step budget retains dirty workspace", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
     const processExecutor = f.executor();
-    state = simulate(
+    state = await simulate(
       scenario,
       undefined,
       {
         protocol: 1,
-        execute(ctx) {
-          processExecutor.execute(ctx);
+        async execute(ctx) {
+          await processExecutor.execute(ctx);
           return {
             version: 1,
             action: { type: "FORK", alternatives: [] },
@@ -338,7 +338,7 @@ test("invalid action is validated before requested commit; step budget retains d
   const g = fixture();
   let limited: State | undefined;
   try {
-    limited = simulate(
+    limited = await simulate(
       scenario,
       { maxConcurrency: 1, maxSteps: 1 },
       g.executor(),
@@ -354,11 +354,11 @@ test("invalid action is validated before requested commit; step budget retains d
   }
 });
 
-test("a failed spawned process returns a blocked outcome and independent lineages continue", () => {
+test("a failed spawned process returns a blocked outcome and independent lineages continue", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
-    state = f.run("child-failure");
+    state = await f.run("child-failure");
     assert.equal(
       state.work.find((w) => w.name === "child")!.reason!.code,
       "PROCESS_EXIT_FAILED",
@@ -371,7 +371,7 @@ test("a failed spawned process returns a blocked outcome and independent lineage
   }
 });
 
-test("actual Git commit rejection preserves the previous canonical SHA and dirty files", () => {
+test("actual Git commit rejection preserves the previous canonical SHA and dirty files", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
@@ -381,7 +381,7 @@ test("actual Git commit rejection preserves the previous canonical SHA and dirty
       mode: 0o755,
     });
     git(f.repo, "config", "core.hooksPath", hooks);
-    state = f.run();
+    state = await f.run();
     assert.equal(state.work[0]!.reason!.code, "ARTIFACT_COMMIT_FAILED");
     assert.equal(state.work[0]!.artifact!.ref, f.base);
     assert.equal(state.work[0]!.artifact!.cleaned, false);
@@ -398,7 +398,7 @@ test("actual Git commit rejection preserves the previous canonical SHA and dirty
   }
 });
 
-test("protocol rejects unstructured completion, canonical refs, duplicate names and FORK from spawned work", () => {
+test("protocol rejects unstructured completion, canonical refs, duplicate names and FORK from spawned work", async () => {
   for (const response of [
     null,
     { version: 1, text: "COMPLETE", effects: [] },
@@ -416,7 +416,7 @@ test("protocol rejects unstructured completion, canonical refs, duplicate names 
       effects: [],
     },
   ]) {
-    const state = simulate(scenario, undefined, {
+    const state = await simulate(scenario, undefined, {
       protocol: 1,
       execute() {
         return response;
@@ -425,7 +425,7 @@ test("protocol rejects unstructured completion, canonical refs, duplicate names 
     assert.equal(state.work[0]!.status, "BLOCKED");
     assert.deepEqual(replay(state), state);
   }
-  const state = simulate(scenario, undefined, {
+  const state = await simulate(scenario, undefined, {
     protocol: 1,
     execute(ctx) {
       return {
@@ -452,7 +452,7 @@ test("protocol rejects unstructured completion, canonical refs, duplicate names 
   assert.deepEqual(replay(state), state);
 });
 
-test("executor identity is recorded independently from lineage identity; Git assignment rejects unknown work", () => {
+test("executor identity is recorded independently from lineage identity; Git assignment rejects unknown work", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
@@ -468,7 +468,7 @@ test("executor identity is recorded independently from lineage identity; Git ass
       message: "No assignment",
     });
     assert.equal(invalid.ok, false);
-    state = f.run();
+    state = await f.run();
     assert.ok(operations(state).every((o) => o.executorId === "fixture"));
     assert.ok(state.work.every((w) => w.lineageId !== "fixture"));
   } finally {
@@ -476,7 +476,7 @@ test("executor identity is recorded independently from lineage identity; Git ass
   }
 });
 
-test("replacing the actor across invocations preserves lineage, workspace and replay", () => {
+test("replacing the actor across invocations preserves lineage, workspace and replay", async () => {
   const f = fixture();
   let state: State | undefined;
   try {
@@ -489,7 +489,7 @@ test("replacing the actor across invocations preserves lineage, workspace and re
         }),
     );
     let activeId = "dispatcher";
-    state = simulate(
+    state = await simulate(
       scenario,
       undefined,
       {

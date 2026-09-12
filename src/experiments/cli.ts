@@ -4,7 +4,7 @@ import { runExperiment, type RunOptions } from "./run.js";
 import { evaluateAfterRun, replayExperiment } from "./evaluation.js";
 import type { Condition } from "./protocol.js";
 const read = (path: string) => JSON.parse(readFileSync(path, "utf8"));
-export function experimentCli(args: string[]) {
+export async function experimentCli(args: string[]) {
   const { values, positionals } = parseArgs({
     args,
     allowPositionals: true,
@@ -57,7 +57,17 @@ export function experimentCli(args: string[]) {
     if (values.steps) options.maxSteps = Number(values.steps);
     if (values.concurrency) options.maxConcurrency = Number(values.concurrency);
     if (values["timeout-ms"]) options.timeoutMs = Number(values["timeout-ms"]);
-    const run = runExperiment(options);
+    const controller = new AbortController();
+    const cancel = () => controller.abort();
+    process.on("SIGINT", cancel);
+    process.on("SIGTERM", cancel);
+    let run;
+    try {
+      run = await runExperiment({ ...options, signal: controller.signal });
+    } finally {
+      process.off("SIGINT", cancel);
+      process.off("SIGTERM", cancel);
+    }
     console.log(
       JSON.stringify({
         directory: run.directory,

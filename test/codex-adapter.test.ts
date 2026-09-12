@@ -21,7 +21,7 @@ import { validateResponse } from "../src/executor/protocol.js";
 import {
   ProcessExecutor,
   GitWorkspaceBackend,
-  simulate,
+  simulateAsync as simulate,
   replay,
 } from "../src/index.js";
 
@@ -77,7 +77,7 @@ function fixture() {
   };
 }
 
-test("input projection preserves exact task and own descendants, excluding unrelated fields at every boundary", () => {
+test("input projection preserves exact task and own descendants, excluding unrelated fields at every boundary", async () => {
   const f = fixture();
   try {
     const c = f.input.context;
@@ -156,7 +156,7 @@ test("input projection preserves exact task and own descendants, excluding unrel
   }
 });
 
-test("all five structured actions round trip through native schema into core v1 validation", () => {
+test("all five structured actions round trip through native schema into core v1 validation", async () => {
   for (const action of [
     { type: "CONTINUE" },
     { type: "COMPLETE", result: "done" },
@@ -213,7 +213,7 @@ test("all five structured actions round trip through native schema into core v1 
     assert.throws(() => responseFrom(raw));
 });
 
-test("CLI uses assigned cwd, separate unchanged task, fresh homes, structured output and filtered diagnostics", () => {
+test("CLI uses assigned cwd, separate unchanged task, fresh homes, structured output and filtered diagnostics", async () => {
   const f = fixture();
   try {
     const result = spawnSync(process.execPath, [adapter, "--codex", fake], {
@@ -250,7 +250,7 @@ test("CLI uses assigned cwd, separate unchanged task, fresh homes, structured ou
   }
 });
 
-test("workspace aliases are accepted, but a different linked worktree is rejected", () => {
+test("workspace aliases are accepted, but a different linked worktree is rejected", async () => {
   const f = fixture();
   try {
     const alias = join(f.dir, "workspace-alias");
@@ -288,10 +288,10 @@ for (const [task, code] of [
   ["exit", "AGENT_EXIT_FAILED"],
   ["prose", "INVALID_AGENT_RESPONSE"],
   ["invalid-action", "INVALID_AGENT_RESPONSE"],
-  ["timeout", "AGENT_TIMEOUT"],
+  ["timeout", "AGENT_WALL_TIME_EXHAUSTED"],
   ["overflow", "AGENT_OUTPUT_LIMIT"],
 ])
-  test(`${task} is operational failure with no semantic stdout`, () => {
+  test(`${task} is operational failure with no semantic stdout`, async () => {
     const f = fixture();
     try {
       f.input.context.work.objective = task!;
@@ -315,7 +315,7 @@ for (const [task, code] of [
     }
   });
 
-test("unavailable executable, launch rejection, missing/mismatched workspace, and unsupported input fail closed", () => {
+test("unavailable executable, launch rejection, missing/mismatched workspace, and unsupported input fail closed", async () => {
   const f = fixture();
   try {
     for (const [executable, cwd, input, code] of [
@@ -352,7 +352,7 @@ test("unavailable executable, launch rejection, missing/mismatched workspace, an
   }
 });
 
-test("existing process/engine boundary owns commits, evaluation, operational failure and replay", () => {
+test("existing process/engine boundary owns commits, evaluation, operational failure and replay", async () => {
   const f = fixture();
   try {
     for (const objective of ["edit", "exit"]) {
@@ -361,7 +361,7 @@ test("existing process/engine boundary owns commits, evaluation, operational fai
         args: [adapter, "--codex", fake],
         id: "fixture-adapter",
       });
-      const state = simulate(
+      const state = await simulate(
         {
           name: "adapter",
           objective,
@@ -396,6 +396,53 @@ test("existing process/engine boundary owns commits, evaluation, operational fai
             force: true,
           });
     }
+  } finally {
+    f.close();
+  }
+});
+
+test("outer cancellation reaches the adapter's detached Codex scope and retains telemetry", async () => {
+  const f = fixture();
+  const controller = new AbortController();
+  const events: import("../src/operational/index.js").OperationalEvent[] = [];
+  try {
+    const child = join(f.dir, "streaming-codex.mjs");
+    writeFileSync(
+      child,
+      `#!/usr/bin/env node
+      import {writeFileSync} from 'node:fs';
+      if (process.argv.includes('--version')) { console.log('codex-cli fixture'); process.exit(0); }
+      writeFileSync('pending.txt','inspect');
+      writeFileSync('../child.pid',String(process.pid));
+      console.log(JSON.stringify({type:'item.started',item:{id:'item_1',type:'command_execution',command:'fixture',status:'in_progress'}}));
+      setInterval(()=>{},100);
+    `,
+      { mode: 0o755 },
+    );
+    const executor = new ProcessExecutor(
+      { executable: process.execPath, args: [adapter, "--codex", child] },
+      {
+        signal: controller.signal,
+        observeEvent(event) {
+          events.push(event);
+          if (event.kind === "command") controller.abort();
+        },
+      },
+    );
+    await assert.rejects(
+      executor.execute(
+        f.input
+          .context as unknown as import("../src/executor/index.js").ExecutorContext,
+      ),
+      /EXECUTOR_CANCELLED/,
+    );
+    assert.ok(events.some((e) => e.kind === "command"));
+    assert.equal(
+      readFileSync(join(f.workspace, "pending.txt"), "utf8"),
+      "inspect",
+    );
+    const pid = Number(readFileSync(join(f.dir, "child.pid"), "utf8"));
+    assert.throws(() => process.kill(pid, 0), /ESRCH/);
   } finally {
     f.close();
   }

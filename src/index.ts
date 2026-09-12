@@ -14,3 +14,5 @@ export * from "./artifacts/workspaces.js";
 
 export * from "./evaluation/commands.js";
 export * from "./evaluation/process.js";
+
+export * from "./operational/index.js";

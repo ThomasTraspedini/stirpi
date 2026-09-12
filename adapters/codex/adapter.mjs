@@ -10,6 +10,7 @@ import {
   lstatSync,
   symlinkSync,
   rmSync,
+  createWriteStream,
 } from "node:fs";
 import { isAbsolute, join, relative } from "node:path";
 import { tmpdir } from "node:os";
@@ -21,6 +22,18 @@ import {
   responseFrom,
 } from "./contract.mjs";
 
+import { CodexEvents } from "./events.mjs";
+
+const operationalOutput =
+  process.env.STIRPI_OPERATIONAL_FD === "3"
+    ? createWriteStream("", { fd: 3, autoClose: false })
+    : null;
+operationalOutput?.on("error", () => {
+  /* Parent channel closed. */
+});
+const emit = (event) => operationalOutput?.write(JSON.stringify(event) + "\n");
+const events = new CodexEvents(emit);
+let cancelled = false;
 const hash = (s) => createHash("sha256").update(s).digest("hex");
 const record = {
   adapter: "codex-m2-v1",
@@ -46,36 +59,49 @@ const kill = () => {
 };
 for (const signal of ["SIGTERM", "SIGINT"])
   process.on(signal, () => {
+    cancelled = true;
     kill();
   });
 
 function run(executable, args, options) {
   return new Promise((resolve) => {
     child = spawn(executable, args, {
-      ...options,
+      cwd: options.cwd,
+      env: options.env,
       detached: true,
       stdio: ["pipe", "pipe", "pipe"],
     });
-    let stdout = "",
-      stderr = "",
+    const stderrHash = createHash("sha256");
+    let stderrBytes = 0,
       error = null,
       size = 0;
-    const timer = setTimeout(() => {
-      error = "AGENT_TIMEOUT";
-      kill();
-    }, options.timeout);
+    const timer =
+      options.timeout === undefined
+        ? undefined
+        : setTimeout(() => {
+            error = "AGENT_WALL_TIME_EXHAUSTED";
+            kill();
+          }, options.timeout);
     const collect = (which, chunk) => {
       size += chunk.length;
+      emit({
+        kind: "output",
+        scope: hash(`codex.${which}`),
+        metadata: { bytes: chunk.length, outputHash: hash(chunk) },
+      });
+      if (which === "stderr") {
+        stderrBytes += chunk.length;
+        stderrHash.update(chunk);
+      }
       if (size > 1024 * 1024) {
         error = "AGENT_OUTPUT_LIMIT";
         kill();
         return;
       }
-      if (which === "stdout") stdout += chunk;
-      else stderr += chunk;
+      if (which === "stdout") events.write(chunk);
     };
-    child.stdout.setEncoding("utf8").on("data", (s) => collect("stdout", s));
-    child.stderr.setEncoding("utf8").on("data", (s) => collect("stderr", s));
+    child.stdout.on("data", (s) => collect("stdout", s));
+    child.stderr.on("data", (s) => collect("stderr", s));
     child.on("error", (e) => {
       error = e.code === "ENOENT" ? "AGENT_UNAVAILABLE" : "AGENT_LAUNCH_FAILED";
     });
@@ -85,7 +111,21 @@ function run(executable, args, options) {
     child.on("close", (status, signal) => {
       clearTimeout(timer);
       child = undefined;
-      resolve({ stdout, stderr, status, signal, error });
+      events.end();
+      if (cancelled) error = "AGENT_CANCELLED";
+      if (error === "AGENT_CANCELLED" || error === "AGENT_WALL_TIME_EXHAUSTED")
+        emit({
+          kind: "termination",
+          status:
+            error === "AGENT_CANCELLED" ? "cancelled" : "resource_exhausted",
+        });
+      resolve({
+        stderrBytes,
+        stderrSha256: stderrHash.digest("hex"),
+        status,
+        signal,
+        error,
+      });
     });
     child.stdin.end(options.input);
   });
@@ -106,8 +146,14 @@ try {
     (values["auth-file"] && !isAbsolute(values["auth-file"]))
   )
     throw new Error("INVALID_CONFIGURATION");
-  const timeout = Number(values["timeout-ms"] ?? 180000);
-  if (!Number.isSafeInteger(timeout) || timeout < 1)
+  const timeout =
+    values["timeout-ms"] === undefined
+      ? undefined
+      : Number(values["timeout-ms"]);
+  if (
+    timeout !== undefined &&
+    (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > 2147483647)
+  )
     throw new Error("INVALID_CONFIGURATION");
   record.tool = values.codex;
   record.model = values.model ?? null;
@@ -254,45 +300,11 @@ try {
   // Arbitrary tool output may include secrets. Keep only native usage and safe
   // diagnostics, never raw command output, stderr, environment, or auth contents.
   record.diagnostics = {
-    stderrBytes: Buffer.byteLength(result.stderr),
-    stderrSha256: hash(result.stderr),
-    eventTypes: {},
+    stderrBytes: result.stderrBytes,
+    stderrSha256: result.stderrSha256,
+    eventTypes: events.eventTypes,
   };
-  for (const line of result.stdout.split("\n")) {
-    try {
-      const event = JSON.parse(line);
-      if (
-        [
-          "thread.started",
-          "turn.started",
-          "turn.completed",
-          "turn.failed",
-          "item.started",
-          "item.completed",
-          "error",
-        ].includes(event.type)
-      )
-        record.diagnostics.eventTypes[event.type] =
-          (record.diagnostics.eventTypes[event.type] ?? 0) + 1;
-      if (event.type === "turn.completed" && event.usage) {
-        record.usage = Object.fromEntries(
-          [
-            "input_tokens",
-            "cached_input_tokens",
-            "output_tokens",
-            "reasoning_output_tokens",
-          ].map((k) => [
-            k,
-            Number.isSafeInteger(event.usage[k]) && event.usage[k] >= 0
-              ? event.usage[k]
-              : null,
-          ]),
-        );
-      }
-    } catch {
-      /* Diagnostic JSONL is never used to infer a control action. */
-    }
-  }
+  record.usage = events.usage;
   if (result.error) throw new Error(result.error);
   if (result.status !== 0) throw new Error("AGENT_EXIT_FAILED");
   if (
@@ -325,7 +337,8 @@ try {
     "INVALID_AUTH_FILE",
     "AGENT_UNAVAILABLE",
     "AGENT_LAUNCH_FAILED",
-    "AGENT_TIMEOUT",
+    "AGENT_WALL_TIME_EXHAUSTED",
+    "AGENT_CANCELLED",
     "AGENT_OUTPUT_LIMIT",
     "AGENT_EXIT_FAILED",
     "INVALID_AGENT_RESPONSE",
@@ -344,4 +357,5 @@ try {
   record.wallTimeMs =
     Date.parse(record.completedAt) - Date.parse(record.startedAt);
   process.stderr.write(JSON.stringify(record) + "\n");
+  operationalOutput?.end();
 }
