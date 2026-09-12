@@ -865,3 +865,107 @@ an implicit invocation timeout.
 
 Timeout/cancellation policies for evaluators are outside this decision unless
 explicitly configured by their own execution contract.
+
+## D050 — No-progress supervision is scope-local
+
+Status: accepted
+
+No-progress supervision applies to the smallest observable execution scope for
+which meaningful progress can be measured.
+
+Elapsed time without progress may be used to stop an opaque or stalled scope,
+but must not be used as a generic proxy for total executor duration.
+
+A progress watchdog is reset only by observations classified as progress for
+that scope.
+
+Activity alone does not necessarily reset a progress watchdog.
+
+Examples of progress may include:
+
+- a new structured execution item starting;
+- an execution item reaching a new lifecycle state;
+- a command completing;
+- verified artifact state changing;
+- another explicit operational transition defined for that scope.
+
+Examples of activity that do not necessarily imply progress include:
+
+- repeated output bytes;
+- reasoning/message deltas;
+- heartbeat-like notifications;
+- process existence.
+
+A no-progress stop is an operational condition and does not imply semantic
+falsification.
+
+## D051 — Resource budgets are explicit and independently measurable
+
+Status: accepted
+
+Execution limits are represented as explicit budgets over measurable resources.
+
+Resources may include, where observable:
+
+- Stirpi steps;
+- executor invocations;
+- lineages;
+- executor items;
+- command executions;
+- tool calls;
+- tokens;
+- monetary cost;
+- wall-clock time.
+
+A budget is optional unless required by the execution or experiment policy.
+
+Reaching a configured budget produces resource exhaustion for that resource.
+
+Wall-clock time is therefore a valid optional resource budget, but it is not an
+implicit indication of executor failure or lack of progress.
+
+Budget configuration, consumption, and exhaustion reason must remain
+inspectable.
+
+## D052 — Repetition alone does not define an execution cycle
+
+Status: accepted
+
+Repeated operations are not considered pathological solely because their command
+or tool identity repeats.
+
+Cycle detection must consider relevant execution state and outcomes.
+
+A future cycle signature may include information such as:
+
+- operation identity;
+- relevant state before execution;
+- observed outcome;
+- relevant state after execution.
+
+For artifact-producing work, repeated execution after a materially changed
+artifact state is not automatically the same cycle.
+
+Cycle detection must prefer false negatives over terminating legitimate progress
+based on superficial repetition.
+
+## D053 — Operational stop causes remain distinct
+
+Status: accepted
+
+Stirpi must preserve the cause of operational termination rather than collapsing
+different mechanisms into a generic timeout or failure.
+
+At minimum, supervision must distinguish where applicable:
+
+- explicit caller cancellation;
+- no-progress stop;
+- resource exhaustion;
+- repeated-cycle stop;
+- repeated-failure stop;
+- process/protocol operational failure.
+
+These operational outcomes do not imply that the lineage assumption is false.
+
+Runtime and experiment evidence must retain the scope, configured policy,
+observed measurements, and reason that caused the stop.
