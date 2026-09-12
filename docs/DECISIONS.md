@@ -1003,3 +1003,32 @@ experiment input.
 
 A failed preflight caused by identity/configuration mismatch must remain
 provenance and must not be rewritten as an experimental result.
+
+## D055 — External executor identity includes executable byte identity
+
+Status: accepted
+
+For reproducible experiments, an external executor is not identified solely by
+its reported version string.
+
+Where an executor is a local executable, experiment evidence should identify at
+least:
+
+- reported executable version;
+- executable SHA256;
+- executable path used for that execution.
+
+The preregistered experiment should pin the executable SHA256 when exact local
+executor identity matters.
+
+The executable path is deployment metadata, not semantic identity.
+
+A version match with a hash mismatch must fail preflight for experiments that
+pin executable identity.
+
+A hash match at a different local path may be accepted, provided the executable
+version and other preregistered executor constraints also match.
+
+Historical runs that recorded only the version remain valid provenance, but
+their exact executable bytes cannot be reconstructed unless independently
+preserved.
