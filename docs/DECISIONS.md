@@ -969,3 +969,37 @@ These operational outcomes do not imply that the lineage assumption is false.
 
 Runtime and experiment evidence must retain the scope, configured policy,
 observed measurements, and reason that caused the stop.
+
+## D054 — Experiment preregistration identity is separate from runtime identity
+
+Status: accepted
+
+A committed experiment preregistration and the Stirpi runtime revision it pins
+have distinct identities.
+
+The preregistration's `stirpiCommit` identifies the exact Stirpi implementation
+revision under which the experiment must execute.
+
+It does not identify the repository HEAD that contains the preregistration
+itself.
+
+A preregistration may therefore be committed after its pinned runtime revision
+without changing the runtime identity.
+
+Experiment evidence must independently preserve:
+
+- the preregistration contents and cryptographic hash;
+- the repository commit containing that preregistration;
+- the pinned Stirpi runtime commit actually used for execution.
+
+Execution must use the pinned runtime implementation rather than silently using
+newer runtime code from the preregistration-containing HEAD.
+
+A descendant relationship alone is insufficient proof of runtime identity.
+
+If necessary, the harness should execute the pinned runtime from an isolated
+clean checkout/worktree while treating the committed preregistration as external
+experiment input.
+
+A failed preflight caused by identity/configuration mismatch must remain
+provenance and must not be rewritten as an experimental result.
