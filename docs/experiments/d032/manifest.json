@@ -4,6 +4,6 @@
   "sourceCommit": "bd9ae09ac74374199c48d22ec36c739600cfee59",
   "taskFile": "task.txt",
   "taskSha256": "cd3f96130ae313eaf212b5b643afdcd0cf0c620e904356278f54aa96b02b840e",
-  "publicEvaluatorFile": "public-evaluator.json",
-  "publicEvaluatorSha256": "c18ea736813ad716600b6a7ecfb5b50e3efa6c8aeda45d2216ca7e395f818498"
+  "publicEvaluatorFile": "public-evaluator-v2.json",
+  "publicEvaluatorSha256": "9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1"
 }

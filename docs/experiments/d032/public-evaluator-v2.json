@@ -1,0 +1,32 @@
+{
+  "id": "booking-invariants-d032-public-evaluator-v2",
+  "criteria": {
+    "description": "Public completion contract derived from the frozen D032 task.",
+    "criteria": [
+      "Full PostgreSQL test suite passes.",
+      "TypeScript typecheck passes.",
+      "git diff --check passes."
+    ]
+  },
+  "checks": [
+    {
+      "id": "full-postgres-suite",
+      "executable": "npm",
+      "args": ["test"],
+      "workingDirectory": "candidate"
+    },
+    {
+      "id": "typecheck",
+      "executable": "npm",
+      "args": ["run", "typecheck"],
+      "workingDirectory": "candidate"
+    },
+    {
+      "id": "diff-check",
+      "executable": "git",
+      "args": ["diff", "--check"],
+      "workingDirectory": "candidate"
+    }
+  ],
+  "completionPolicy": "all_checks_pass"
+}
