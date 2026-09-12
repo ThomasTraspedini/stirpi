@@ -1,4 +1,10 @@
 import {
+  validatePolicy,
+  type InvocationPolicy,
+  type RunBudgets,
+  type SupervisionObserver,
+} from "../supervision/index.js";
+import {
   hash,
   summarize,
   type OperationalEvent,
@@ -48,6 +54,8 @@ export interface RunOptions {
     sampling?: string;
     baselinePolicy?: string;
   };
+  budgets?: RunBudgets;
+  supervision?: InvocationPolicy;
   maxSteps?: number;
   maxConcurrency?: number;
   timeoutMs?: number;
@@ -109,15 +117,17 @@ export async function runExperiment(options: RunOptions) {
   // Validate the executor before creating a run.
   new ProcessExecutor(options.executor);
 
+  validatePolicy(options.supervision ?? {});
   const config = {
-    maxSteps: options.maxSteps ?? 100,
+    ...(options.maxSteps !== undefined ? { maxSteps: options.maxSteps } : {}),
+    ...(options.budgets ? { budgets: options.budgets } : {}),
     maxConcurrency: options.maxConcurrency ?? 1,
   };
   const timeoutMs = options.timeoutMs;
   const evaluatorTimeoutMs = options.timeoutMs ?? 60000;
   if (
-    !Number.isSafeInteger(config.maxSteps) ||
-    config.maxSteps < 0 ||
+    (config.maxSteps !== undefined &&
+      (!Number.isSafeInteger(config.maxSteps) || config.maxSteps < 0)) ||
     !Number.isSafeInteger(config.maxConcurrency) ||
     config.maxConcurrency < 1 ||
     (timeoutMs !== undefined &&
@@ -150,6 +160,7 @@ export async function runExperiment(options: RunOptions) {
         metadata: options.metadata ?? {},
         config,
         timeoutMs,
+        supervision: options.supervision,
         control: control(options.condition),
       }),
     ),
@@ -170,6 +181,7 @@ export async function runExperiment(options: RunOptions) {
     },
     limits: {
       ...config,
+      supervision: options.supervision ?? {},
       executorWallTimeMs: timeoutMs ?? null,
       evaluatorTimeoutMs,
       processOutputBytes: 1048576,
@@ -208,7 +220,11 @@ export async function runExperiment(options: RunOptions) {
     const executor = {
       protocol: 1 as const,
       id: options.executor.id ?? options.executor.executable,
-      async execute(context: ExecutorContext, observe?: OperationalObserver) {
+      async execute(
+        context: ExecutorContext,
+        observe?: OperationalObserver,
+        supervise?: SupervisionObserver,
+      ) {
         if (humanGate)
           throw new OperationalFailure({
             code: "HUMAN_GATE_CLOSED",
@@ -241,6 +257,14 @@ export async function runExperiment(options: RunOptions) {
         );
         const processExecutor = new ProcessExecutor(options.executor, {
           environment: { ...environment, HOME: localHome, TMPDIR: localHome },
+          ...(options.supervision ? { supervision: options.supervision } : {}),
+          observeSupervision(observation) {
+            appendFileSync(
+              invocationPath,
+              JSON.stringify({ type: "supervision", index, observation }) +
+                "\n",
+            );
+          },
           ...(timeoutMs !== undefined ? { timeoutMs } : {}),
           ...(options.signal ? { signal: options.signal } : {}),
           observeEvent(event) {
@@ -273,7 +297,11 @@ export async function runExperiment(options: RunOptions) {
           },
         });
         try {
-          const response = await processExecutor.execute(local, observe);
+          const response = await processExecutor.execute(
+            local,
+            observe,
+            supervise,
+          );
           const validated = validateResponse(response);
           if (options.condition !== "T" && validated.action.type === "FORK")
             throw new OperationalFailure({
@@ -305,6 +333,8 @@ export async function runExperiment(options: RunOptions) {
               timestamp: new Date().toISOString(),
               error:
                 failure instanceof Error ? failure.message : String(failure),
+              reason:
+                failure instanceof OperationalFailure ? failure.reason : null,
             }) + "\n",
           );
           throw failure;

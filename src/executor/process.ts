@@ -1,3 +1,10 @@
+import {
+  InvocationSupervisor,
+  type InvocationPolicy,
+  type SupervisionObserver,
+  type SupervisionObservation,
+  type StopEvidence,
+} from "../supervision/index.js";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import type { Readable } from "node:stream";
@@ -16,6 +23,7 @@ export interface ProcessConfig {
   id?: string;
 }
 export interface ProcessObservation {
+  supervision?: SupervisionObservation;
   startedAt: string;
   completedAt: string;
   stdout: string;
@@ -25,6 +33,8 @@ export interface ProcessObservation {
   error: string | null;
 }
 export interface ProcessOptions {
+  supervision?: InvocationPolicy;
+  observeSupervision?: SupervisionObserver;
   environment?: NodeJS.ProcessEnv;
   timeoutMs?: number;
   signal?: AbortSignal;
@@ -60,6 +70,7 @@ export class ProcessExecutor implements Executor {
   async execute(
     context: ExecutorContext,
     observe?: OperationalObserver,
+    supervise?: SupervisionObserver,
   ): Promise<unknown> {
     const workspace = context.work.artifact;
     if (!workspace?.worktree || workspace.cleaned)
@@ -78,9 +89,38 @@ export class ProcessExecutor implements Executor {
     const startedAt = new Date().toISOString();
     const invocationId = randomUUID();
     const scope = hash(invocationId);
+    if (
+      timeout !== undefined &&
+      this.options.supervision?.budgets?.wallTimeMs !== undefined
+    )
+      throw new Error(
+        "Use either timeoutMs or supervision wallTimeMs, not both",
+      );
+    const supervisor = new InvocationSupervisor(`invocation:${invocationId}`, {
+      ...this.options.supervision,
+      budgets: {
+        ...this.options.supervision?.budgets,
+        ...(timeout !== undefined ? { wallTimeMs: timeout } : {}),
+      },
+    });
+    let refresh: (() => void) | undefined;
+    let finished = false;
     let observerFailed = false;
+    const record = () => {
+      for (const callback of [supervise, this.options.observeSupervision]) {
+        try {
+          callback?.(supervisor.snapshot());
+        } catch {
+          observerFailed = true;
+          stopObserver?.();
+        }
+      }
+    };
     let stopObserver: (() => void) | undefined;
     const channel = new OperationalChannel(invocationId, (event) => {
+      if (!finished) supervisor.observe(event);
+      refresh?.();
+      record();
       for (const callback of [observe, this.options.observeEvent]) {
         try {
           callback?.(structuredClone(event));
@@ -92,13 +132,22 @@ export class ProcessExecutor implements Executor {
     });
     let termination: string | null = null;
     let providerTermination: string | null = null;
+    let providerStop: StopEvidence | undefined;
     let stdout = Buffer.alloc(0),
       stderr = Buffer.alloc(0);
     let captured = 0;
     const limit = 1024 * 1024;
     let status: number | null = null,
       signal: string | null = null;
-    if (this.options.signal?.aborted) termination = "EXECUTOR_CANCELLED";
+    record();
+    if (this.options.signal?.aborted) {
+      termination = "EXECUTOR_CANCELLED";
+      supervisor.stop({
+        kind: "CALLER_CANCELLED",
+        scope: supervisor.scope,
+        code: termination,
+      });
+    } else if (supervisor.check()) termination = "RESOURCE_EXHAUSTED";
     else
       await new Promise<void>((resolve) => {
         const child = spawn(this.config.executable, this.config.args ?? [], {
@@ -130,6 +179,14 @@ export class ProcessExecutor implements Executor {
         const stop = (code: string) => {
           if (termination) return;
           termination = code;
+          supervisor.stop({
+            kind:
+              code === "EXECUTOR_CANCELLED"
+                ? "CALLER_CANCELLED"
+                : "PROCESS_PROTOCOL_FAILURE",
+            scope: supervisor.scope,
+            code,
+          });
           kill("SIGTERM");
           // Escalation only after explicit termination/output failure, never a watchdog.
           cleanup = setTimeout(() => kill("SIGKILL"), 1000);
@@ -138,11 +195,29 @@ export class ProcessExecutor implements Executor {
         const cancel = () => stop("EXECUTOR_CANCELLED");
         this.options.signal?.addEventListener("abort", cancel, { once: true });
         if (this.options.signal?.aborted) cancel();
-        if (timeout !== undefined)
-          timer = setTimeout(
-            () => stop("EXECUTOR_WALL_TIME_EXHAUSTED"),
-            timeout,
-          );
+        refresh = () => {
+          clearTimeout(timer);
+          const reason = supervisor.check();
+          if (reason) {
+            stop(
+              reason.kind === "NO_PROGRESS"
+                ? "NO_PROGRESS"
+                : reason.kind === "RESOURCE_EXHAUSTED"
+                  ? timeout !== undefined && reason.resource === "wallTimeMs"
+                    ? "EXECUTOR_WALL_TIME_EXHAUSTED"
+                    : "RESOURCE_EXHAUSTED"
+                  : reason.code,
+            );
+            return;
+          }
+          const delay = supervisor.delay();
+          if (delay !== undefined)
+            timer = setTimeout(() => {
+              refresh?.();
+              record();
+            }, delay);
+        };
+        refresh();
         const lines = new JsonLines(
           (value) => {
             const event = channel.emit(
@@ -151,8 +226,20 @@ export class ProcessExecutor implements Executor {
             if (
               event.kind === "termination" &&
               event.status === "resource_exhausted"
-            )
-              providerTermination = "EXECUTOR_WALL_TIME_EXHAUSTED";
+            ) {
+              const budget = event.metadata?.budgetMs;
+              const observed = event.metadata?.durationMs;
+              if (typeof budget === "number" && typeof observed === "number") {
+                providerTermination = "EXECUTOR_WALL_TIME_EXHAUSTED";
+                providerStop = {
+                  kind: "RESOURCE_EXHAUSTED",
+                  scope: `${supervisor.scope}/provider`,
+                  resource: "wallTimeMs",
+                  budget,
+                  observed,
+                };
+              } else providerTermination = "INVALID_RESOURCE_EVIDENCE";
+            }
             if (event.kind === "termination" && event.status === "cancelled")
               providerTermination = "EXECUTOR_CANCELLED";
           },
@@ -185,6 +272,7 @@ export class ProcessExecutor implements Executor {
           /* Failed child may close stdin early. */
         });
         child.on("close", (code, sig) => {
+          refresh = undefined;
           clearTimeout(timer);
           clearTimeout(cleanup);
           if (termination) kill("SIGKILL");
@@ -193,11 +281,41 @@ export class ProcessExecutor implements Executor {
           lines.end();
           status = code;
           signal = sig;
-          if (code !== 0) termination ??= providerTermination;
+          if (code !== 0 && !termination) {
+            termination = providerTermination;
+            if (providerStop) supervisor.stop(providerStop);
+          }
           stopObserver = undefined;
           resolve();
         });
         child.stdin!.end(JSON.stringify({ version: 1, context }) + "\n");
+      });
+    const pendingStop = supervisor.snapshot().stop;
+    if (!termination && pendingStop)
+      termination =
+        pendingStop.kind === "NO_PROGRESS"
+          ? "NO_PROGRESS"
+          : pendingStop.kind === "RESOURCE_EXHAUSTED"
+            ? "RESOURCE_EXHAUSTED"
+            : pendingStop.code;
+    finished = true;
+    let response: unknown;
+    if (!termination && status !== 0) termination = "PROCESS_EXIT_FAILED";
+    if (!termination) {
+      try {
+        response = JSON.parse(stdout.toString("utf8"));
+      } catch {
+        termination = "INVALID_EXECUTOR_JSON";
+      }
+    }
+    if (termination)
+      supervisor.stop({
+        kind:
+          termination === "EXECUTOR_CANCELLED"
+            ? "CALLER_CANCELLED"
+            : "PROCESS_PROTOCOL_FAILURE",
+        scope: supervisor.scope,
+        code: termination,
       });
     channel.emit({
       kind: "process",
@@ -205,7 +323,7 @@ export class ProcessExecutor implements Executor {
       status:
         termination === "EXECUTOR_CANCELLED"
           ? "cancelled"
-          : termination === "EXECUTOR_WALL_TIME_EXHAUSTED"
+          : supervisor.snapshot().stop?.kind === "RESOURCE_EXHAUSTED"
             ? "resource_exhausted"
             : termination || status !== 0
               ? "failed"
@@ -215,8 +333,17 @@ export class ProcessExecutor implements Executor {
         ...(status !== null ? { exitCode: status } : {}),
       },
     });
-    if (observerFailed) termination ??= "PROCESS_OBSERVER_FAILED";
+    if (observerFailed) {
+      termination ??= "PROCESS_OBSERVER_FAILED";
+      supervisor.stop({
+        kind: "PROCESS_PROTOCOL_FAILURE",
+        scope: supervisor.scope,
+        code: termination,
+      });
+    }
+    record();
     this.options.observe?.({
+      supervision: supervisor.snapshot(),
       startedAt,
       completedAt: new Date().toISOString(),
       stdout: stdout.toString("utf8"),
@@ -226,19 +353,15 @@ export class ProcessExecutor implements Executor {
       error: termination,
     });
     if (termination)
-      throw new OperationalFailure({ code: termination, message: termination });
-    if (status !== 0)
       throw new OperationalFailure({
-        code: "PROCESS_EXIT_FAILED",
-        message: `Process exited with status ${status}, signal ${signal}`,
+        code: termination,
+        message: termination,
+        stop: supervisor.snapshot().stop ?? {
+          kind: "PROCESS_PROTOCOL_FAILURE",
+          scope: supervisor.scope,
+          code: termination,
+        },
       });
-    try {
-      return JSON.parse(stdout.toString("utf8"));
-    } catch {
-      throw new OperationalFailure({
-        code: "INVALID_EXECUTOR_JSON",
-        message: "Process stdout must contain one JSON response",
-      });
-    }
+    return response;
   }
 }

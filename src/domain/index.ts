@@ -12,6 +12,7 @@ export interface RunIdentity {
 export interface Reason {
   code: string;
   message: string;
+  stop?: import("../supervision/index.js").StopEvidence;
 }
 export interface Resources {
   steps: number;
@@ -56,7 +57,8 @@ export interface Scenario {
 }
 export interface Config {
   maxConcurrency: number;
-  maxSteps: number;
+  maxSteps?: number;
+  budgets?: import("../supervision/index.js").RunBudgets;
 }
 export interface Lineage {
   artifact?: Artifact;

@@ -1,3 +1,5 @@
+import { validateLimits } from "../supervision/index.js";
+import { superviseRun, type RunSupervisionEffect } from "../supervision/run.js";
 import type { ArtifactBackend } from "../artifacts/index.js";
 import {
   sumResources,
@@ -27,11 +29,12 @@ import { executorContext } from "../executor/context.js";
 import { select } from "../scheduler/index.js";
 function* simulation(
   scenario: Scenario,
-  config: Config = { maxConcurrency: 1, maxSteps: 100 },
+  config: Config = { maxConcurrency: 1 },
   executor: Executor = new ScriptedExecutor(scenario.scripts),
   evaluator: Evaluator = new FakeEvaluator(scenario.hiddenEvaluation),
   identity: RunIdentity = { taskId: `task:${scenario.name}`, runId: "run" },
   artifactBackend?: ArtifactBackend,
+  supervisionEffect: RunSupervisionEffect = superviseRun,
 ): Generator<
   import("../executor/index.js").ExecutorContext,
   State,
@@ -40,12 +43,23 @@ function* simulation(
   if (
     !Number.isSafeInteger(config.maxConcurrency) ||
     config.maxConcurrency < 1 ||
-    !Number.isSafeInteger(config.maxSteps) ||
-    config.maxSteps < 0
+    (config.maxSteps !== undefined &&
+      (!Number.isSafeInteger(config.maxSteps) || config.maxSteps < 0))
   )
     throw new Error(
       "Concurrency must be positive and steps nonnegative safe integers",
     );
+  validateLimits(config.budgets ?? {});
+  if (
+    Object.keys(config.budgets ?? {}).some(
+      (k) => !["steps", "invocations", "lineages"].includes(k),
+    )
+  )
+    throw new Error("Unsupported run budget");
+  if (config.maxSteps !== undefined && config.budgets?.steps !== undefined)
+    throw new Error("Use maxSteps or budgets.steps, not both");
+  const stepLimit = config.budgets?.steps ?? config.maxSteps ?? Infinity;
+  let invocations = 0;
   const state: State = {
     ...identity,
     status: "ACTIVE",
@@ -145,9 +159,14 @@ function* simulation(
       l.reason = w.reason;
     }
   };
-  const block = (w: WorkUnit, code: string, message: string) => {
+  const block = (
+    w: WorkUnit,
+    code: string,
+    message: string,
+    stop?: import("../supervision/index.js").StopEvidence,
+  ) => {
     w.status = "BLOCKED";
-    w.reason = { code, message };
+    w.reason = { code, message, ...(stop ? { stop } : {}) };
     sync(w);
     emit("BLOCKED", w.id, w.reason);
   };
@@ -184,27 +203,56 @@ function* simulation(
         });
       }
   };
+  let exhausted = false;
+  const checkpoint = (name: string, requestedLineages = 0) => {
+    if (exhausted) return true;
+    const observation = supervisionEffect({
+      checkpoint: name,
+      scope: `run:${state.runId}`,
+      budgets: {
+        ...config.budgets,
+        ...(config.maxSteps !== undefined ? { steps: config.maxSteps } : {}),
+      },
+      consumption: {
+        steps: state.resources.steps,
+        invocations,
+        lineages: state.lineages.length,
+      },
+      requestedLineages,
+    });
+    emit("SUPERVISION", state.runId, observation);
+    if (!observation.stop) return false;
+    exhausted = true;
+    for (const work of state.work)
+      if (["ACTIVE", "WAITING"].includes(work.status))
+        block(
+          work,
+          config.maxSteps !== undefined &&
+            observation.stop.kind === "RESOURCE_EXHAUSTED" &&
+            observation.stop.resource === "steps"
+            ? "STEP_BUDGET"
+            : "RESOURCE_EXHAUSTED",
+          "Run resource budget exhausted",
+          observation.stop,
+        );
+    return true;
+  };
   while (true) {
     resume();
     const batch = select(state.work, config.maxConcurrency);
     if (!batch.length) break;
-    if (state.resources.steps >= config.maxSteps) {
-      for (const w of state.work)
-        if (w.status === "ACTIVE" || w.status === "WAITING")
-          block(w, "STEP_BUDGET", "Run step budget exhausted");
-      break;
-    }
+    if (checkpoint("schedule")) break;
     emit("SCHEDULED", state.runId, {
-      work: batch
-        .slice(0, config.maxSteps - state.resources.steps)
-        .map((w) => w.id),
+      work: batch.slice(0, stepLimit - state.resources.steps).map((w) => w.id),
     });
     for (const w of batch) {
-      if (state.resources.steps >= config.maxSteps) break;
+      if (checkpoint(`work:${w.id}`)) break;
       w.resources.steps++;
-      w.resources.tokens += 10;
-      w.resources.cost += 1;
-      w.resources.wallTimeMs += 1;
+      if (!executor.protocol) {
+        w.resources.tokens += 10;
+        w.resources.cost += 1;
+        w.resources.wallTimeMs += 1;
+      }
       state.resources = sumResources(state.work);
       if (
         !executor.protocol &&
@@ -250,6 +298,7 @@ function* simulation(
           !!artifactBackend,
           !!executor.protocol,
         );
+        invocations++;
         const operation = executor.protocol ? yield context : undefined;
         if (operation) emit("EXECUTOR_OPERATION", w.id, operation);
         if (operation && !operation.outcome.ok)
@@ -272,6 +321,11 @@ function* simulation(
           names.some((name) => state.work.some((w) => w.name === name))
         )
           throw new Error("Work names must be unique within a run");
+        if (
+          action.type === "FORK" &&
+          checkpoint(`fork:${w.id}`, action.alternatives.length)
+        )
+          continue;
         if (response) {
           for (const request of response.effects)
             workspaceEffect(w, "COMMIT", request.message);
@@ -375,6 +429,18 @@ function* simulation(
             ? error.reason.code
             : "INVALID_EXECUTOR_ACTION",
           error instanceof Error ? error.message : String(error),
+          error instanceof OperationalFailure && error.reason.stop
+            ? error.reason.stop
+            : executor.protocol
+              ? {
+                  kind: "PROCESS_PROTOCOL_FAILURE",
+                  scope: `work:${w.id}`,
+                  code:
+                    error instanceof OperationalFailure
+                      ? error.reason.code
+                      : "INVALID_EXECUTOR_ACTION",
+                }
+              : undefined,
         );
       }
       emit("RESOURCES", w.id, w.resources);

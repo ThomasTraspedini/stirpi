@@ -8,6 +8,13 @@ import {
 import { simulate } from "../engine/index.js";
 import type { EvaluationOperation } from "../evaluation/index.js";
 export function replay(original: State): State {
+  const supervision = original.events
+    .filter((e) => e.type === "SUPERVISION")
+    .map(
+      (e) =>
+        e.data as import("../supervision/run.js").RunSupervisionObservation,
+    );
+  let supervisionCursor = 0;
   let cursor = 0;
   let invocation = 0;
   let evaluationCursor = 0;
@@ -31,12 +38,14 @@ export function replay(original: State): State {
               ? executor.id
               : (operations[invocation - 1]?.executorId ?? executor.id);
           },
-          execute(context, observe) {
+          execute(context, observe, supervise) {
             const operation = operations[invocation++];
             if (!operation || !isDeepStrictEqual(operation.context, context))
               throw new Error(
                 "Replay mismatch: executor context or outcome missing",
               );
+            for (const record of operation.supervision ?? [])
+              supervise?.(structuredClone(record));
             if (operation.observations) {
               if (
                 !isDeepStrictEqual(
@@ -84,8 +93,16 @@ export function replay(original: State): State {
           },
         }
       : undefined,
+    (input) => {
+      const recorded = supervision[supervisionCursor++];
+      if (!recorded) throw new Error("Replay supervision outcome missing");
+      if (!isDeepStrictEqual({ ...input, stop: recorded.stop }, recorded))
+        throw new Error("Replay supervision context mismatch");
+      return structuredClone(recorded);
+    },
   );
   if (
+    supervisionCursor !== supervision.length ||
     evaluationCursor !== evaluations.length ||
     invocation !== operations.length ||
     cursor !== (original.artifactOperations?.length ?? 0) ||

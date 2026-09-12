@@ -25,7 +25,11 @@ export interface Executor {
   readonly protocol?: 1;
   readonly asynchronous?: boolean;
   readonly id?: string;
-  execute(context: ExecutorContext, observe?: OperationalObserver): unknown;
+  execute(
+    context: ExecutorContext,
+    observe?: OperationalObserver,
+    supervise?: import("../supervision/index.js").SupervisionObserver,
+  ): unknown;
 }
 export class ScriptedExecutor implements Executor {
   constructor(private readonly scripts: Record<string, unknown[]>) {}

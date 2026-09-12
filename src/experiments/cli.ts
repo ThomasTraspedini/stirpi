@@ -16,6 +16,8 @@ export async function experimentCli(args: string[]) {
       "public-evaluator": { type: "string" },
       metadata: { type: "string" },
       steps: { type: "string" },
+      budgets: { type: "string" },
+      supervision: { type: "string" },
       concurrency: { type: "string" },
       "timeout-ms": { type: "string" },
       "private-data": { type: "string" },
@@ -26,7 +28,7 @@ export async function experimentCli(args: string[]) {
   const [command, target] = positionals;
   if (values.help || !command) {
     console.log(
-      "strpi experiment run <manifest> --condition H|S|T --source <local-repo|URL> --executor <config.json> --public-evaluator <config.json> --output <directory> [--metadata config.json] [--steps 100] [--concurrency 1] [--timeout-ms 60000]\nstrpi experiment replay <run-directory>\nstrpi experiment evaluate <run-directory> --private-data <path> --hook <command.json>",
+      "strpi experiment run <manifest> --condition H|S|T --source <local-repo|URL> --executor <config.json> --public-evaluator <config.json> --output <directory> [--metadata config.json] [--steps N] [--budgets config.json] [--supervision config.json] [--concurrency 1] [--timeout-ms 60000]\nstrpi experiment replay <run-directory>\nstrpi experiment evaluate <run-directory> --private-data <path> --hook <command.json>",
     );
     return;
   }
@@ -53,6 +55,8 @@ export async function experimentCli(args: string[]) {
       output: values.output,
       publicEvaluator: read(values["public-evaluator"]),
     };
+    if (values.budgets) options.budgets = read(values.budgets);
+    if (values.supervision) options.supervision = read(values.supervision);
     if (values.metadata) options.metadata = read(values.metadata);
     if (values.steps) options.maxSteps = Number(values.steps);
     if (values.concurrency) options.maxConcurrency = Number(values.concurrency);

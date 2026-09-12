@@ -103,3 +103,63 @@ file, MCP/web tool, agent/reasoning activity and usage when exposed. Native usag
 is sampled at `turn.completed`; undocumented counters are not estimated.
 See [adapter documentation](../adapters/codex/README.md) and
 [smoke observations](../adapters/codex/SMOKE.md) for coverage and limitations.
+
+## Explicit supervision
+
+`Config.budgets` accepts optional `steps`, `invocations`, and `lineages` limits
+at Run scope. `maxSteps` remains a compatibility alias for `budgets.steps`;
+providing both is an error. The engine API and experiment runner have no default
+step budget. The simulation CLI may explicitly configure its demonstration limit.
+Run checks happen at scheduling/admission boundaries. A completed final step may
+finish normally; another step is refused once the budget is reached. FORK is
+indivisible: if all children cannot fit, admission stops before any child or
+artifact effect is created. Evidence includes actual lineage consumption and the
+requested additional count; uncreated children are not counted as consumption.
+
+`ProcessOptions.supervision` accepts, for example:
+
+```json
+{
+  "budgets": { "items": 200, "commands": 80, "wallTimeMs": 600000 },
+  "noProgressMs": 90000
+}
+```
+
+Every field is optional. No wall timer or no-progress timer runs when neither is
+configured. `timeoutMs` is a compatibility alias for an explicit invocation
+wall-time budget; it cannot be combined with `budgets.wallTimeMs`.
+
+The watchdog owns one ExecutorInvocation. Structured item/command lifecycle
+progress resets it; output bytes, deltas, and duplicate lifecycle events do not.
+Codex does not expose independently owned/cancellable model or nested subprocess
+scopes, so this layer does not construct watchdogs for them. Monotonic elapsed
+time measures deadlines; telemetry timestamps remain audit evidence.
+
+Items and commands count distinct observed scope identities, using the same item
+kinds as the operational summary. A command also counts as an item. The count
+includes items first observed at completion or update when start telemetry is
+missing. Reaching a configured count stops the invocation immediately. These are
+observed counts, not estimates of unreported activity; opaque executors cannot
+provide precise item/command enforcement. Tokens remain recorded usage telemetry,
+including usage arriving only at Codex turn completion. There is no live token
+budget or estimated token/cost consumption for real executors.
+
+`Reason.stop` distinguishes `CALLER_CANCELLED`, `NO_PROGRESS`,
+`RESOURCE_EXHAUSTED`, and `PROCESS_PROTOCOL_FAILURE`, while preserving existing
+specific diagnostic codes. Stops block work operationally and do not falsify
+lineage assumptions. The first stop cause is retained through process cleanup.
+Resource evidence contains scope, resource, budget, and observed consumption;
+no-progress evidence contains scope, last progress sequence (null before any
+progress), elapsed duration, and configured limit.
+
+`EXECUTOR_OPERATION.supervision` persists invocation policy and measurement
+snapshots, including latest progress, usage and stop evidence. Run `SUPERVISION`
+events persist admission measurements and outcomes. These records are included in
+SQLite and JSON evidence. Experiment runs accept `--budgets <json>` and
+`--supervision <json>` (or the corresponding `RunOptions` fields), save policy in
+metadata, and append live supervision snapshots to `invocations.jsonl` so partial
+runs remain inspectable. Replay consumes these recorded observations and outcomes;
+it never creates watchdogs, consumes resource budgets again, or starts executors.
+
+This layer does not implement repetition guards, state fingerprints or cycle
+classification.

@@ -65,6 +65,8 @@ for (const signal of ["SIGTERM", "SIGINT"])
 
 function run(executable, args, options) {
   return new Promise((resolve) => {
+    const started = performance.now();
+    let exhaustedAt;
     child = spawn(executable, args, {
       cwd: options.cwd,
       env: options.env,
@@ -80,6 +82,7 @@ function run(executable, args, options) {
         ? undefined
         : setTimeout(() => {
             error = "AGENT_WALL_TIME_EXHAUSTED";
+            exhaustedAt = Math.floor(performance.now() - started);
             kill();
           }, options.timeout);
     const collect = (which, chunk) => {
@@ -116,6 +119,14 @@ function run(executable, args, options) {
       if (error === "AGENT_CANCELLED" || error === "AGENT_WALL_TIME_EXHAUSTED")
         emit({
           kind: "termination",
+          ...(error === "AGENT_WALL_TIME_EXHAUSTED"
+            ? {
+                metadata: {
+                  budgetMs: options.timeout,
+                  durationMs: exhaustedAt,
+                },
+              }
+            : {}),
           status:
             error === "AGENT_CANCELLED" ? "cancelled" : "resource_exhausted",
         });

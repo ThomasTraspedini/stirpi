@@ -22,6 +22,7 @@ export interface ExecutorResponse {
   text?: string;
 }
 export interface ExecutorOperation {
+  supervision?: import("../supervision/index.js").SupervisionObservation[];
   observations?: OperationalEvent[];
   executorId: string;
   context: ExecutorContext;
@@ -29,12 +30,15 @@ export interface ExecutorOperation {
 }
 function operation(executor: Executor, context: ExecutorContext) {
   const observations: OperationalEvent[] = [];
+  const supervision: import("../supervision/index.js").SupervisionObservation[] =
+    [];
   let channel: OperationalChannel | undefined;
   const finish = (outcome: ExecutorOperation["outcome"]): ExecutorOperation =>
     structuredClone({
       executorId: executor.id ?? "external",
       context,
       outcome,
+      ...(supervision.length ? { supervision } : {}),
       ...(observations.length ? { observations } : {}),
     });
   const fail = (error: unknown) =>
@@ -49,28 +53,32 @@ function operation(executor: Executor, context: ExecutorContext) {
             },
     });
   const execute = () =>
-    executor.execute(structuredClone(context), (event) => {
-      const id =
-        typeof event?.invocationId === "string"
-          ? event.invocationId
-          : "unspecified";
-      const safeId =
-        /^(?:[a-f0-9]{64}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/.test(
-          id,
-        )
-          ? id
-          : hash(id);
-      channel ??= new OperationalChannel(safeId, (value) =>
-        observations.push(value),
-      );
-      const timestamp =
-        typeof event?.timestamp === "string" &&
-        event.timestamp.length <= 32 &&
-        Number.isFinite(Date.parse(event.timestamp))
-          ? new Date(event.timestamp).toISOString()
-          : new Date().toISOString();
-      channel.emit(event, timestamp);
-    });
+    executor.execute(
+      structuredClone(context),
+      (event) => {
+        const id =
+          typeof event?.invocationId === "string"
+            ? event.invocationId
+            : "unspecified";
+        const safeId =
+          /^(?:[a-f0-9]{64}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/.test(
+            id,
+          )
+            ? id
+            : hash(id);
+        channel ??= new OperationalChannel(safeId, (value) =>
+          observations.push(value),
+        );
+        const timestamp =
+          typeof event?.timestamp === "string" &&
+          event.timestamp.length <= 32 &&
+          Number.isFinite(Date.parse(event.timestamp))
+            ? new Date(event.timestamp).toISOString()
+            : new Date().toISOString();
+        channel.emit(event, timestamp);
+      },
+      (record) => supervision.push(structuredClone(record)),
+    );
   return { finish, fail, execute };
 }
 export function invoke(

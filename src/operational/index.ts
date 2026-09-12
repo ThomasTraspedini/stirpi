@@ -43,6 +43,7 @@ const numeric = new Set([
   "bytes",
   "exitCode",
   "durationMs",
+  "budgetMs",
   "files",
   "inputTokens",
   "cachedInputTokens",
