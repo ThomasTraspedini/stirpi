@@ -1,6 +1,9 @@
 import { assertRuntimeCheckout } from "../src/experiments/runtime-identity.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import {
   mkdtempSync,
   cpSync,
@@ -901,7 +904,7 @@ test("committed later preregistration executes pinned runtime and retains both i
       runFile,
       readFileSync(runFile, "utf8").replace(
         "return { directory, result, state };",
-        'writeFileSync(join(directory, "pinned-marker"), "pinned runtime executed");\n  return { directory, result, state };',
+        'writeFileSync(join(directory, "pinned-marker"), "pinned runtime executed");\n  writeFileSync(join(directory, "pinned-environment.json"), JSON.stringify({ nodePath: process.env.NODE_PATH ?? null, status: git(process.cwd(), "status", "--porcelain", "--untracked-files=all", "--ignored") }));\n  return { directory, result, state };',
       ),
     );
     git(repository, "add", ".");
@@ -933,9 +936,49 @@ test("committed later preregistration executes pinned runtime and retains both i
     const containingCommit = git(repository, "rev-parse", "HEAD");
     const base: RunOptions = f.options("T");
     delete base.maxSteps;
-    const run = await runExperiment({ ...base, preregistration });
+    // Exercise the external compiled launcher, with no dependencies in its tree.
+    const externalBuild = join(f.dir, "external-build");
+    const require = createRequire(import.meta.url);
+    execFileSync(process.execPath, [
+      require.resolve("typescript/bin/tsc"),
+      "--project",
+      resolve("tsconfig.json"),
+      "--outDir",
+      externalBuild,
+    ]);
+    writeFileSync(join(externalBuild, "package.json"), '{"type":"module"}');
+    const entry = join(f.dir, "launch.mjs");
+    writeFileSync(
+      entry,
+      `
+      import { runExperiment } from ${JSON.stringify(pathToFileURL(join(externalBuild, "experiments/run.js")).href)};
+      console.log(JSON.stringify(await runExperiment(${JSON.stringify({ ...base, preregistration })})));
+    `,
+    );
+    const run = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [resolve("tools/launch-pinned-runtime.mjs"), entry],
+        { cwd: repository, env: { PATH: process.env.PATH }, encoding: "utf8" },
+      ),
+    );
     assert.equal(run.result.error, null);
     assert.ok(run.result.resources.executorInvocations > 0);
+    assert.deepEqual(json(join(run.directory, "pinned-environment.json")), {
+      nodePath: null,
+      status: "",
+    });
+    assert.equal(existsSync(join(repository, "node_modules")), false);
+    assert.equal(existsSync(join(externalBuild, "node_modules")), false);
+    const returned = calls(run.directory).filter(
+      (call) => call.type === "returned",
+    );
+    assert.ok(returned.length > 0);
+    for (const call of returned)
+      assert.equal(
+        JSON.parse(call.response.text).envKeys.includes("NODE_PATH"),
+        false,
+      );
     assert.equal(
       readFileSync(join(run.directory, "pinned-marker"), "utf8"),
       "pinned runtime executed",

@@ -223,6 +223,22 @@ The pinned revision must provide the experiment run API. Its policy validation
 and execution semantics remain authoritative. Unpinned fixture pilots retain the
 local execution path.
 
+When launching an externally compiled runtime, use the wrapper in the active
+Stirpi source checkout:
+
+```sh
+node /path/to/stirpi/tools/launch-pinned-runtime.mjs /path/to/external/build/cli/index.js experiment run ...
+```
+
+The wrapper derives `node_modules` relative to its own source-checkout location,
+independently of the working directory. It replaces inherited `NODE_PATH` for
+the outer Node process and first verifies that `typescript/bin/tsc` and
+`@types/node/package.json` resolve within that dependency tree from the relocated
+launcher. Missing dependencies fail before launcher execution or runtime
+compilation. The wrapper does not install dependencies or write to the pinned
+checkout. The pinned launcher's compiler and runtime children retain their
+existing PATH-only environments; executors do not receive `NODE_PATH`.
+
 The original preregistration is snapshotted as external input, along with its
 explicitly referenced public evaluator file (which must stay within the input
 repository). It need not exist in the runtime checkout. Testcase source Git
