@@ -30,13 +30,32 @@ export const nativeType = (v: unknown): v is string =>
   v.length <= 80 &&
   /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,3}$/.test(v);
 export function diagnosticMetadata(key: string, value: unknown): boolean {
+  if (key === "diagnosticCategory")
+    return (
+      typeof value === "string" &&
+      [
+        "AUTHENTICATION",
+        "AUTHORIZATION",
+        "RATE_OR_USAGE_LIMIT",
+        "MODEL_UNAVAILABLE",
+        "PROVIDER_SERVER",
+        "NETWORK_CONNECTION",
+        "RESPONSE_STREAM_DISCONNECTED",
+        "TIMEOUT",
+        "FILESYSTEM_STATE_PERMISSION",
+        "OTHER",
+      ].includes(value)
+    );
+  if (key === "classificationSource")
+    return value === "codex-exec-bounded-message-v1";
+  if (key === "classifierVersionSupported") return typeof value === "boolean";
   if (key === "nativeType") return nativeType(value);
   if (key.startsWith("error_") && key in enums)
     return typeof value === "string" && errorCategories.includes(value);
   if (key === "eventClass") return enums.eventClass!.includes(value as string);
   if (["retry", "retryable", "structuredCategoryAvailable"].includes(key))
     return typeof value === "boolean";
-  if (["http_status", "status_code"].includes(key))
+  if (["http_status", "status_code", "messageDerivedHttpStatus"].includes(key))
     return (
       Number.isInteger(value) && Number(value) >= 100 && Number(value) <= 599
     );

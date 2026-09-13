@@ -171,3 +171,9 @@ recorded. Config presence and ignored policy, state permissions (mode and access
 checks), and placement categories are retained before adapter state cleanup.
 Placement is unchanged. Requested GPT model names are retained when validated;
 other model identifiers are omitted at the process boundary.
+
+Message-only exec errors additionally use the [versioned bounded classifier](error-classifier.md).
+Only derived category/source/version-support and strictly validated
+`messageDerivedHttpStatus` fields are retained alongside existing message size/hash.
+Unsupported versions produce OTHER. Classification does not change lifecycle,
+progress, evaluation or retry behavior.

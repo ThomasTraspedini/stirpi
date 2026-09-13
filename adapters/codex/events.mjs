@@ -48,7 +48,8 @@ export class CodexEvents {
   turnOpen = false;
   durations = new Map();
   started = new Map();
-  constructor(emit, limit = 1024 * 1024) {
+  constructor(emit, limit = 1024 * 1024, version) {
+    this.version = version;
     this.emit = emit;
     this.limit = limit;
   }
@@ -114,10 +115,16 @@ export class CodexEvents {
       this.malformed(type);
       return;
     }
-    this.counts.recognized++;
-    const metadata = { nativeType: type, eventClass: "recognized" };
-    if (type === "error" || type === "turn.failed")
-      Object.assign(metadata, errorFields(event));
+    const malformedMessage =
+      (type === "error" && typeof event.message !== "string") ||
+      (type === "turn.failed" &&
+        (Array.isArray(event.error) ||
+          typeof event.error?.message !== "string"));
+    const eventClass = malformedMessage ? "malformed" : "recognized";
+    this.counts[eventClass]++;
+    const metadata = { nativeType: type, eventClass };
+    if (!malformedMessage && (type === "error" || type === "turn.failed"))
+      Object.assign(metadata, errorFields(event, this.version));
     if ((type === "error" || type === "turn.failed") && this.errors.length < 32)
       this.errors.push({ ...metadata });
     if (/^(thread|turn|item)\./.test(type))

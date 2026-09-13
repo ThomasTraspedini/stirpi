@@ -283,6 +283,7 @@ try {
   record.version = /^codex-cli [\w.+-]+\s*$/.test(version.stdout)
     ? version.stdout.trim()
     : null;
+  events.version = record.version;
   const schemaFile = join(temporary, "response-schema.json"),
     responseFile = join(temporary, "response.json");
   writeFileSync(schemaFile, JSON.stringify(responseSchema), { mode: 0o600 });

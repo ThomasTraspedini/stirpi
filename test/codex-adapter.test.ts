@@ -447,3 +447,77 @@ test("outer cancellation reaches the adapter's detached Codex scope and retains 
     f.close();
   }
 });
+
+test("message-classified errors cross the process boundary without ending semantic execution", async () => {
+  const f = fixture();
+  try {
+    const child = join(f.dir, "diagnostic-codex.mjs");
+    writeFileSync(
+      child,
+      `#!/usr/bin/env node
+      import {writeFileSync} from 'node:fs';
+      if (process.argv.includes('--version')) { console.log('codex-cli 0.154.0-alpha.6.2'); process.exit(0); }
+      console.log(JSON.stringify({type:'thread.started',thread_id:'fixture'}));
+      console.log(JSON.stringify({type:'turn.started'}));
+      for (const event of [
+        {type:'error',message:'unexpected status 429 Too Many Requests: raw-credential-sentinel'},
+        {type:'turn.failed',error:{message:'Connection failed: raw-credential-sentinel'}}
+      ]) console.log(JSON.stringify(event));
+      console.log(JSON.stringify({type:'turn.started'}));
+      console.log(JSON.stringify({type:'turn.completed'}));
+      writeFileSync(process.argv[process.argv.indexOf('--output-last-message')+1], JSON.stringify({version:1,action:{type:'COMPLETE',result:'done'},effects:[],text:''}));
+    `,
+      { mode: 0o755 },
+    );
+    const observations: import("../src/executor/process.js").ProcessObservation[] =
+      [];
+    const events: import("../src/operational/index.js").OperationalEvent[] = [];
+    const executor = new ProcessExecutor(
+      { executable: process.execPath, args: [adapter, "--codex", child] },
+      {
+        observe: (o) => observations.push(o),
+        observeEvent: (e) => events.push(e),
+      },
+    );
+    const state = await simulate(
+      {
+        name: "error-diagnostics",
+        objective: "Return done without edits",
+        publicEvaluation: { description: "done", criteria: ["done"] },
+        hiddenEvaluation: { requiredText: "done" },
+        scripts: {},
+      },
+      undefined,
+      executor,
+      undefined,
+      undefined,
+      new GitWorkspaceBackend(f.repo),
+    );
+    assert.equal(state.status, "COMPLETED");
+    assert.deepEqual(replay(state), state);
+    const errors = events.filter((e) => e.metadata?.diagnosticCategory);
+    assert.deepEqual(
+      errors.map((e) => e.metadata?.diagnosticCategory),
+      ["RATE_OR_USAGE_LIMIT", "NETWORK_CONNECTION"],
+    );
+    assert.deepEqual(errors[0]?.categories, ["activity"]);
+    const persisted = join(f.dir, "persisted.json");
+    writeFileSync(persisted, JSON.stringify({ state, observations, events }));
+    assert.equal(
+      readFileSync(persisted, "utf8").includes("raw-credential-sentinel"),
+      false,
+    );
+    assert.equal(
+      observations[0]?.adapterDiagnostics?.errors instanceof Array,
+      true,
+    );
+    for (const w of state.work)
+      if (w.artifact?.worktree)
+        rmSync(join(w.artifact.worktree, ".."), {
+          recursive: true,
+          force: true,
+        });
+  } finally {
+    f.close();
+  }
+});

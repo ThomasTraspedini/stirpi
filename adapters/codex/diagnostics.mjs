@@ -1,3 +1,4 @@
+import { classifyErrorMessage } from "./error-classifier.mjs";
 import { createHash } from "node:crypto";
 import { accessSync, constants, statSync } from "node:fs";
 export const nativeType = (v) =>
@@ -25,9 +26,15 @@ const categories = new Set([
   "model_not_found",
   "bad_request",
 ]);
-export function errorFields(event) {
+export function errorFields(event, version) {
   const source =
-    event.error && typeof event.error === "object" ? event.error : event;
+    event.type === "turn.failed"
+      ? event.error &&
+        typeof event.error === "object" &&
+        !Array.isArray(event.error)
+        ? event.error
+        : {}
+      : event;
   const result = {};
   for (const key of ["code", "category", "type"])
     if (categories.has(source[key])) result[`error_${key}`] = source[key];
@@ -55,6 +62,7 @@ export function errorFields(event) {
         .update(source[key])
         .digest("hex");
   if (typeof source.message === "string") {
+    Object.assign(result, classifyErrorMessage(source.message, version));
     result.messageBytes = Buffer.byteLength(source.message);
     result.messageHash = createHash("sha256")
       .update(source.message)
