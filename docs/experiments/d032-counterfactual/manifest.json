@@ -1,0 +1,13 @@
+{
+  "id": "booking-invariants-d032-counterfactual-001",
+  "sourceRepository": "ThomasTraspedini/booking-invariants",
+  "sourceCommit": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+  "taskFile": "task.txt",
+  "taskSha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1",
+  "publicEvaluatorFile": "../d032/public-evaluator-v2.json",
+  "publicEvaluatorSha256": "9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1",
+  "historicalTestcase": "booking-invariants-d032-001",
+  "historicalTaskFile": "../d032/task.txt",
+  "historicalTaskSha256": "cd3f96130ae313eaf212b5b643afdcd0cf0c620e904356278f54aa96b02b840e",
+  "intentionalTaskSemanticChange": "The only intentional task-level semantic change is removal of the historical mandatory-stop instruction for a new lock-order protocol. No replacement guidance or positive branching instruction is introduced."
+}
