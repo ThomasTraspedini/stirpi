@@ -1,5 +1,6 @@
 import type { OperationalObserver } from "../operational/index.js";
 import type { Artifact } from "../artifacts/index.js";
+import type { VerificationEvidence } from "../verification/index.js";
 import type {
   Action,
   PublicCriteria,
@@ -12,6 +13,10 @@ export interface ExecutorContext {
   work: Readonly<WorkUnit>;
   dna: readonly string[];
   publicEvaluation: PublicCriteria;
+  verification?: {
+    available: string[];
+    latest: VerificationEvidence[];
+  };
   results: {
     artifacts?: string[];
     artifact?: Artifact;

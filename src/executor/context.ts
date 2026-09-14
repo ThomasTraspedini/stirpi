@@ -1,5 +1,6 @@
 import { dna, type State, type WorkUnit } from "../domain/index.js";
 import type { ExecutorContext } from "./index.js";
+import type { VerificationEvidence } from "../verification/index.js";
 
 // Explicitly project local state; never serialize the full run or genealogy.
 export function executorContext(
@@ -7,6 +8,7 @@ export function executorContext(
   work: WorkUnit,
   artifacts: boolean,
   protocol: boolean,
+  verification?: { available: string[]; latest: VerificationEvidence[] },
 ): ExecutorContext {
   return structuredClone({
     ...(protocol
@@ -15,6 +17,9 @@ export function executorContext(
     work,
     dna: dna(state, work.lineageId),
     publicEvaluation: state.scenario.publicEvaluation,
+    ...(protocol && verification
+      ? { verification: structuredClone(verification) }
+      : {}),
     results: state.work
       .filter((c) => c.parentId === work.id)
       .map((c) => ({

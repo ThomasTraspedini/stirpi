@@ -18,7 +18,9 @@ export class OperationalFailure extends Error {
 export interface ExecutorResponse {
   version: 1;
   action: Action;
-  effects: { type: "COMMIT"; message: string }[];
+  effects: (
+    { type: "COMMIT"; message: string } | { type: "VERIFY"; id: string }
+  )[];
   text?: string;
 }
 export interface ExecutorOperation {
@@ -108,7 +110,10 @@ export async function invokeAsync(
     return op.fail(error);
   }
 }
-export function validateResponse(value: unknown): ExecutorResponse {
+export function validateResponse(
+  value: unknown,
+  verificationIds?: readonly string[],
+): ExecutorResponse {
   const fail = (message: string): never => {
     throw new OperationalFailure({
       code: "INVALID_EXECUTOR_RESPONSE",
@@ -141,20 +146,44 @@ export function validateResponse(value: unknown): ExecutorResponse {
     return fail("Unknown or executor-owned artifact field in action");
   if (action.type === "COMPLETE" && action.artifacts !== undefined)
     return fail("Canonical artifacts are assigned by Stirpi");
-  if (
-    !Array.isArray(v.effects) ||
-    !v.effects.every(
-      (e) =>
-        e &&
-        typeof e === "object" &&
-        !Array.isArray(e) &&
-        e.type === "COMMIT" &&
-        typeof e.message === "string" &&
-        e.message.trim() &&
-        Object.keys(e).every((k) => ["type", "message"].includes(k)),
+  if (!Array.isArray(v.effects)) return fail("effects must be an array");
+  const verifies = v.effects.filter(
+    (effect) =>
+      effect &&
+      typeof effect === "object" &&
+      !Array.isArray(effect) &&
+      (effect as Record<string, unknown>).type === "VERIFY",
+  );
+  if (verifies.length > 1)
+    return fail("At most one VERIFY effect is permitted");
+  for (const effect of v.effects) {
+    if (!effect || typeof effect !== "object" || Array.isArray(effect))
+      return fail("Invalid effect");
+    const e = effect as Record<string, unknown>;
+    if (
+      e.type === "COMMIT" &&
+      typeof e.message === "string" &&
+      e.message.trim() &&
+      Object.keys(e).every((k) => ["type", "message"].includes(k))
     )
-  )
-    return fail("effects must contain only COMMIT requests with messages");
+      continue;
+    if (
+      e.type === "VERIFY" &&
+      typeof e.id === "string" &&
+      e.id.trim() &&
+      Object.keys(e).every((k) => ["type", "id"].includes(k))
+    ) {
+      if (action.type !== "CONTINUE")
+        return fail("VERIFY is valid only with CONTINUE");
+      if (verificationIds && !verificationIds.includes(e.id))
+        throw new OperationalFailure({
+          code: "UNKNOWN_VERIFICATION_ID",
+          message: `Unknown verification ID: ${e.id}`,
+        });
+      continue;
+    }
+    return fail("effects must contain only valid COMMIT or VERIFY requests");
+  }
   if (v.text !== undefined && typeof v.text !== "string")
     return fail("text must be a string");
   return structuredClone(value) as ExecutorResponse;

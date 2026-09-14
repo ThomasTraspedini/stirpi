@@ -7,6 +7,10 @@ import {
 } from "../executor/protocol.js";
 import { simulate } from "../engine/index.js";
 import type { EvaluationOperation } from "../evaluation/index.js";
+import type {
+  VerificationExecutor,
+  VerificationOperation,
+} from "../verification/index.js";
 export function replay(original: State): State {
   const supervision = original.events
     .filter((e) => e.type === "SUPERVISION")
@@ -18,6 +22,33 @@ export function replay(original: State): State {
   let cursor = 0;
   let invocation = 0;
   let evaluationCursor = 0;
+  let verificationCursor = 0;
+  const verifications = original.events
+    .filter((e) => e.type === "VERIFICATION_OPERATION")
+    .map((e) => e.data as VerificationOperation);
+  const verifier: VerificationExecutor | undefined = verifications.length
+    ? {
+        available() {
+          return [...new Set(verifications.map((v) => v.request.id))];
+        },
+        perform(id, workId) {
+          const operation = verifications[verificationCursor++];
+          if (
+            !operation ||
+            operation.request.id !== id ||
+            operation.request.workId !== workId
+          )
+            throw new Error(
+              "Replay mismatch: verification request differs or outcome missing",
+            );
+          if (!/^[a-f0-9]{64}$/.test(operation.request.workspaceDigest))
+            throw new Error(
+              "Replay mismatch: verification workspace digest is invalid",
+            );
+          return structuredClone(operation);
+        },
+      }
+    : undefined;
   const evaluations = original.events
     .filter((e) => e.type === "EVALUATION_OPERATION")
     .map((e) => e.data as EvaluationOperation);
@@ -100,12 +131,14 @@ export function replay(original: State): State {
         throw new Error("Replay supervision context mismatch");
       return structuredClone(recorded);
     },
+    verifier,
   );
   if (
     supervisionCursor !== supervision.length ||
     evaluationCursor !== evaluations.length ||
     invocation !== operations.length ||
     cursor !== (original.artifactOperations?.length ?? 0) ||
+    verificationCursor !== verifications.length ||
     !isDeepStrictEqual(original, replayed)
   )
     throw new Error(

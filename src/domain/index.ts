@@ -1,4 +1,5 @@
 import type { Artifact, ArtifactOperation } from "../artifacts/index.js";
+import type { VerificationOperation } from "../verification/index.js";
 export type LineageStatus =
   "ACTIVE" | "WAITING" | "BLOCKED" | "BRANCHED" | "DEAD" | "COMPLETED";
 // M0 run aggregation only produces these states.
@@ -96,6 +97,7 @@ export interface Event {
 }
 export interface State extends RunIdentity {
   artifactOperations?: ArtifactOperation[];
+  verificationOperations?: VerificationOperation[];
   status: RunStatus;
   reason: Reason | null;
   scenario: Scenario;

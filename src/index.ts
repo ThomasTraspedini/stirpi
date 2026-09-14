@@ -11,6 +11,7 @@ export * from "./artifacts/git.js";
 export * from "./executor/process.js";
 export * from "./executor/protocol.js";
 export * from "./artifacts/workspaces.js";
+export * from "./verification/index.js";
 
 export * from "./evaluation/commands.js";
 export * from "./evaluation/process.js";

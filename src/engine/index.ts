@@ -27,6 +27,10 @@ import {
 import { artifactEffects } from "./artifact-effects.js";
 import { executorContext } from "../executor/context.js";
 import { select } from "../scheduler/index.js";
+import type {
+  VerificationEvidence,
+  VerificationExecutor,
+} from "../verification/index.js";
 function* simulation(
   scenario: Scenario,
   config: Config = { maxConcurrency: 1 },
@@ -35,6 +39,7 @@ function* simulation(
   identity: RunIdentity = { taskId: `task:${scenario.name}`, runId: "run" },
   artifactBackend?: ArtifactBackend,
   supervisionEffect: RunSupervisionEffect = superviseRun,
+  verificationRuntime?: VerificationExecutor,
 ): Generator<
   import("../executor/index.js").ExecutorContext,
   State,
@@ -183,6 +188,14 @@ function* simulation(
     } else block(state.work[0]!, outcome.reason.code, outcome.reason.message);
   }
   const artifactAttempted = new Set<string>();
+  const verificationEvidence = new Map<string, VerificationEvidence[]>();
+  const latestVerification = (workId: string) => {
+    const latest = new Map<string, VerificationEvidence>();
+    for (const operation of state.verificationOperations ?? [])
+      if (operation.request.workId === workId && operation.outcome.ok)
+        latest.set(operation.outcome.evidence.id, operation.outcome.evidence);
+    return [...latest.values()];
+  };
   const resume = () => {
     for (const w of state.work)
       if (
@@ -297,14 +310,24 @@ function* simulation(
           w,
           !!artifactBackend,
           !!executor.protocol,
+          verificationRuntime
+            ? {
+                available: verificationRuntime.available(),
+                latest: verificationEvidence.get(w.id) ?? [],
+              }
+            : undefined,
         );
+        const deliveredVerification = verificationEvidence.has(w.id);
         invocations++;
         const operation = executor.protocol ? yield context : undefined;
         if (operation) emit("EXECUTOR_OPERATION", w.id, operation);
         if (operation && !operation.outcome.ok)
           throw new OperationalFailure(operation.outcome.reason);
         const response = operation?.outcome.ok
-          ? validateResponse(operation.outcome.response)
+          ? validateResponse(
+              operation.outcome.response,
+              verificationRuntime?.available(),
+            )
           : undefined;
         const action =
           response?.action ?? validateAction(executor.execute(context));
@@ -328,7 +351,8 @@ function* simulation(
           continue;
         if (response) {
           for (const request of response.effects)
-            workspaceEffect(w, "COMMIT", request.message);
+            if (request.type === "COMMIT")
+              workspaceEffect(w, "COMMIT", request.message);
           if (w.artifact && ["FORK", "SPAWN", "COMPLETE"].includes(action.type))
             workspaceEffect(w, "CHECK");
         }
@@ -368,6 +392,35 @@ function* simulation(
         }
         w.cursor++;
         emit("ACTION", w.id, action);
+        if (response) {
+          const request = response.effects.find(
+            (effect) => effect.type === "VERIFY",
+          );
+          if (request) {
+            if (
+              !verificationRuntime ||
+              !w.artifact?.worktree ||
+              w.artifact.cleaned
+            )
+              throw new OperationalFailure({
+                code: "WORKSPACE_REQUIRED",
+                message:
+                  "VERIFY requires an active assigned workspace and verifier",
+              });
+            const verification = verificationRuntime.perform(
+              request.id,
+              w.id,
+              w.artifact.worktree,
+            );
+            (state.verificationOperations ??= []).push(
+              structuredClone(verification),
+            );
+            emit("VERIFICATION_OPERATION", w.id, verification);
+            if (!verification.outcome.ok)
+              throw new OperationalFailure(verification.outcome.reason);
+            verificationEvidence.set(w.id, latestVerification(w.id));
+          }
+        }
         switch (action.type) {
           case "CONTINUE":
             w.queue = state.nextQueue++;
@@ -421,6 +474,8 @@ function* simulation(
             break;
         }
         sync(w);
+        // Evidence is a one-invocation delivery, not permanent executor memory.
+        if (deliveredVerification) verificationEvidence.delete(w.id);
       } catch (error) {
         w.cursor++;
         block(
