@@ -1,3 +1,10 @@
+import {
+  TrustedPreparation,
+  bookingPreparation,
+  executorEnvironment,
+  type PreparationConfig,
+  type TrustedProcess,
+} from "./preparation.js";
 import { environmentEvidence } from "../operational/diagnostics.js";
 import {
   validatePolicy,
@@ -45,6 +52,7 @@ import { runPinnedRuntime } from "./runtime-identity.js";
 import { preregisteredOptions } from "./preregistration.js";
 
 export interface RunOptions {
+  preparation?: PreparationConfig;
   preregistration?: string;
   evaluatorWallTimeMs?: number;
   manifest: string;
@@ -82,7 +90,10 @@ export async function runExperiment(
   return runExperimentLocally(options);
 }
 
-export async function runExperimentLocally(options: RunOptions) {
+export async function runExperimentLocally(
+  options: RunOptions,
+  preparationProcess?: TrustedProcess,
+) {
   const frozen = frozenInput(options.manifest);
   const preflight = preregisteredOptions(options, frozen.manifest.id);
   const { signal, observeEvent, ...configuration } = preflight.options;
@@ -257,17 +268,25 @@ export async function runExperimentLocally(options: RunOptions) {
   let state: State | undefined;
   let error: string | null = null;
   let archive: string | undefined;
+  const preparationPath = join(directory, "preparation.json");
+  const preparationConfig =
+    options.preparation ??
+    (frozen.manifest.sourceRepository === "ThomasTraspedini/booking-invariants"
+      ? bookingPreparation
+      : undefined);
+  const preparation = preparationConfig
+    ? new TrustedPreparation(
+        preparationConfig,
+        () => save(preparationPath, preparation!.records),
+        preparationProcess,
+      )
+    : undefined;
+  if (preparation) save(preparationPath, preparation.records);
   try {
     archive = prepareSource(options.source, directory, frozen.manifest);
     const home = join(directory, "executor-home");
     mkdirSync(home);
-    const environment = {
-      PATH: process.env.PATH,
-      LANG: "C.UTF-8",
-      TZ: "UTC",
-      HOME: home,
-      TMPDIR: home,
-    };
+    const environment = executorEnvironment(home);
     const executor = {
       protocol: 1 as const,
       id: options.executor.id ?? options.executor.executable,
@@ -286,6 +305,7 @@ export async function runExperimentLocally(options: RunOptions) {
           for (const ref of child.artifacts ?? []) {
             transfer(archive!, context.work.artifact!.worktree!, ref);
           }
+        if (preparation) preparation.prepare(context.work.artifact!.worktree!);
         const localHome = join(home, context.work.id);
         mkdirSync(localHome, { recursive: true });
         const index = ++invocations;
@@ -414,6 +434,10 @@ export async function runExperimentLocally(options: RunOptions) {
         evaluatorTimeoutMs,
         evaluations,
         () => save(evaluationPath, evaluations),
+        preparation
+          ? (workspace, check) =>
+              preparation.verificationEnvironment(workspace, check, environment)
+          : undefined,
       ),
       { taskId: frozen.manifest.id, runId },
       {
@@ -485,6 +509,11 @@ export async function runExperimentLocally(options: RunOptions) {
   } catch (failure) {
     error = failure instanceof Error ? failure.message : String(failure);
   }
+  try {
+    preparation?.cleanup();
+  } catch (failure) {
+    error = failure instanceof Error ? failure.message : String(failure);
+  }
   const completedAt = new Date().toISOString();
   const humanRequests =
     state?.work.filter((w) => w.reason?.code === "HUMAN_DECISION_REQUIRED") ??
@@ -536,6 +565,10 @@ export async function runExperimentLocally(options: RunOptions) {
       supplied: 0,
     },
     evidence: {
+      preparation: preparation ? "preparation.json" : null,
+      preparationSha256: preparation
+        ? sha256(readFileSync(preparationPath))
+        : null,
       preflight: preflight.evidence ? "preflight.json" : null,
       invocations: "invocations.jsonl",
       operational: "operational.jsonl",

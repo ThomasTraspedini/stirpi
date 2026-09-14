@@ -68,6 +68,10 @@ export function runtimeEvaluator(
   timeout: number | undefined,
   records: EvaluationRecord[],
   save: () => void,
+  checkEnvironment?: (
+    workspace: string,
+    check: import("../evaluation/commands.js").PublicCheck,
+  ) => NodeJS.ProcessEnv,
 ): Evaluator {
   validatePublicEvaluator(config);
   return {
@@ -84,9 +88,14 @@ export function runtimeEvaluator(
       try {
         const evaluator =
           config.checks !== undefined
-            ? new CommandChecksEvaluator(config, env, timeout, (check) => {
-                record.checks.push(check);
-              })
+            ? new CommandChecksEvaluator(
+                config,
+                checkEnvironment ?? env,
+                timeout,
+                (check) => {
+                  record.checks.push(check);
+                },
+              )
             : new ProcessEvaluator(
                 config.command,
                 cwd,
@@ -113,6 +122,17 @@ export function runtimeEvaluator(
   };
 }
 export function replayExperiment(directory: string) {
+  const resultPath = join(directory, "result.json");
+  if (existsSync(resultPath)) {
+    const result = JSON.parse(readFileSync(resultPath, "utf8"));
+    if (result.evidence?.preparation) {
+      const bytes = readFileSync(join(directory, "preparation.json"));
+      if (sha256(bytes) !== result.evidence.preparationSha256)
+        throw new Error("Replay preparation evidence mismatch");
+      // Evidence is an observation, never a request to repeat external effects.
+      JSON.parse(bytes.toString());
+    }
+  }
   const metadata = JSON.parse(
     readFileSync(join(directory, "metadata.json"), "utf8"),
   );

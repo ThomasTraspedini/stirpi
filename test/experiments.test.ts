@@ -1129,3 +1129,67 @@ test("executor identity pins gate experiment launch before output creation", asy
     f.close();
   }
 });
+
+test("preparation gates executor launch and replay never repeats trusted effects", async () => {
+  const { runExperimentLocally } = await import("../src/experiments/run.js");
+  const { bookingPreparation } =
+    await import("../src/experiments/preparation.js");
+  const f = fixture();
+  try {
+    git(f.source, "checkout", "--detach", f.base);
+    writeFileSync(
+      join(f.source, "package.json"),
+      '{"name":"fixture","version":"1"}',
+    );
+    writeFileSync(join(f.source, "package-lock.json"), "{}");
+    git(f.source, "add", "package.json", "package-lock.json");
+    git(f.source, "commit", "-m", "Fixture dependency identity");
+    const manifest = {
+      ...f.manifest,
+      sourceCommit: git(f.source, "rev-parse", "HEAD"),
+    };
+    writeFileSync(f.path, JSON.stringify(manifest));
+    let calls = 0;
+    const prepared = await runExperimentLocally(
+      { ...f.options("H"), preparation: bookingPreparation },
+      (_exe, args) => {
+        calls++;
+        if (args[0] === "inspect")
+          return JSON.stringify([
+            {
+              Image: "image",
+              NetworkSettings: {
+                Ports: { "5432/tcp": [{ HostPort: "49153" }] },
+              },
+            },
+          ]);
+        return "container";
+      },
+    );
+    assert.ok(prepared.result.resources.executorInvocations > 0);
+    const before = calls;
+    replayExperiment(prepared.directory);
+    assert.equal(calls, before);
+    const records = json(join(prepared.directory, "preparation.json"));
+    assert.ok(
+      records.every((r: { steps: { id: string; passed: boolean }[] }) =>
+        r.steps.some((s) => s.id === "cleanup" && s.passed),
+      ),
+    );
+    const failed = await runExperimentLocally(
+      { ...f.options("H"), preparation: bookingPreparation },
+      () => {
+        throw new Error("registry missing");
+      },
+    );
+    assert.equal(failed.result.resources.executorInvocations, 0);
+    assert.ok(
+      json(join(failed.directory, "preparation.json"))[0].steps.some(
+        (s: { id: string; passed: boolean }) =>
+          s.id === "dependencies" && !s.passed,
+      ),
+    );
+  } finally {
+    f.close();
+  }
+});

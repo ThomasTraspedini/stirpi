@@ -298,3 +298,26 @@ omit the hash (and existing fixtures may omit executor pins); actual identity is
 still measured and recorded. No executable is installed, copied, or repaired.
 As with other runtime behavior, D054 applies: a pinned older runtime retains its
 historical preflight behavior; new byte pins require a runtime supporting D055.
+
+Trusted workspace preparation runs once per assignment before executor launch.
+`RunOptions.preparation` configures npm lockfile installation, module resolution,
+and disposable PostgreSQL prerequisites. Booking Invariants defaults to PostgreSQL
+16 and `btree_gist`. Docker atomically allocates a loopback port; no fixed host port
+or shared database is used. Credentials exist only in outer process environments.
+The executor retains its existing workspace-write sandbox and environment allowlist;
+it needs neither installation nor Docker operations.
+
+`preparation.json` records package and lockfile hashes, package identity, preparation
+steps, container/image identity, port, and cleanup. Public verification remains the
+predeclared evaluator checks. The prepared path allows only `npm test`,
+`npm run typecheck`, and `git diff --check`; only the test process receives
+`DATABASE_URL`. Changed package or lockfile identity is rejected before verification.
+These checks execute candidate code and are trusted outer operations, not a new
+sandbox for arbitrary hostile test code. Existing runtime evaluation records retain
+command results. Replay checks the preparation evidence digest and consumes recorded
+runtime outcomes without installing, provisioning, or executing checks.
+
+Database resources are removed at run completion, including operational failure.
+Dirty workspaces retain the existing diagnostic retention policy. Preparation does
+not install into the frozen source checkout. No executor/backend sandbox settings
+are changed by this infrastructure.

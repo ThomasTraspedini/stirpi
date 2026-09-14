@@ -1,0 +1,63 @@
+{
+  "packageSha256": "56fa8c5e289563a9cbbfa1e184cc255369e2bfb8c4105ed3273d53a64946dbcc",
+  "lockfileSha256": "bde87452d6e18fcedfbb025e7214296de5183689ed8d6fddcc47c74d8b7d45d6",
+  "packageIdentity": {
+    "name": "booking-invariants",
+    "version": "0.0.0"
+  },
+  "instance": "stirpi-5cf2e181-9b27-41c8-ad2d-c1b52bc13d0c",
+  "steps": [
+    {
+      "id": "dependencies",
+      "passed": true
+    },
+    {
+      "id": "module-resolution",
+      "passed": true
+    },
+    {
+      "id": "typecheck",
+      "passed": true
+    },
+    {
+      "id": "postgres",
+      "passed": true
+    },
+    {
+      "id": "postgres-identity",
+      "passed": true
+    },
+    {
+      "id": "database-connectivity",
+      "passed": true
+    },
+    {
+      "id": "prerequisites",
+      "passed": true
+    },
+    {
+      "id": "cleanup",
+      "passed": true
+    }
+  ],
+  "containerId": "ce946feddd0e24529629a7adc5ffe3774153aaac202025280e2c40d07a93d130",
+  "imageId": "sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+  "port": 32769,
+  "sourceCommit": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+  "kind": "preparation-only-smoke",
+  "verification": [
+    {
+      "command": ["npm", "test"],
+      "passed": true,
+      "tests": 85
+    },
+    {
+      "command": ["npm", "run", "typecheck"],
+      "passed": true
+    },
+    {
+      "command": ["git", "diff", "--check"],
+      "passed": true
+    }
+  ]
+}

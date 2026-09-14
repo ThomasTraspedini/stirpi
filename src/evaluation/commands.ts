@@ -61,7 +61,9 @@ export class CommandChecksEvaluator implements Evaluator {
   private readonly config: CommandChecksConfig;
   constructor(
     config: CommandChecksConfig,
-    private readonly environment: NodeJS.ProcessEnv = {
+    private readonly environment:
+      | NodeJS.ProcessEnv
+      | ((workspace: string, check: PublicCheck) => NodeJS.ProcessEnv) = {
       PATH: process.env.PATH,
     },
     private readonly timeoutMs: number | undefined = undefined,
@@ -101,9 +103,14 @@ export class CommandChecksEvaluator implements Evaluator {
         const output = spawnSync(check.executable, check.args, {
           cwd: context.workspacePath,
           env: Object.fromEntries(
-            Object.entries(this.environment).filter(
-              ([key]) => !key.startsWith("GIT_"),
-            ),
+            Object.entries(
+              typeof this.environment === "function"
+                ? this.environment(
+                    context.workspacePath,
+                    structuredClone(check),
+                  )
+                : this.environment,
+            ).filter(([key]) => !key.startsWith("GIT_")),
           ),
           input: JSON.stringify(context) + "\n",
           encoding: "utf8",
