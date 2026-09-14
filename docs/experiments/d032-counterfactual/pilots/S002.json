@@ -1,0 +1,27 @@
+{
+  "id": "d032-counterfactual-S002",
+  "class": "pilot",
+  "testcase": "booking-invariants-d032-counterfactual-001",
+  "condition": "S",
+  "stirpiCommit": "133ca8bcdff246def7ef2c6a67e934f0e8c8e8a1",
+  "executor": {
+    "adapter": "codex",
+    "executableVersion": "0.154.0-alpha.6.2",
+    "executableSha256": "ecad78dbf98adb89ec475edac86630406cbe59d9f3070b17d88065f136b94bcb",
+    "model": "gpt-6-astra"
+  },
+  "publicEvaluator": {
+    "file": "../../d032/public-evaluator-v2.json",
+    "sha256": "9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1"
+  },
+  "limits": {
+    "maxSteps": 20,
+    "maxExecutorInvocations": 20,
+    "maxLineages": 20,
+    "maxItemsPerInvocation": 200,
+    "maxCommandsPerInvocation": 100,
+    "noProgressMs": 180000,
+    "maxEvaluatorWallTimeMs": 300000
+  },
+  "hiddenEvaluationDuringRun": false
+}
