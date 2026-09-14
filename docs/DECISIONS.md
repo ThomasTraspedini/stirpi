@@ -1252,3 +1252,60 @@ dependency-bundle, preparation, and cleanup identities and outcomes. Replay
 validates the recorded identities and outcomes without creating or contacting
 any live network, proxy, container, image, registry, resolver, or bundle-store
 resource.
+
+## D068 — Registry egress uses a fixed Stirpi-owned proxy artifact contract
+
+Status: accepted
+
+The D067 registry-egress proxy is a small Stirpi-owned, digest-pinned container
+artifact whose only data-plane operation is HTTP/1.1 CONNECT. Its approved
+artifact contract fixes its image entrypoint, empty argv, non-root runtime
+identity, listener, policy path, protocol version, policy-schema version,
+resolver behavior, public-address classifier, readiness record, and absence of
+reload, management, generic HTTP-forwarding, and TLS-interception facilities.
+A general-purpose or third-party proxy is not authorized merely because it can
+be configured to approximate these behaviors.
+
+The trusted verification profile pins the immutable proxy image digest for an
+explicit platform and architecture together with the artifact-contract,
+protocol, policy-schema, resolver-policy, and address-policy identities. The
+image digest is the profile's artifact identity; subordinate executable,
+source, build, config, layer, SBOM, and conformance identities are approval and
+provenance evidence rather than redundant profile authority.
+
+The trusted runtime creates the only proxy policy file from exact canonical
+profile origins and ports. The closed, bounded, canonical policy file contains
+exact runtime-derived listener/client topology, a fresh launch challenge, exact
+host-and-port destinations, and versioned protocol, resolver, and
+address-policy identities. Its semantic policy digest excludes only the
+launch-specific topology and challenge, and therefore equals the trusted
+runtime's digest of the exact profile-derived policy. It rejects duplicates,
+unknown fields or versions, wildcards, IP literals, trailing-dot aliases, and
+IDNs. The proxy fails before listening unless the policy is canonical and its
+declared digest equals the digest of its effective semantic policy. Candidate
+or preparation code cannot supply, mount, modify, or reload policy.
+
+For every accepted CONNECT, the proxy authorizes the normalized hostname and
+explicit port before DNS, resolves the name itself exactly once, rejects the
+whole attempt if any returned address is not public under the pinned Stirpi
+address-policy algorithm, and dials only numeric addresses from that saved
+validated result without re-resolution. Direct IP CONNECT, ordinary HTTP
+forwarding, redirects performed by the proxy, and TLS interception are
+forbidden.
+
+Readiness is a single bounded machine-readable record emitted by the fixed
+process after policy validation, resolver snapshot, listener creation, and
+effective-policy installation. It binds a fresh runtime challenge to the
+artifact/protocol/policy identities, effective-policy digest, listener,
+resolver observations, and build evidence. The runtime accepts it only from
+the exact launched container ID, independently matches the effective-policy
+digest to the profile-derived policy, confirms the container remains running,
+and separately attests the exact image, OCI entrypoint, argv, mounts,
+hardening, and network topology before dependency installation. A listening
+port alone is not readiness.
+
+The trusted runtime owns policy creation, networks, proxy, readiness and
+topology attestation, preparation, bundle sealing, and exact-resource cleanup.
+Evidence preserves their identities and distinct outcomes. Replay validates
+the recorded identity bindings and outcomes without DNS, network, proxy,
+Docker, image, registry, resolver, bundle-store, or cleanup work.
