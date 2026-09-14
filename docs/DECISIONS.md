@@ -1032,3 +1032,80 @@ version and other preregistered executor constraints also match.
 Historical runs that recorded only the version remain valid provenance, but
 their exact executable bytes cannot be reconstructed unless independently
 preserved.
+
+## D056 — VERIFY is an operational effect
+
+Status: accepted
+
+VERIFY is an executor-requested operational effect, not a semantic lineage
+transition.
+
+A VERIFY request:
+
+- is identified only by a trusted stable verification ID;
+- is valid only with CONTINUE;
+- cannot carry executor-controlled command, argv, cwd, environment, timeout,
+  network, or resource policy;
+- produces normal positive or negative verification evidence when the verifier
+  executes successfully;
+- produces an operational failure when the verifier infrastructure cannot
+  operate;
+- delivers bounded evidence to a subsequent invocation of the same work unit;
+- does not itself authorize COMPLETE;
+- is replayed from recorded evidence without repeating external verification.
+
+## D057 — Protocol versions permit backward-compatible additive capabilities
+
+Status: accepted
+
+Within a protocol major version, optional capabilities may be added when:
+
+- existing valid messages retain their meaning;
+- existing executors remain valid without using the new capability;
+- strict runtimes that do not implement the added capability may reject it
+  explicitly rather than reinterpret it.
+
+Breaking changes to existing fields, meanings, required behavior, or authority
+boundaries require a new protocol version.
+
+Under this rule, VERIFY may be added to executor protocol version 1.
+
+## D058 — Candidate-executing verification requires isolation
+
+Status: accepted
+
+Any requested or public verification that executes candidate-controlled code
+must run inside an approved isolated verifier boundary.
+
+Candidate code must not execute directly in the trusted Stirpi host process.
+
+The verifier operates on a disposable snapshot/copy of the assigned workspace
+and must not receive:
+
+- Docker daemon/socket access;
+- arbitrary host filesystem access;
+- Stirpi private state;
+- private experiment/oracle material;
+- inherited trusted-host environment;
+- unrestricted network access.
+
+The persistent executor workspace remains authoritative and is not modified by
+verifier cleanup.
+
+## D059 — Database access for isolated verification is disposable and scoped
+
+When candidate verification requires a database:
+
+- verification receives a per-request disposable non-superuser database lease;
+- credentials and database identity are created for that verification request
+  and destroyed afterward;
+- verifier access is restricted to the experiment-owned database endpoint;
+- general network access is not granted merely to enable database verification;
+- database administrator credentials are never exposed to candidate code;
+- credentials are not persisted in Stirpi evidence;
+- verification infrastructure cleanup terminates sessions and destroys the
+  disposable database identity.
+
+For the current Docker verifier implementation, the preferred transport is a
+Docker-managed Unix socket shared only between the verifier and its PostgreSQL
+sidecar, with both containers otherwise using no network.
