@@ -1413,3 +1413,63 @@ Report:
 - remaining uncommitted files.
 
 Stop.
+
+## D072 — Proxy BuildIdentityV1 is a domain-separated canonical pre-build identity
+
+Status: accepted
+
+D071 is implemented through BuildIdentityV1.
+
+BuildIdentityV1 is derived only from immutable authority available before proxy
+artifact production. Its closed version-1 input document contains the source
+HTTPS repository and full Git OID; the exact-blob SHA-256 of
+`proxy/build-definition.json` in that commit; the digest-only builder OCI
+reference, matching manifest digest, and resolved platform; the target Linux
+platform; fixed context, Dockerfile, final stage, and no additional build
+arguments; no additional build materials; and the D068 artifact, protocol,
+policy-schema, resolver-policy, and address-policy identities.
+
+Version 1 accepts only Linux `amd64` and `arm64`, and builder and target
+platforms must be equal. The build context is the clean Git tree selected by
+the recorded commit. `BUILDER_IMAGE` is derived from the first-class builder
+field. `BUILD_IDENTITY` is derived after hashing and is not an input member.
+Additional build arguments or downloaded materials require a later schema
+version.
+
+The document is parsed as strict UTF-8 JSON with no BOM. Duplicate names,
+unknown fields, malformed UTF-8, non-ASCII strings, non-canonical URI/path/
+digest forms, and trailing non-whitespace bytes are rejected. Inputs are not
+trimmed, case-folded, rewritten, or Unicode-normalized. The validated document
+is serialized with RFC 8785 JSON Canonicalization Scheme, without a trailing
+line feed, as strict UTF-8 bytes.
+
+The domain string `stirpi.registry-egress-proxy.build-identity.v1` is 46 ASCII
+bytes. The domain prefix is those 46 bytes followed by one NUL byte, for a
+total of 47 bytes. The exact rule is:
+
+```text
+UTF8("stirpi.registry-egress-proxy.build-identity.v1") || 0x00 || canonicalDocumentBytes
+```
+
+BuildIdentityV1 is `sha256:` followed by lowercase hexadecimal SHA-256 of that
+preimage. There is no BOM, length prefix, separator, or trailing LF.
+
+The derived value may be embedded in the executable and is copied unchanged
+into proxy readiness, the candidate release record, and SLSA provenance. The
+candidate and provenance retain the authoritative pre-build fields needed to
+reconstruct it mechanically. The SLSA subject remains the final OCI platform
+manifest, which is a separate result identity. Executable, OCI, SBOM,
+provenance, conformance, approval, index, release-version, timestamp, and
+invocation identities are never inputs to BuildIdentityV1.
+
+The candidate release schema is advanced to version 2 and carries the derived
+identity, fixed build parameters, and empty materials. Provenance uses a
+version-2 Stirpi build type, carries the exact pre-build projection and
+`BUILD_IDENTITY` argument, and keeps the final manifest as its sole subject.
+Independent Node and Go implementations must agree on the canonical bytes,
+47-byte-prefixed preimages, and all golden hashes, and must reject the same
+malformed and cross-binding-invalid inputs.
+
+The complete normative schema, semantic constraints, golden fixtures, acceptance
+requirements, and migration map are recorded in
+`docs/verification/proxy-build-identity-v1.md`.
