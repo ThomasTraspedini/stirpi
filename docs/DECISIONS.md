@@ -1109,3 +1109,110 @@ When candidate verification requires a database:
 For the current Docker verifier implementation, the preferred transport is a
 Docker-managed Unix socket shared only between the verifier and its PostgreSQL
 sidecar, with both containers otherwise using no network.
+
+## D060 — Trusted verification profiles own candidate execution policy
+
+Status: accepted
+
+Candidate-executing verification is authorized only by a trusted, versioned
+verification profile committed in the pinned Stirpi runtime revision.
+
+The profile owns verifier and supporting image identities, platform, toolchain
+expectations, dependency policy, stable operation IDs, fixed executable and argv,
+database prerequisites, isolation, and resource/output limits.
+
+Executors may request only a stable operation ID. Evaluators may select only an
+operation already authorized by the profile. Neither may supply or override
+command, argv, cwd, environment, network, database setup, images, or limits.
+
+Profiles and their operational state remain outside target repositories.
+
+## D061 — Candidate dependencies come only from isolated immutable bundles
+
+Status: accepted
+
+Candidate verification must not trust dependency directories from an executor
+workspace or execute candidate-controlled package-manager operations on the
+trusted host.
+
+Dependencies are prepared in a dedicated isolated, digest-pinned preparation
+environment under an exact trusted install and registry-access policy. The
+preparer receives no candidate runtime secrets and exports a bounded immutable
+bundle identified by its dependency inputs, preparation image, platform,
+architecture, install policy, and canonical content digest.
+
+The verifier receives only a disposable copy or read-only source of a
+hash-verified bundle. Bundle provenance and identity are retained as verification
+evidence.
+
+## D062 — Verification image and platform identities are explicit
+
+Status: accepted
+
+Every container image used for candidate verification, dependency preparation,
+or verification database service must be configured by immutable OCI digest
+together with an explicit platform and architecture.
+
+Mutable tags, implicit local images, implicit registries, and host-default
+platform selection are not verification authority.
+
+Evidence preserves both the configured digest identity and the actual resolved
+platform manifest and image identities used by the container runtime.
+
+## D063 — Database prerequisites are trusted profile authority
+
+Status: accepted
+
+Database image, extensions, bootstrap policy, transport, and candidate-role
+properties used by verification are authorized by the trusted verification
+profile, not by candidate code.
+
+Trusted infrastructure installs and validates authorized prerequisites before
+exposing a disposable non-superuser lease. Candidate code receives neither
+administrator credentials nor authority to broaden those prerequisites.
+
+This decision refines the authority source for the disposable and scoped access
+required by D059 without changing D059's lease or cleanup semantics.
+
+## D064 — Evaluator meaning is separate from verification environment
+
+Status: accepted
+
+A public evaluator defines solver-visible criteria, required checks, and the
+policy that determines whether they pass. A trusted verification profile defines
+the environment and fixed operations in which candidate-executing checks run.
+
+Resolving an evaluator check through a profile must not add task-specific hints,
+hidden material, expected outcomes, or change the evaluator's completion policy.
+
+All command-style public checks are treated as candidate-executing and use the
+isolated verifier. The trusted host may perform only separately typed operations
+whose contract cannot execute candidate-controlled code; there is no fallback
+from isolated verification to host command execution.
+
+## D065 — Future preregistrations pin exact verification profiles
+
+Status: accepted
+
+A preregistration that uses trusted verification records the profile's stable ID,
+version, repository-relative path in the pinned Stirpi runtime commit, and SHA-256
+of its exact bytes.
+
+The pinned runtime commit and path locate the profile; the profile SHA-256 is its
+explicit experimental identity. Image identities referenced by the profile are
+immutable, and actual resolved image identities are retained in run evidence.
+
+Historical preregistrations are not retroactively amended. A failed historical
+preflight remains historical provenance.
+
+## D066 — Verification replay consumes identity-bound recorded outcomes
+
+Status: accepted
+
+Replay preserves and validates verification profile identity, dependency-bundle
+identity and provenance, configured and resolved image identities, candidate
+workspace identity, and verification outcomes.
+
+Replay supplies those recorded outcomes at the verification effect boundary. It
+must not rebuild dependencies, consult a live bundle cache or registry, resolve
+or launch images, create database leases, or execute candidate verification.
