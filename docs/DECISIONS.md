@@ -1362,3 +1362,54 @@ complete exact-byte and artifact chain, and fails closed on absence, ambiguity,
 unavailability, or mismatch. Replay validates recorded identities and outcomes
 without rebuilding, republishing, fetching, or rerunning the proxy or its
 evidence.
+
+## D071 — Build identity is independent of artifact identity
+
+Status: accepted
+
+A proxy build identity identifies the immutable build inputs and build
+procedure, not the resulting OCI artifact.
+
+It is deterministically derived from trusted pre-build authority, including
+the reviewed source identity, build-definition identity, builder image
+identity, target platform and architecture, build parameters, and relevant
+proxy contract identities.
+
+The build identity may be embedded in the proxy executable because it is fully
+determined before artifact production.
+
+Result identities are separate:
+
+- the proxy executable SHA-256 identifies the produced executable bytes;
+- the OCI manifest digest identifies the final packaged proxy artifact;
+- build provenance uses the final OCI manifest digest as its subject and binds
+  that result to the pre-build build identity and its authoritative inputs.
+
+The final OCI manifest digest, provenance digest, SBOM digest, or other
+post-build artifact identity must not be required inside bytes that contribute
+to those same identities.
+
+Release records preserve and verify both build identity and result artifact
+identities without conflating them.
+
+Requirements:
+
+- preserve D056–D070 unchanged;
+- do not stage any existing Phase-1 or proxy implementation changes;
+- run git diff --check;
+- stage only docs/DECISIONS.md;
+- inspect the cached diff;
+- commit exactly:
+
+docs: separate proxy build and artifact identity
+
+- push main.
+
+Report:
+
+- full commit SHA;
+- committed files;
+- push result;
+- remaining uncommitted files.
+
+Stop.
