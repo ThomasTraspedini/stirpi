@@ -1309,3 +1309,56 @@ topology attestation, preparation, bundle sealing, and exact-resource cleanup.
 Evidence preserves their identities and distinct outcomes. Replay validates
 the recorded identity bindings and outcomes without DNS, network, proxy,
 Docker, image, registry, resolver, bundle-store, or cleanup work.
+
+## D069 — Proxy releases use immutable, standard supply-chain evidence
+
+Status: accepted
+
+Each approved D068 proxy release has one strict factual candidate record per
+platform manifest. The record binds the release version, reviewed source
+commit, exact build definition, digest-pinned builder image, target platform,
+D068 contract identities, OCI repository and manifest/config/ordered-layer
+digests, executable SHA-256, CycloneDX 1.6 JSON SBOM, in-toto Statement v1 with
+SLSA Provenance v1, and exact-manifest conformance result. Unknown fields and
+unsupported versions are rejected.
+
+Candidate, SBOM, provenance, and conformance bytes are committed under the
+versioned `releases/registry-egress-proxy/` hierarchy and identified by SHA-256
+of their exact committed bytes without canonical reserialization. The SBOM and
+provenance bytes are additionally published as digest-addressed OCI 1.1 image
+manifest artifacts whose subject is the exact proxy platform manifest. Their
+recorded artifact-manifest digests, not mutable tags or discovery results,
+identify the published copies. Version 1 does not require signing,
+transparency-log availability, release assets, or a reproducible-build claim.
+
+Conformance records bind the suite source, version and exact definition, fixed
+execution definition and runner image, target manifest and platform, D068
+contract identities, and result. Timestamps are informational observation
+metadata and do not define artifact, suite, execution, or result identity.
+
+## D070 — Proxy approval is a separate exact-candidate decision
+
+Status: accepted
+
+A D068 proxy candidate becomes approved only through a separate immutable
+approval record whose decision means “I approve candidate release record
+SHA-256 X.” Approval never mutates the candidate or its artifact identities and
+does not require a human to transcribe subordinate generated digests. Before
+approval, independent mechanical verification must validate the candidate and
+all source, build, OCI, executable, SBOM, provenance, and passing conformance
+cross-bindings.
+
+The approved-release index in the pinned Stirpi runtime revision identifies
+usable releases and pins the exact-byte SHA-256 and path of both candidate and
+approval records. The approval pins the candidate in turn. Repository review
+and merge are the version-1 human trust boundary; cryptographic signing is not
+required.
+
+Consistent with D068, the trusted verification profile remains authoritative
+for the immutable proxy manifest, explicit platform, and contract identities;
+the release record is not a second artifact selector. Preflight looks up one
+matching approved index entry in the same pinned Stirpi revision, validates the
+complete exact-byte and artifact chain, and fails closed on absence, ambiguity,
+unavailability, or mismatch. Replay validates recorded identities and outcomes
+without rebuilding, republishing, fetching, or rerunning the proxy or its
+evidence.
