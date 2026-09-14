@@ -1216,3 +1216,39 @@ workspace identity, and verification outcomes.
 Replay supplies those recorded outcomes at the verification effect boundary. It
 must not rebuild dependencies, consult a live bundle cache or registry, resolve
 or launch images, create database leases, or execute candidate verification.
+
+## D067 — Dependency preparation uses an attestable registry-only egress boundary
+
+Status: accepted
+
+Dependency preparation that retrieves packages must have no direct route to
+general external networks. The trusted runtime creates and owns a disposable
+per-preparation internal network and a digest-pinned egress-proxy container. The
+preparation container is attached only to the internal network; only the proxy
+is attached to an outbound network.
+
+The trusted verification profile owns the proxy image identity, exact allowed
+HTTPS registry origins and destination ports, and versioned proxy and DNS
+resolution policies. Candidate/package data, executors, evaluators, host
+environment, and machine-local defaults cannot add or override that authority.
+
+The proxy permits only CONNECT tunnels to exact declared origin host-and-port
+pairs, preserves end-to-end TLS, resolves allowed names itself, rejects
+non-public destination addresses, and denies every undeclared destination.
+Dependency-preparation containers receive no external DNS path, Docker socket,
+trusted-host filesystem, secrets, or authority to modify proxy policy or network
+topology.
+
+Before installation, the runtime must attest the configured and resolved proxy
+image identity, effective proxy and resolver policy, exact container/network
+attachments, absence of a direct preparation-container egress path, and
+deny-by-default behavior. Failure to create or attest the boundary is an
+operational failure and must not fall back to ordinary Docker networking, host
+package installation, or widened origins.
+
+The runtime owns teardown of the preparation container, proxy, networks,
+volumes, and policy material. Evidence preserves profile, proxy, egress-policy,
+dependency-bundle, preparation, and cleanup identities and outcomes. Replay
+validates the recorded identities and outcomes without creating or contacting
+any live network, proxy, container, image, registry, resolver, or bundle-store
+resource.
