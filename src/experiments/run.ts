@@ -49,6 +49,7 @@ import {
 } from "./evaluation.js";
 
 import { runPinnedRuntime } from "./runtime-identity.js";
+import { authorityObject, parseAuthorityJson } from "../authority/json.js";
 import { preregisteredOptions } from "./preregistration.js";
 
 export interface RunOptions {
@@ -82,11 +83,14 @@ const save = (path: string, value: unknown) =>
 export async function runExperiment(
   options: RunOptions,
 ): Promise<Awaited<ReturnType<typeof runExperimentLocally>>> {
-  if (
-    options.preregistration &&
-    "stirpiCommit" in JSON.parse(readFileSync(options.preregistration, "utf8"))
-  )
-    return runPinnedRuntime(options);
+  if (options.preregistration) {
+    const pilot = authorityObject(
+      parseAuthorityJson(readFileSync(options.preregistration)),
+      "Preflight: preregistration",
+    );
+    if (pilot.schemaVersion === 2 || "stirpiCommit" in pilot)
+      return runPinnedRuntime(options);
+  }
   return runExperimentLocally(options);
 }
 

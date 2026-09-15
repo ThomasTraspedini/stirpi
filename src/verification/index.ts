@@ -13,6 +13,11 @@ import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { Reason } from "../domain/index.js";
+export * from "./trusted-profile.js";
+export * from "./dependency-bundle.js";
+export * from "./dependency-preparation.js";
+export * from "./preflight.js";
+export * from "./egress-policy.js";
 
 export interface VerificationLimits {
   timeoutMs: number;

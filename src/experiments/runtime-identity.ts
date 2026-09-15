@@ -1,3 +1,5 @@
+import { authorityObject, parseAuthorityJson } from "../authority/json.js";
+import { validatePreregisteredProfile } from "./profile-authority.js";
 import { execFileSync, fork } from "node:child_process";
 import { createRequire } from "node:module";
 import {
@@ -36,8 +38,13 @@ export function assertRuntimeCheckout(checkout: string, pin: string) {
 export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
   const path = realpathSync(options.preregistration!);
   const bytes = readFileSync(path);
-  const pilot = JSON.parse(bytes.toString("utf8"));
+  const pilot = authorityObject(
+    parseAuthorityJson(bytes),
+    "Preflight: preregistration",
+  );
   const pin = pilot.stirpiCommit;
+  if (typeof pin !== "string" || !/^[a-f0-9]{40}$/.test(pin))
+    throw new Error("Preflight: invalid runtime pin");
   let repository: string;
   let containingCommit: string;
   try {
@@ -69,7 +76,9 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
       { cause: error },
     );
   }
-  const temporary = mkdtempSync(join(tmpdir(), "stirpi-runtime-"));
+  const temporary = mkdtempSync(
+    join(realpathSync(tmpdir()), "stirpi-runtime-"),
+  );
   const checkout = join(temporary, "checkout");
   const build = join(temporary, "build");
   try {
@@ -77,6 +86,8 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
     transfer(repository, checkout, pin);
     git(checkout, "checkout", "--detach", pin);
     assertRuntimeCheckout(checkout, pin);
+    if (pilot.schemaVersion === 2)
+      validatePreregisteredProfile(pilot, checkout);
     // Never consume dist, loaders, package scripts, or runtime modules from HEAD.
     execFileSync(
       process.execPath,
@@ -98,7 +109,10 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
     mkdirSync(dirname(snapshot), { recursive: true });
     writeFileSync(snapshot, bytes);
     if (pilot.publicEvaluator !== undefined) {
-      const file = pilot.publicEvaluator.file;
+      const file = authorityObject(
+        pilot.publicEvaluator,
+        "Preflight: public evaluator pin",
+      ).file;
       if (
         typeof file !== "string" ||
         !resolve(dirname(snapshot), file).startsWith(inputRoot + "/")

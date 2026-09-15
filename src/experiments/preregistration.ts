@@ -9,6 +9,16 @@ import {
   type RunBudgets,
   type InvocationPolicy,
 } from "../supervision/index.js";
+import { parseVerificationProfilePin } from "../verification/preflight.js";
+import {
+  authorityObject,
+  closedAuthorityObject,
+  parseAuthorityJson,
+} from "../authority/json.js";
+import { validatePreregisteredProfile } from "./profile-authority.js";
+
+/** Parses the additive schema-2 profile pin without treating historical pilots as profile-backed. */
+export const schema2VerificationProfile = parseVerificationProfilePin;
 
 const runFields = {
   maxSteps: "steps",
@@ -64,7 +74,11 @@ export function pilotEnvelope(limits: unknown) {
 export function preregisteredOptions(options: RunOptions, testcase: string) {
   if (!options.preregistration) return { options, evidence: null };
   const bytes = readFileSync(options.preregistration);
-  const pilot = JSON.parse(bytes.toString("utf8"));
+  const pilot = authorityObject(
+    parseAuthorityJson(bytes),
+    "Preflight: preregistration",
+  );
+  const schema2 = pilot?.schemaVersion === 2;
   if (
     !pilot ||
     pilot.class !== "pilot" ||
@@ -100,10 +114,26 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
     "publicEvaluator",
     "limits",
     "hiddenEvaluationDuringRun",
+    ...(schema2 ? ["schemaVersion", "verificationProfile"] : []),
   ];
   for (const field of Object.keys(pilot))
     if (!fields.includes(field))
       throw new Error(`Preflight: unsupported pilot field ${field}`);
+  if ("schemaVersion" in pilot && !schema2)
+    throw new Error("Preflight: unsupported preregistration schema");
+  const verificationProfile = schema2
+    ? validatePreregisteredProfile(pilot, process.cwd())
+    : null;
+  if (
+    schema2 &&
+    Object.hasOwn(
+      authorityObject(pilot.limits, "Preflight: limits"),
+      "maxEvaluatorWallTimeMs",
+    )
+  )
+    throw new Error(
+      "Preflight: schema-2 evaluator wall-time belongs to profile operations",
+    );
   const derived = pilotEnvelope(pilot.limits);
   for (const field of [
     "budgets",
@@ -116,7 +146,11 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
     )
       throw new Error(`Preflight: contradictory ${field}`);
   if (pilot.publicEvaluator !== undefined) {
-    const pin = pilot.publicEvaluator;
+    const pin = closedAuthorityObject(
+      pilot.publicEvaluator,
+      ["file", "sha256"],
+      "Preflight: public evaluator pin",
+    );
     if (!pin || typeof pin.file !== "string" || typeof pin.sha256 !== "string")
       throw new Error("Preflight: invalid public evaluator pin");
     const evaluatorBytes = readFileSync(
@@ -125,13 +159,29 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
     if (
       sha256(evaluatorBytes) !== pin.sha256 ||
       !isDeepStrictEqual(
-        JSON.parse(evaluatorBytes.toString("utf8")),
+        parseAuthorityJson(evaluatorBytes),
         options.publicEvaluator,
       )
     )
       throw new Error("Preflight: public evaluator pin mismatch");
   }
-  const executor = verifyExecutor(options.executor, pilot.executor);
+  if (schema2 && pilot.executor !== undefined) {
+    const executorPin = authorityObject(
+      pilot.executor,
+      "Preflight: executor pin",
+    );
+    if (
+      Object.keys(executorPin).some(
+        (key) =>
+          !["adapter", "executableVersion", "executableSha256"].includes(key),
+      )
+    )
+      throw new Error("Preflight: unknown executor pin field");
+  }
+  const executor = verifyExecutor(
+    options.executor,
+    pilot.executor as Parameters<typeof verifyExecutor>[1],
+  );
   const effective = { ...options, ...derived, executor: executor.command };
   const evidence = {
     verified: true,
@@ -140,6 +190,8 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
       path: resolve(options.preregistration),
       sha256: sha256(bytes),
       document: pilot,
+      schemaVersion: schema2 ? 2 : 1,
+      verificationProfile,
     },
     preregisteredLimits: pilot.limits,
     budgets: derived.budgets,
