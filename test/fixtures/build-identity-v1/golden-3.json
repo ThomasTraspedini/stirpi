@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "kind": "stirpi.registry-egress-proxy-build-identity/1",
+  "source": {
+    "repository": "https://github.com/example/stirpi",
+    "commit": {
+      "algorithm": "sha1",
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "buildDefinition": {
+    "path": "proxy/build-definition.json",
+    "sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "builderImage": {
+    "reference": "ghcr.io/stirpi/proxy-builder@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "manifestDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "platform": {
+      "os": "linux",
+      "architecture": "arm64"
+    }
+  },
+  "target": {
+    "os": "linux",
+    "architecture": "arm64"
+  },
+  "buildParameters": {
+    "context": ".",
+    "dockerfile": "proxy/Dockerfile",
+    "targetStage": "final",
+    "additionalBuildArguments": []
+  },
+  "materials": [],
+  "contracts": {
+    "artifact": "stirpi.registry-egress-proxy-artifact/1",
+    "protocol": "stirpi.connect-only/1",
+    "policySchema": "stirpi.registry-egress-policy/1",
+    "resolverPolicy": "stirpi.resolve-once/1",
+    "addressPolicy": "stirpi.public-address/1"
+  }
+}

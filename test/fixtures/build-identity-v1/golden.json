@@ -1,0 +1,20 @@
+[
+  {
+    "fixture": 1,
+    "canonicalBytes": 1041,
+    "preimageBytes": 1088,
+    "buildIdentity": "sha256:555f6aa92093a494221764bf5ec7927474a1c75293bfe8c498ab942343ca1311"
+  },
+  {
+    "fixture": 2,
+    "canonicalBytes": 1073,
+    "preimageBytes": 1120,
+    "buildIdentity": "sha256:b3bec68af6c0ed49e81b054b6029260c91b8a639b9151eb39d3b1f0130d3064f"
+  },
+  {
+    "fixture": 3,
+    "canonicalBytes": 1041,
+    "preimageBytes": 1088,
+    "buildIdentity": "sha256:1dacf8fee7d3e7a22f8afe2ad975e38cbd58120c1ff02927fc17923b70c35110"
+  }
+]

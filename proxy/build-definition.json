@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "buildType": "https://stirpi.dev/build-types/registry-egress-proxy/v2",
+  "context": ".",
+  "dockerfile": "proxy/Dockerfile",
+  "targetStage": "final",
+  "builderArgument": "BUILDER_IMAGE",
+  "builderIdentity": "OCI digest reference resolved for the target platform",
+  "buildIdentityArgument": "BUILD_IDENTITY",
+  "buildIdentity": "BuildIdentityV1: domain-separated JCS pre-build authority, injected into main.buildIdentity",
+  "target": { "os": "linux", "architectures": ["amd64", "arm64"] },
+  "additionalBuildArguments": [],
+  "materials": [],
+  "output": { "path": "/stirpi-registry-egress-proxy", "base": "scratch" },
+  "forbidden": [
+    "mutable builder references",
+    "host Go",
+    "build without derived BUILD_IDENTITY"
+  ]
+}

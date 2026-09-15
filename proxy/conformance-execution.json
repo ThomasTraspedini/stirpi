@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "execution": "containerized isolated black-box plus white-box suite",
+  "runnerImage": "provided by release invocation as an OCI digest reference",
+  "argv": ["go", "test", "./proxy/...", "-run", "Conformance"],
+  "isolation": [
+    "controlled DNS",
+    "controlled upstream",
+    "no host resolver authority"
+  ],
+  "resultRecord": "releases/registry-egress-proxy/<version>/<os>-<architecture>/conformance.json"
+}

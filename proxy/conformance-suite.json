@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "suite": "stirpi-registry-egress-proxy-conformance",
+  "version": 1,
+  "subject": "exact OCI platform manifest digest",
+  "requiredCases": [
+    "connect-only",
+    "http-forwarding-denied",
+    "strict-policy-parsing",
+    "exact-host-port-allowlist",
+    "malformed-policy-fail-closed",
+    "launch-challenge-binding",
+    "startup-readiness-attestation",
+    "effective-policy-digest",
+    "resolver-snapshot-owned-by-proxy",
+    "prohibited-address-rejection",
+    "ipv4-mapped-ipv6-rejection",
+    "resolve-once-numeric-dial",
+    "classifier-table-identity",
+    "policy-immutability"
+  ],
+  "passPolicy": "all required cases must pass against the exact manifest"
+}
