@@ -1,6 +1,6 @@
 # Proxy release governance and supply-chain evidence
 
-Status: design proposal; no implementation or accepted decision is changed.
+Status: release-governance design for D069–D070, updated by accepted D072.
 
 This document defines the smallest release-governance contract needed to
 produce and approve an artifact satisfying D068. It does not modify D056-D068,
@@ -92,8 +92,8 @@ or identity agreement across documents.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://stirpi.dev/schemas/registry-egress-proxy-release-candidate-v1.schema.json",
-  "title": "Stirpi registry-egress proxy release candidate version 1",
+  "$id": "https://stirpi.dev/schemas/registry-egress-proxy-release-candidate-v2.schema.json",
+  "title": "Stirpi registry-egress proxy release candidate version 2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -104,6 +104,9 @@ or identity agreement across documents.
     "builderImage",
     "target",
     "contracts",
+    "buildIdentity",
+    "buildParameters",
+    "materials",
     "oci",
     "executable",
     "sbom",
@@ -111,7 +114,7 @@ or identity agreement across documents.
     "conformance"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "release": {
       "type": "object",
       "additionalProperties": false,
@@ -137,6 +140,24 @@ or identity agreement across documents.
     "builderImage": { "$ref": "#/$defs/imageIdentity" },
     "target": { "$ref": "#/$defs/platform" },
     "contracts": { "$ref": "#/$defs/contracts" },
+    "buildIdentity": { "$ref": "#/$defs/sha256" },
+    "buildParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "dockerfile",
+        "targetStage",
+        "additionalBuildArguments"
+      ],
+      "properties": {
+        "context": { "const": "." },
+        "dockerfile": { "const": "proxy/Dockerfile" },
+        "targetStage": { "const": "final" },
+        "additionalBuildArguments": { "type": "array", "maxItems": 0 }
+      }
+    },
+    "materials": { "type": "array", "maxItems": 0 },
     "oci": {
       "type": "object",
       "additionalProperties": false,
@@ -150,7 +171,9 @@ or identity agreement across documents.
             {
               "type": "object",
               "properties": {
-                "mediaType": { "const": "application/vnd.oci.image.manifest.v1+json" }
+                "mediaType": {
+                  "const": "application/vnd.oci.image.manifest.v1+json"
+                }
               }
             }
           ]
@@ -161,7 +184,9 @@ or identity agreement across documents.
             {
               "type": "object",
               "properties": {
-                "mediaType": { "const": "application/vnd.oci.image.config.v1+json" }
+                "mediaType": {
+                  "const": "application/vnd.oci.image.config.v1+json"
+                }
               }
             }
           ]
@@ -190,7 +215,9 @@ or identity agreement across documents.
           "type": "object",
           "properties": {
             "schema": { "const": "CycloneDX-1.6" },
-            "mediaType": { "const": "application/vnd.cyclonedx+json; version=1.6" },
+            "mediaType": {
+              "const": "application/vnd.cyclonedx+json; version=1.6"
+            },
             "artifactType": { "const": "application/vnd.cyclonedx+json" }
           }
         }
@@ -222,7 +249,11 @@ or identity agreement across documents.
           "additionalProperties": false,
           "required": ["version", "source", "definition"],
           "properties": {
-            "version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "version": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
             "source": {
               "type": "object",
               "additionalProperties": false,
@@ -291,7 +322,10 @@ or identity agreement across documents.
       "required": ["os", "architecture"],
       "properties": {
         "os": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$" },
-        "architecture": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$" }
+        "architecture": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+        }
       }
     },
     "contracts": {
@@ -386,7 +420,9 @@ or identity agreement across documents.
             {
               "type": "object",
               "properties": {
-                "mediaType": { "const": "application/vnd.oci.image.manifest.v1+json" }
+                "mediaType": {
+                  "const": "application/vnd.oci.image.manifest.v1+json"
+                }
               }
             }
           ]
@@ -398,6 +434,16 @@ or identity agreement across documents.
 ```
 
 Candidate semantic validation additionally requires:
+
+- reconstruct the closed [BuildIdentityV1](proxy-build-identity-v1.md) document
+  from candidate source, definition, builder, target, parameters, materials,
+  and contracts; all D072 syntax and semantic constraints apply, including
+  canonical HTTPS, the fixed definition path, Linux amd64/arm64, and equal
+  builder and target platforms;
+- derive the domain-separated identity and require equality with
+  `buildIdentity`, the actual embedded executable value, provenance's
+  independently reconstructed value and argument, and retained readiness;
+- reject schema-1 candidates and any post-build input to BuildIdentityV1;
 
 - the source commit exists in the named repository, and the regular file at
   `buildDefinition.path` in that exact commit hashes to
@@ -442,7 +488,13 @@ one exact candidate; it does not repeat or permit edits to artifact facts.
   "title": "Stirpi registry-egress proxy approval version 1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "candidate", "decision", "reviewer", "approvedAt"],
+  "required": [
+    "schemaVersion",
+    "candidate",
+    "decision",
+    "reviewer",
+    "approvedAt"
+  ],
   "properties": {
     "schemaVersion": { "const": 1 },
     "candidate": {
@@ -520,17 +572,28 @@ The approved-release index is the only registry of usable proxy releases:
             "additionalProperties": false,
             "required": ["os", "architecture"],
             "properties": {
-              "os": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$" },
-              "architecture": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$" }
+              "os": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+              },
+              "architecture": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+              }
             }
           },
-          "artifactContract": { "const": "stirpi.registry-egress-proxy-artifact/1" },
+          "artifactContract": {
+            "const": "stirpi.registry-egress-proxy-artifact/1"
+          },
           "ociRepository": {
             "type": "string",
             "pattern": "^[a-z0-9.-]+(?::[0-9]+)?/[a-z0-9]+(?:[._-][a-z0-9]+)*(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*$",
             "maxLength": 255
           },
-          "manifestDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+          "manifestDigest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
           "candidate": { "$ref": "#/$defs/fileIdentity" },
           "approval": { "$ref": "#/$defs/fileIdentity" }
         }
@@ -593,13 +656,21 @@ than a generic ecosystem standard. Its strict schema is:
       "additionalProperties": false,
       "required": ["version", "source", "definition"],
       "properties": {
-        "version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
         "source": {
           "type": "object",
           "additionalProperties": false,
           "required": ["repository", "commit"],
           "properties": {
-            "repository": { "type": "string", "pattern": "^https://[^?#]+(?:\\?[^#]*)?$", "maxLength": 2048 },
+            "repository": {
+              "type": "string",
+              "pattern": "^https://[^?#]+(?:\\?[^#]*)?$",
+              "maxLength": 2048
+            },
             "commit": {
               "oneOf": [
                 {
@@ -644,7 +715,13 @@ than a generic ecosystem standard. Its strict schema is:
     "contracts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["artifact", "protocol", "policySchema", "resolverPolicy", "addressPolicy"],
+      "required": [
+        "artifact",
+        "protocol",
+        "policySchema",
+        "resolverPolicy",
+        "addressPolicy"
+      ],
       "properties": {
         "artifact": { "const": "stirpi.registry-egress-proxy-artifact/1" },
         "protocol": { "const": "stirpi.connect-only/1" },
@@ -704,7 +781,10 @@ than a generic ecosystem standard. Its strict schema is:
       "required": ["os", "architecture"],
       "properties": {
         "os": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$" },
-        "architecture": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$" }
+        "architecture": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+        }
       }
     },
     "repositoryFile": {
@@ -800,15 +880,19 @@ schema and this stricter profile:
   repository and its sole digest is `sha256`, equal to the hex part of the
   candidate platform-manifest digest;
 - `predicate.buildDefinition.buildType` is
-  `https://stirpi.dev/build-types/registry-egress-proxy/v1`;
+  `https://stirpi.dev/build-types/registry-egress-proxy/v2`;
 - `externalParameters` has a closed shape containing the exact source
   repository and Git OID, build-definition path and SHA-256, release version,
-  target OS/architecture, and fixed build arguments;
-- `internalParameters` has a closed shape containing the builder/toolchain OCI
-  digest reference, resolved platform-manifest digest, and platform;
+  target OS/architecture, `buildParameters`, empty `materials`, `contracts`,
+  and `arguments: { "BUILD_IDENTITY": "sha256:..." }`;
+- `internalParameters` is exactly `{ "builderImage": ... }`, containing the
+  complete candidate builder-image object;
 - `resolvedDependencies` contains the source Git revision, exact build
-  definition, builder image, and every other downloaded build material by
-  immutable digest, with no mutable-only material;
+  definition, and builder image as immutable SLSA resource descriptors. In
+  this order, each descriptor has `uri` and `digest`: source repository with
+  its Git algorithm/value; definition path with its SHA-256 hex; and builder
+  digest reference with its manifest SHA-256 hex. D072 v1 permits no additional
+  downloaded material;
 - `runDetails.builder.id` is
   `https://stirpi.dev/builders/registry-egress-proxy/v1`;
 - `runDetails.metadata` records `invocationId`, `startedOn`, and `finishedOn` as
@@ -820,7 +904,10 @@ The build-type definition committed at the candidate's `buildDefinition.path`
 normatively fixes the exact external/internal parameter object shapes, build
 arguments, environment, output selection, and OCI assembly procedure. The
 candidate and provenance values for source, definition, builder image, target,
-and manifest subject must be equal. Provenance records how the artifact was
+parameters, materials, contracts, and release version must be equal. Verification
+reconstructs BuildIdentityV1 from provenance's own external and internal fields,
+then checks its argument against the candidate, executable, and readiness.
+The sole manifest subject is checked separately. Provenance records how the artifact was
 built; version 1 makes no bit-for-bit reproducible-build claim.
 
 The exact statement bytes are committed as `provenance.intoto.json` and
@@ -933,8 +1020,12 @@ The first release follows this sequence and stops on any failed check:
 1. **Human:** review and commit proxy source, build-type definition, exact build
    recipe, and conformance suite.
 2. **Mechanical:** resolve the pinned builder image for the target platform;
-   build once with the fixed parameters; retain source, build, builder, and
-   material identities.
+   read the exact build-definition blob from the reviewed commit; materialize
+   the complete clean Git tree without overlays or untracked files; derive
+   BuildIdentityV1 independently in Node and Go and require identical canonical
+   bytes, preimages, and digest. Build once with the fixed parameters, deriving
+   `BUILDER_IMAGE` from builder authority and injecting the derived
+   `BUILD_IDENTITY`; retain all pre-build authority.
 3. **Mechanical:** assemble and inspect the OCI platform image; publish it;
    record the immutable manifest, config, ordered layers, and extracted
    executable SHA-256.

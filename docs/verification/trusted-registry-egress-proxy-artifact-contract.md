@@ -321,7 +321,7 @@ proxy writes exactly this JCS object plus LF as its sole stdout record:
   "addressPolicy": "stirpi.public-address/1",
   "artifactContract": "stirpi.registry-egress-proxy-artifact/1",
   "attestationSchema": "stirpi.registry-egress-readiness/1",
-  "buildIdentity": "sha256:<approved build-provenance subject digest>",
+  "buildIdentity": "sha256:<derived pre-build BuildIdentityV1 digest>",
   "effectivePolicySha256": "sha256:<policy digest>",
   "event": "ready",
   "executableSha256": "sha256:<executable bytes digest>",
@@ -338,6 +338,10 @@ proxy writes exactly this JCS object plus LF as its sole stdout record:
   "runtime": { "gid": 65532, "uid": 65532 }
 }
 ```
+
+`buildIdentity` is the D072 [BuildIdentityV1](proxy-build-identity-v1.md)
+digest of canonical pre-build authority embedded in the executable. The final
+OCI manifest remains the separate provenance subject and artifact identity.
 
 Resolver endpoints are sorted and unique and must be numeric addresses.
 Resolver search domains and options are not used because the proxy emits only
