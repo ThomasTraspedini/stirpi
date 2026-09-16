@@ -57,16 +57,20 @@ export class TrustedLocalAuthority {
       join(executorBin, "npm"),
     );
     this.executorPath = executorBin;
-    const npmrc = join(stateRoot, "empty-npmrc");
-    writeFileSync(npmrc, "");
+    // npm 11 rejects loading one config file as both user and global config.
+    // Keep both trusted, empty authority files while giving each role its own path.
+    const userNpmrc = join(stateRoot, "empty-npmrc-user");
+    const globalNpmrc = join(stateRoot, "empty-npmrc-global");
+    writeFileSync(userNpmrc, "");
+    writeFileSync(globalNpmrc, "");
     this.environment = {
       PATH: bin,
       HOME: home,
       TMPDIR: home,
       LANG: "C.UTF-8",
       TZ: "UTC",
-      NPM_CONFIG_USERCONFIG: npmrc,
-      NPM_CONFIG_GLOBALCONFIG: npmrc,
+      NPM_CONFIG_USERCONFIG: userNpmrc,
+      NPM_CONFIG_GLOBALCONFIG: globalNpmrc,
       NPM_CONFIG_REGISTRY: contract.preparation.npm.registry,
       NPM_CONFIG_IGNORE_SCRIPTS: "false",
       NPM_CONFIG_AUDIT: "false",

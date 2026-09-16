@@ -211,7 +211,7 @@ test("baseline-only authority covers harmless metadata but rejects new operation
       dependencies.env.NPM_CONFIG_REGISTRY,
       "https://registry.npmjs.org/",
     );
-    assert.equal(
+    assert.notEqual(
       dependencies.env.NPM_CONFIG_USERCONFIG,
       dependencies.env.NPM_CONFIG_GLOBALCONFIG,
     );
@@ -254,6 +254,54 @@ test("baseline-only authority covers harmless metadata but rejects new operation
     assert.equal(prep.records[1]!.steps.at(-1)!.id, "cleanup");
     writeFileSync(join(f.source, "package.json"), "{}");
     assert.throws(() => authority.assertBaseline(f.source), /baseline package/);
+  } finally {
+    f.close();
+  }
+});
+
+test("trusted npm environment gives npm 11 distinct empty authority configs", () => {
+  const f = bindingFixture();
+  try {
+    const state = join(f.directory, "trusted-state");
+    const local = defaultLocalTools();
+    const authority = new TrustedLocalAuthority(
+      f.contract,
+      { ...f.tools, node: local.node, npmRoot: local.npmRoot },
+      state,
+      fakePreparation(f, []),
+    );
+    const env = authority.env();
+    const userConfig = env.NPM_CONFIG_USERCONFIG!;
+    const globalConfig = env.NPM_CONFIG_GLOBALCONFIG!;
+
+    assert.notEqual(userConfig, globalConfig);
+    assert.equal(readFileSync(userConfig, "utf8"), "");
+    assert.equal(readFileSync(globalConfig, "utf8"), "");
+    for (const config of [userConfig, globalConfig])
+      assert.equal(config.startsWith(f.source + "/"), false);
+    assert.equal(env.PATH, join(state, "trusted-bin"));
+    assert.equal(env.HOME, join(state, "preparation-home"));
+    assert.equal(env.TMPDIR, env.HOME);
+    assert.equal(env.NPM_CONFIG_REGISTRY, "https://registry.npmjs.org/");
+    assert.equal(env.NPM_CONFIG_IGNORE_SCRIPTS, "false");
+    assert.equal(env.NPM_CONFIG_AUDIT, "false");
+    assert.equal(env.NPM_CONFIG_FUND, "false");
+    assert.equal(
+      Object.keys(env).some((key) =>
+        /token|password|auth|api_key|credential/i.test(key),
+      ),
+      false,
+    );
+
+    const npm = spawnSync("npm", ["--version"], {
+      cwd: f.source,
+      env,
+      encoding: "utf8",
+      shell: false,
+    });
+    assert.equal(npm.error, undefined);
+    assert.equal(npm.status, 0, npm.stderr);
+    assert.match(npm.stdout, /^\d+\.\d+\.\d+\s*$/);
   } finally {
     f.close();
   }
