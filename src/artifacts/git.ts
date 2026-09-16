@@ -17,8 +17,9 @@ import type {
   ArtifactRequest,
 } from "./index.js";
 
-function git(path: string, ...args: string[]): string {
-  return execFileSync("git", ["-C", path, ...args], {
+function git(executable: string, path: string, ...args: string[]): string {
+  const identityArgs = executable === "git" ? [] : ["--no-replace-objects"];
+  return execFileSync(executable, [...identityArgs, "-C", path, ...args], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     env: Object.fromEntries(
@@ -44,6 +45,7 @@ export class GitArtifactBackend implements ArtifactBackend {
   constructor(
     private readonly repository: string,
     private readonly work: GitWork = () => {},
+    private readonly gitExecutable = "git",
   ) {}
 
   perform(request: ArtifactRequest): ArtifactOutcome {
@@ -51,11 +53,22 @@ export class GitArtifactBackend implements ArtifactBackend {
       this.ready = false;
       try {
         if (
-          git(this.repository, "rev-parse", "--is-inside-work-tree") !== "true"
+          git(
+            this.gitExecutable,
+            this.repository,
+            "rev-parse",
+            "--is-inside-work-tree",
+          ) !== "true"
         )
           throw new Error("Target must be a Git working repository");
         if (
-          git(this.repository, "status", "--porcelain", "--untracked-files=all")
+          git(
+            this.gitExecutable,
+            this.repository,
+            "status",
+            "--porcelain",
+            "--untracked-files=all",
+          )
         )
           return {
             ok: false,
@@ -65,6 +78,7 @@ export class GitArtifactBackend implements ArtifactBackend {
             },
           };
         const ref = git(
+          this.gitExecutable,
           this.repository,
           "rev-parse",
           "--verify",
@@ -95,6 +109,7 @@ export class GitArtifactBackend implements ArtifactBackend {
       if (
         !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(request.base) ||
         git(
+          this.gitExecutable,
           this.repository,
           "rev-parse",
           "--verify",
@@ -103,7 +118,12 @@ export class GitArtifactBackend implements ArtifactBackend {
       )
         throw new Error("Base must be a full commit identity");
       const root = realpathSync(
-        git(this.repository, "rev-parse", "--show-toplevel"),
+        git(
+          this.gitExecutable,
+          this.repository,
+          "rev-parse",
+          "--show-toplevel",
+        ),
       );
       const tempRoot = realpathSync(tmpdir());
       const rel = relative(root, tempRoot);
@@ -121,8 +141,18 @@ export class GitArtifactBackend implements ArtifactBackend {
         worktree: path,
         cleaned: false,
       };
-      git(this.repository, "worktree", "add", "-b", branch, path, request.base);
+      git(
+        this.gitExecutable,
+        this.repository,
+        "worktree",
+        "add",
+        "-b",
+        branch,
+        path,
+        request.base,
+      );
       created = true;
+      const gitExecutable = this.gitExecutable;
       this.work(request, {
         path,
         base: request.base,
@@ -130,15 +160,37 @@ export class GitArtifactBackend implements ArtifactBackend {
         commit(message) {
           if (!message.trim())
             throw new Error("Commit message must describe the change");
-          git(path, "add", "--all");
-          const tree = git(path, "write-tree");
-          if (tree !== git(path, "rev-parse", "HEAD^{tree}"))
-            git(path, "-c", "commit.gpgsign=false", "commit", "-m", message);
-          return git(path, "rev-parse", "HEAD");
+          git(gitExecutable, path, "add", "--all");
+          const tree = git(gitExecutable, path, "write-tree");
+          if (tree !== git(gitExecutable, path, "rev-parse", "HEAD^{tree}"))
+            git(
+              gitExecutable,
+              path,
+              "-c",
+              "commit.gpgsign=false",
+              "commit",
+              "-m",
+              message,
+            );
+          return git(gitExecutable, path, "rev-parse", "HEAD");
         },
       });
-      artifact.ref = git(path, "rev-parse", "--verify", "HEAD^{commit}");
-      if (git(path, "status", "--porcelain", "--untracked-files=all"))
+      artifact.ref = git(
+        this.gitExecutable,
+        path,
+        "rev-parse",
+        "--verify",
+        "HEAD^{commit}",
+      );
+      if (
+        git(
+          this.gitExecutable,
+          path,
+          "status",
+          "--porcelain",
+          "--untracked-files=all",
+        )
+      )
         throw new Error(
           "Work left uncommitted changes; worktree retained for inspection",
         );
@@ -152,13 +204,20 @@ export class GitArtifactBackend implements ArtifactBackend {
     if (created && artifact) {
       try {
         artifact.ref = git(
+          this.gitExecutable,
           artifact.worktree!,
           "rev-parse",
           "--verify",
           "HEAD^{commit}",
         );
         // No force: Git refuses removal if work would be lost (including ignored files).
-        git(this.repository, "worktree", "remove", artifact.worktree!);
+        git(
+          this.gitExecutable,
+          this.repository,
+          "worktree",
+          "remove",
+          artifact.worktree!,
+        );
         artifact.cleaned = true;
       } catch (error) {
         if (outcome.ok)
@@ -195,8 +254,11 @@ export class GitArtifactBackend implements ArtifactBackend {
 export function assertExternalGitState(
   repository: string,
   paths: string[],
+  gitExecutable = "git",
 ): void {
-  const root = realpathSync(git(repository, "rev-parse", "--show-toplevel"));
+  const root = realpathSync(
+    git(gitExecutable, repository, "rev-parse", "--show-toplevel"),
+  );
   for (const path of paths) {
     let ancestor = resolve(path);
     const suffix: string[] = [];

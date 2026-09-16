@@ -35,7 +35,7 @@ function requiredArgument(args: string[], name: string) {
 }
 
 // Resolve once and launch using this absolute path, independent of worktree cwd.
-function executablePath(executable: string) {
+export function executablePath(executable: string) {
   if (typeof executable !== "string" || !executable.trim())
     throw new Error("Preflight: invalid executor executable");
   const candidates = executable.includes("/")
@@ -92,6 +92,11 @@ export function verifyExecutor(config: ProcessConfig, pin: ExecutorPin = {}) {
     command.args = args;
   }
   const executableSha256 = sha256(readFileSync(path));
+  if (
+    pin.executableSha256 !== undefined &&
+    pin.executableSha256 !== executableSha256
+  )
+    throw new Error("Preflight: executor executable SHA256 mismatch");
   let executableVersion: string;
   try {
     executableVersion = execFileSync(path, ["--version"], {

@@ -1,3 +1,12 @@
+import {
+  bindTrustedLocal,
+  localPath,
+  runtimeBlob,
+} from "./trusted-local-contract.js";
+import {
+  defaultLocalTools,
+  verifyLocalTools,
+} from "./trusted-local-identity.js";
 import { authorityObject, parseAuthorityJson } from "../authority/json.js";
 import { validatePreregisteredProfile } from "./profile-authority.js";
 import { execFileSync, fork } from "node:child_process";
@@ -11,10 +20,10 @@ import {
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
-  git,
+  gitAt,
   gitEnvironment,
   initRepository,
   sha256,
@@ -25,10 +34,21 @@ import type { RunOptions, runExperimentLocally } from "./run.js";
 type Result = Awaited<ReturnType<typeof runExperimentLocally>>;
 const require = createRequire(import.meta.url);
 
-export function assertRuntimeCheckout(checkout: string, pin: string) {
+export function assertRuntimeCheckout(
+  checkout: string,
+  pin: string,
+  gitExecutable = "git",
+) {
   if (
-    git(checkout, "rev-parse", "HEAD") !== pin ||
-    git(checkout, "status", "--porcelain", "--untracked-files=all", "--ignored")
+    gitAt(gitExecutable, checkout, "rev-parse", "HEAD") !== pin ||
+    gitAt(
+      gitExecutable,
+      checkout,
+      "status",
+      "--porcelain",
+      "--untracked-files=all",
+      "--ignored",
+    )
   )
     throw new Error("Preflight: runtime checkout dirty or identity mismatch");
 }
@@ -45,14 +65,32 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
   const pin = pilot.stirpiCommit;
   if (typeof pin !== "string" || !/^[a-f0-9]{40}$/.test(pin))
     throw new Error("Preflight: invalid runtime pin");
+  // Schema 3 supplies an operational locator whose bytes are authenticated
+  // against R below. Use that same candidate for the bootstrap reads, then
+  // retain those reads only if verification succeeds.
+  const schema3Tools =
+    pilot.schemaVersion === 3
+      ? (options.trustedLocalTools ?? defaultLocalTools())
+      : undefined;
+  const gitExecutable = schema3Tools?.git ?? "git";
+  if (
+    schema3Tools &&
+    (typeof gitExecutable !== "string" || !isAbsolute(gitExecutable))
+  )
+    throw new Error("Preflight: tool locations must be absolute locators");
   let repository: string;
   let containingCommit: string;
   try {
-    repository = git(dirname(path), "rev-parse", "--show-toplevel");
-    containingCommit = git(repository, "rev-parse", "HEAD");
+    repository = gitAt(
+      gitExecutable,
+      dirname(path),
+      "rev-parse",
+      "--show-toplevel",
+    );
+    containingCommit = gitAt(gitExecutable, repository, "rev-parse", "HEAD");
     const name = relative(repository, path);
     const committed = execFileSync(
-      "git",
+      gitExecutable,
       [
         "--no-replace-objects",
         "-C",
@@ -67,7 +105,13 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
     if (
       typeof pin !== "string" ||
       !/^[a-f0-9]{40}$/.test(pin) ||
-      git(repository, "rev-parse", "--verify", `${pin}^{commit}`) !== pin
+      gitAt(
+        gitExecutable,
+        repository,
+        "rev-parse",
+        "--verify",
+        `${pin}^{commit}`,
+      ) !== pin
     )
       throw new Error("invalid runtime pin");
   } catch (error) {
@@ -82,32 +126,123 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
   const checkout = join(temporary, "checkout");
   const build = join(temporary, "build");
   try {
-    initRepository(checkout);
-    transfer(repository, checkout, pin);
-    git(checkout, "checkout", "--detach", pin);
-    assertRuntimeCheckout(checkout, pin);
+    initRepository(checkout, gitExecutable);
+    transfer(repository, checkout, pin, gitExecutable);
+    gitAt(gitExecutable, checkout, "checkout", "--detach", pin);
+    assertRuntimeCheckout(checkout, pin, gitExecutable);
     if (pilot.schemaVersion === 2)
       validatePreregisteredProfile(pilot, checkout);
+    const binding =
+      pilot.schemaVersion === 3
+        ? bindTrustedLocal(pilot, checkout, false, gitExecutable)
+        : undefined;
+    if (binding) {
+      for (const [name, filePin] of Object.entries(binding.contract.inputs)) {
+        const committed = binding.inputs[name as keyof typeof binding.inputs];
+        if (name !== "governance") {
+          const fromP = runtimeBlob(repository, filePin.path, gitExecutable);
+          if (!fromP.equals(committed))
+            throw new Error(`Preflight: ${name} P/R input mismatch`);
+        }
+      }
+      if (
+        relative(repository, resolve(options.manifest)) !==
+          binding.contract.inputs.manifest.path ||
+        !readFileSync(options.manifest).equals(binding.inputs.manifest)
+      )
+        throw new Error("Preflight: external manifest mismatch");
+      // Ensure the supplied manifest's task resolves to the exact snapshotted task.
+      const manifest = authorityObject(
+        parseAuthorityJson(binding.inputs.manifest),
+        "manifest",
+      );
+      if (
+        typeof manifest.taskFile !== "string" ||
+        resolve(
+          dirname(binding.contract.inputs.manifest.path),
+          manifest.taskFile,
+        ) !== resolve(binding.contract.inputs.task.path)
+      )
+        throw new Error("Preflight: task path does not match contract");
+    }
+    const tools = binding
+      ? verifyLocalTools(binding.contract, schema3Tools!)
+      : undefined;
+    if (binding) {
+      // Validate supplied argv before replacing its deployment path with R's adapter.
+      if (
+        sha256(readFileSync(options.executor.executable)) !==
+          binding.contract.toolchain.node.sha256 ||
+        Object.keys(options.executor).some(
+          (key) => !["id", "executable", "args"].includes(key),
+        )
+      )
+        throw new Error(
+          "Preflight: executor executable/configuration override",
+        );
+      const args = options.executor.args ?? [];
+      if (
+        args[0] !== "R:" + binding.contract.executor.adapterPath &&
+        args[0] !== resolve(repository, binding.contract.executor.adapterPath)
+      )
+        throw new Error("Preflight: executor adapter must designate R");
+      const expected = [
+        args[0],
+        "--codex",
+        args[2],
+        "--model",
+        binding.contract.executor.model,
+        "--effort",
+        binding.contract.executor.effort,
+        "--timeout-ms",
+        String(binding.contract.executor.timeoutMs),
+      ];
+      const auth =
+        args.length === 11 &&
+        args[9] === "--auth-file" &&
+        args[10]?.startsWith("/")
+          ? args.slice(9)
+          : [];
+      if (
+        !args[2]?.startsWith("/") ||
+        JSON.stringify(args) !== JSON.stringify([...expected, ...auth])
+      )
+        throw new Error("Preflight: executor configuration override");
+    }
     // Never consume dist, loaders, package scripts, or runtime modules from HEAD.
     execFileSync(
       process.execPath,
       [
-        require.resolve("typescript/bin/tsc"),
+        tools
+          ? join(tools.compilerRoot, "bin/tsc")
+          : require.resolve("typescript/bin/tsc"),
         "--project",
         join(checkout, "tsconfig.json"),
         "--outDir",
         build,
         "--typeRoots",
-        dirname(dirname(require.resolve("@types/node/package.json"))),
+        tools
+          ? tools.typeRoots
+          : dirname(dirname(require.resolve("@types/node/package.json"))),
       ],
       { cwd: checkout, env: { PATH: process.env.PATH }, stdio: "pipe" },
     );
-    assertRuntimeCheckout(checkout, pin);
+    assertRuntimeCheckout(checkout, pin, gitExecutable);
     writeFileSync(join(build, "package.json"), '{"type":"module"}');
     const inputRoot = join(temporary, "input");
     const snapshot = join(inputRoot, relative(repository, path));
     mkdirSync(dirname(snapshot), { recursive: true });
     writeFileSync(snapshot, bytes);
+    if (binding) {
+      for (const [name, filePin] of Object.entries(binding.contract.inputs)) {
+        const committed = binding.inputs[name as keyof typeof binding.inputs];
+        const target = resolve(inputRoot, filePin.path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, committed);
+      }
+      localPath(checkout, binding.contract.executor.adapterPath);
+      localPath(checkout, "adapters/codex/contract.mjs");
+    }
     if (pilot.publicEvaluator !== undefined) {
       const file = authorityObject(
         pilot.publicEvaluator,
@@ -131,7 +266,7 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
       import { execFileSync } from 'node:child_process';
       import { readFileSync } from 'node:fs';
       import { createHash } from 'node:crypto';
-      const git = (...args) => execFileSync('git', ['--no-replace-objects', ...args], {
+      const git = (...args) => execFileSync(${JSON.stringify(gitExecutable)}, ['--no-replace-objects', ...args], {
         encoding: 'utf8', env: ${JSON.stringify(gitEnvironment())}
       }).trim();
       const actualCommit = git('rev-parse', 'HEAD');
@@ -153,8 +288,8 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
       });
     `,
     );
-    assertRuntimeCheckout(checkout, pin);
-    const actualCommit = git(checkout, "rev-parse", "HEAD");
+    assertRuntimeCheckout(checkout, pin, gitExecutable);
+    const actualCommit = gitAt(gitExecutable, checkout, "rev-parse", "HEAD");
     if (actualCommit !== pin)
       throw new Error("Preflight: actual runtime differs from pin");
     const { signal, observeEvent, ...input } = options;
@@ -203,7 +338,22 @@ export async function runPinnedRuntime(options: RunOptions): Promise<Result> {
         options: {
           ...input,
           preregistration: snapshot,
-          manifest: resolve(input.manifest),
+          manifest: binding
+            ? resolve(inputRoot, binding.contract.inputs.manifest.path)
+            : resolve(input.manifest),
+          ...(binding && tools
+            ? {
+                trustedLocalTools: tools,
+                executor: {
+                  ...input.executor,
+                  executable: tools.node,
+                  args: [
+                    resolve(checkout, binding.contract.executor.adapterPath),
+                    ...(input.executor.args ?? []).slice(1),
+                  ],
+                },
+              }
+            : {}),
           output: resolve(input.output),
           source: /^(https?:|git@|ssh:)/.test(input.source)
             ? input.source

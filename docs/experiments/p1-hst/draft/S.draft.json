@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 3,
+  "id": "p1-hst-S-draft-001",
+  "class": "pilot",
+  "testcase": "booking-invariants-d032-counterfactual-001",
+  "condition": "S",
+  "stirpiCommit": "UNRESOLVED-RUNTIME-COMMIT",
+  "trustedLocalContract": {
+    "id": "p1-hst-common-001",
+    "version": 1,
+    "path": "docs/experiments/p1-hst/trusted-local-contract.json",
+    "sha256": "94dc9b071c926f358dd5a82ad13354bc4053a3acaa26499715d0f4599eac2e19"
+  },
+  "hiddenEvaluationDuringRun": false
+}

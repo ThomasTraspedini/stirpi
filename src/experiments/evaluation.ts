@@ -1,3 +1,4 @@
+import { parseTrustedLocalContract } from "./trusted-local-contract.js";
 import { sha256 } from "./inputs.js";
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -169,6 +170,74 @@ export function replayExperiment(directory: string) {
       )
     )
       throw new Error("Replay experiment/runtime identity mismatch");
+  }
+  const local = metadata.preflight?.trustedLocal;
+  if (local) {
+    const contract = parseTrustedLocalContract(local.contents);
+    if (
+      sha256(local.contents) !== local.contractSha256 ||
+      !isDeepStrictEqual(contract, local.contract) ||
+      metadata.preflight.preregistration.document.trustedLocalContract
+        .sha256 !== local.contractSha256
+    )
+      throw new Error("Replay trusted-local contract mismatch");
+    for (const [key, pin] of Object.entries(contract.inputs)) {
+      const input = local.inputs[key];
+      if (
+        !input ||
+        input.sha256 !== pin.sha256 ||
+        sha256(input.contents) !== pin.sha256
+      )
+        throw new Error("Replay trusted-local input mismatch");
+    }
+    if (
+      sha256(readFileSync(join(directory, "task.txt"))) !==
+      contract.inputs.task.sha256
+    )
+      throw new Error("Replay trusted-local task mismatch");
+    const promptRecords = jsonLines(join(directory, "invocations.jsonl")) as {
+      type: string;
+      index: number;
+      effectivePromptIdentity?: {
+        taskSha256: string;
+        governanceSha256: string;
+        promptSha256: string;
+      };
+      input?: { governance?: { text: string; sha256: string } };
+      governanceSha256?: string;
+      prompt?: string;
+      promptSha256?: string;
+    }[];
+    for (const record of promptRecords) {
+      if (record.type !== "started") continue;
+      if (
+        !isDeepStrictEqual(record.input?.governance, {
+          text: local.inputs.governance.contents,
+          sha256: contract.inputs.governance.sha256,
+        }) ||
+        record.governanceSha256 !== contract.inputs.governance.sha256 ||
+        typeof record.prompt !== "string" ||
+        sha256(record.prompt) !== record.promptSha256 ||
+        !record.prompt.includes(local.inputs.governance.contents)
+      )
+        throw new Error("Replay trusted-local governance/prompt mismatch");
+      if (
+        promptRecords.some(
+          (row) => row.type === "returned" && row.index === record.index,
+        ) &&
+        !isDeepStrictEqual(
+          promptRecords.find(
+            (row) => row.type === "process" && row.index === record.index,
+          )?.effectivePromptIdentity,
+          {
+            taskSha256: contract.inputs.task.sha256,
+            governanceSha256: contract.inputs.governance.sha256,
+            promptSha256: record.promptSha256,
+          },
+        )
+      )
+        throw new Error("Replay trusted-local effective prompt mismatch");
+    }
   }
   const state: State = JSON.parse(
     readFileSync(join(directory, "state.json"), "utf8"),

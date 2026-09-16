@@ -11,8 +11,9 @@ import type {
 } from "./index.js";
 import { GitArtifactBackend, assertExternalGitState } from "./git.js";
 
-function git(path: string, ...args: string[]): string {
-  return execFileSync("git", ["-C", path, ...args], {
+function git(executable: string, path: string, ...args: string[]): string {
+  const identityArgs = executable === "git" ? [] : ["--no-replace-objects"];
+  return execFileSync(executable, [...identityArgs, "-C", path, ...args], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     env: Object.fromEntries(
@@ -24,10 +25,17 @@ function git(path: string, ...args: string[]): string {
 export class GitWorkspaceBackend implements ArtifactBackend {
   private ready = false;
   private readonly assignments = new Map<string, Artifact>();
-  constructor(private readonly repository: string) {}
+  constructor(
+    private readonly repository: string,
+    private readonly gitExecutable = "git",
+  ) {}
   perform(request: ArtifactRequest): ArtifactOutcome {
     if (request.type === "INITIALIZE") {
-      const result = new GitArtifactBackend(this.repository).perform(request);
+      const result = new GitArtifactBackend(
+        this.repository,
+        undefined,
+        this.gitExecutable,
+      ).perform(request);
       this.ready = result.ok;
       return result;
     }
@@ -48,6 +56,7 @@ export class GitWorkspaceBackend implements ArtifactBackend {
         if (
           !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(request.base) ||
           git(
+            this.gitExecutable,
             this.repository,
             "rev-parse",
             "--verify",
@@ -56,12 +65,13 @@ export class GitWorkspaceBackend implements ArtifactBackend {
         )
           throw new Error("Base must be an immutable commit SHA");
         const temp = realpathSync(tmpdir());
-        assertExternalGitState(this.repository, [temp]);
+        assertExternalGitState(this.repository, [temp], this.gitExecutable);
         const container = mkdtempSync(join(temp, "stirpi-work-"));
         const worktree = join(container, "checkout");
         const branch = `stirpi/work-${randomUUID()}`;
         try {
           git(
+            this.gitExecutable,
             this.repository,
             "worktree",
             "add",
@@ -92,16 +102,21 @@ export class GitWorkspaceBackend implements ArtifactBackend {
         const path = artifact.worktree;
         if (
           request.base !== artifact.ref ||
-          git(path, "rev-parse", "HEAD") !== artifact.ref ||
-          git(path, "symbolic-ref", "--short", "HEAD") !== artifact.branch
+          git(this.gitExecutable, path, "rev-parse", "HEAD") !== artifact.ref ||
+          git(this.gitExecutable, path, "symbolic-ref", "--short", "HEAD") !==
+            artifact.branch
         )
           throw new Error("Executor changed managed Git identity");
         if (request.type === "COMMIT") {
           if (!request.message?.trim())
             throw new Error("Commit message must describe the change");
-          git(path, "add", "--all");
-          if (git(path, "write-tree") !== git(path, "rev-parse", "HEAD^{tree}"))
+          git(this.gitExecutable, path, "add", "--all");
+          if (
+            git(this.gitExecutable, path, "write-tree") !==
+            git(this.gitExecutable, path, "rev-parse", "HEAD^{tree}")
+          )
             git(
+              this.gitExecutable,
               path,
               "-c",
               "commit.gpgsign=false",
@@ -109,9 +124,23 @@ export class GitWorkspaceBackend implements ArtifactBackend {
               "-m",
               request.message,
             );
-          artifact.ref = git(path, "rev-parse", "--verify", "HEAD^{commit}");
+          artifact.ref = git(
+            this.gitExecutable,
+            path,
+            "rev-parse",
+            "--verify",
+            "HEAD^{commit}",
+          );
         } else if (request.type === "CHECK") {
-          if (git(path, "status", "--porcelain", "--untracked-files=all"))
+          if (
+            git(
+              this.gitExecutable,
+              path,
+              "status",
+              "--porcelain",
+              "--untracked-files=all",
+            )
+          )
             return {
               ok: false,
               reason: {
@@ -125,6 +154,7 @@ export class GitWorkspaceBackend implements ArtifactBackend {
           // No force: retain dirty and ignored files for diagnosis.
           if (
             git(
+              this.gitExecutable,
               path,
               "status",
               "--porcelain",
@@ -133,7 +163,7 @@ export class GitWorkspaceBackend implements ArtifactBackend {
             )
           )
             return { ok: true, artifact: structuredClone(artifact) };
-          git(this.repository, "worktree", "remove", path);
+          git(this.gitExecutable, this.repository, "worktree", "remove", path);
           artifact.cleaned = true;
           try {
             rmdirSync(join(path, ".."));

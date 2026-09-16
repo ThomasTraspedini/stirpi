@@ -190,3 +190,12 @@ Only derived category/source/version-support and strictly validated
 `messageDerivedHttpStatus` fields are retained alongside existing message size/hash.
 Unsupported versions produce OTHER. Classification does not change lifecycle,
 progress, evaluation or retry behavior.
+
+For the dedicated P1 trusted-local pilot, the harness supplies a separate
+`governance: {text, sha256}` context field verified against runtime R's public
+contract. `invocationFrom` rejects malformed/hash-mismatched governance and
+preserves it; `promptFrom` adds its unchanged text in an explicit common section.
+The task is still passed unchanged via stdin. Adapter stderr records
+`governanceSha256`, `promptSha256` and `taskSha256`; the dedicated harness compares
+these hashes with its expected prompt before accepting a returned response.
+Historical invocations omit this field and retain their existing prompt format.

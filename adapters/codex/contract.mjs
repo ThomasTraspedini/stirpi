@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // Adapter-owned representation of M2 v1; no provider dependency in Stirpi core.
 const string = { type: "string" };
 const text = { type: "string", minLength: 1 };
@@ -184,6 +185,21 @@ export function invocationFrom(raw) {
     throw new Error("WORKSPACE_REQUIRED");
   if (c.task !== undefined && typeof c.task !== "string")
     throw new Error("INVALID_INPUT");
+  let governance;
+  if (c.governance !== undefined) {
+    const g = c.governance;
+    if (
+      !g ||
+      typeof g !== "object" ||
+      Array.isArray(g) ||
+      Object.keys(g).length !== 2 ||
+      typeof g.text !== "string" ||
+      !/^[a-f0-9]{64}$/.test(g.sha256) ||
+      createHash("sha256").update(g.text).digest("hex") !== g.sha256
+    )
+      throw new Error("INVALID_INPUT");
+    governance = { text: g.text, sha256: g.sha256 };
+  }
   let verification;
   if (c.verification !== undefined) {
     const id = (value) =>
@@ -257,6 +273,7 @@ export function invocationFrom(raw) {
       artifact: artifact(r.artifact),
     })),
     ...(verification ? { verification } : {}),
+    ...(governance ? { governance } : {}),
   };
   if (c.control !== undefined) {
     if (
@@ -299,4 +316,17 @@ export function invocationFrom(raw) {
   )
     throw new Error("INVALID_INPUT");
   return { task: c.task ?? c.work.objective, context, workspace };
+}
+
+export function promptFrom(invocation) {
+  const { context, task } = invocation;
+  const contract = responseContract(context);
+  const prompt =
+    contract.instructions +
+    (context.governance
+      ? "\n\nCommon solver governance:\n" + context.governance.text
+      : "") +
+    "\n\nLineage-local context (JSON):\n" +
+    JSON.stringify(context);
+  return { contract, prompt, task };
 }

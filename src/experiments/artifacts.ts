@@ -7,7 +7,7 @@ import type {
   ArtifactOutcome,
 } from "../artifacts/index.js";
 import { GitWorkspaceBackend } from "../artifacts/workspaces.js";
-import { git, initRepository, transfer, verifyStart } from "./inputs.js";
+import { gitAt, initRepository, transfer, verifyStart } from "./inputs.js";
 
 // A separate object database per assignment prevents ordinary Git inspection of
 // sibling refs/objects. Existing M2 owns workspace/commit/lifecycle operations.
@@ -20,6 +20,7 @@ export class ExperimentArtifacts implements ArtifactBackend {
     private readonly archive: string,
     private readonly worlds: string,
     private readonly sourceCommit: string,
+    private readonly gitExecutable = "git",
   ) {
     mkdirSync(worlds);
   }
@@ -27,7 +28,7 @@ export class ExperimentArtifacts implements ArtifactBackend {
     let performed: ArtifactOutcome | undefined;
     try {
       if (request.type === "INITIALIZE") {
-        verifyStart(this.archive, this.sourceCommit);
+        verifyStart(this.archive, this.sourceCommit, this.gitExecutable);
         return {
           ok: true,
           artifact: { ref: this.sourceCommit, base: this.sourceCommit },
@@ -40,11 +41,11 @@ export class ExperimentArtifacts implements ArtifactBackend {
       if (request.type === "OPEN") {
         if (assignment) throw new Error("Workspace already assigned");
         const repo = join(this.worlds, randomUUID());
-        initRepository(repo);
-        transfer(this.archive, repo, request.base);
-        git(repo, "checkout", "--detach", request.base);
-        verifyStart(repo, request.base);
-        const backend = new GitWorkspaceBackend(repo);
+        initRepository(repo, this.gitExecutable);
+        transfer(this.archive, repo, request.base, this.gitExecutable);
+        gitAt(this.gitExecutable, repo, "checkout", "--detach", request.base);
+        verifyStart(repo, request.base, this.gitExecutable);
+        const backend = new GitWorkspaceBackend(repo, this.gitExecutable);
         const initialized = backend.perform({
           type: "INITIALIZE",
           taskId: request.taskId,
@@ -61,8 +62,14 @@ export class ExperimentArtifacts implements ArtifactBackend {
         outcome.ok &&
         (request.type === "COMMIT" || request.type === "RELEASE")
       ) {
-        transfer(assignment.repo, this.archive, outcome.artifact.ref);
-        git(
+        transfer(
+          assignment.repo,
+          this.archive,
+          outcome.artifact.ref,
+          this.gitExecutable,
+        );
+        gitAt(
+          this.gitExecutable,
           this.archive,
           "update-ref",
           `refs/heads/artifact-${key}`,

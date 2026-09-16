@@ -15,7 +15,7 @@ import {
 import { isAbsolute, join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
-import { invocationFrom, responseContract, responseFrom } from "./contract.mjs";
+import { invocationFrom, promptFrom, responseFrom } from "./contract.mjs";
 
 import {
   environmentEvidence,
@@ -302,19 +302,16 @@ try {
     ? version.stdout.trim()
     : null;
   events.version = record.version;
-  const contract = responseContract(context);
+  const { contract, prompt } = promptFrom(invocation);
   const schemaFile = join(temporary, "response-schema.json"),
     responseFile = join(temporary, "response.json");
   writeFileSync(schemaFile, JSON.stringify(contract.schema), { mode: 0o600 });
   // CLI treats an explicit prompt and stdin as separate instruction/context parts.
   // Task text is an unmodified suffix: no quoting, trimming, or reconstruction.
-  const prompt =
-    contract.instructions +
-    "\n\nLineage-local context (JSON):\n" +
-    JSON.stringify(context);
   record.taskSha256 = hash(task);
   record.contextSha256 = hash(JSON.stringify(context));
   record.promptSha256 = hash(prompt);
+  record.governanceSha256 = context.governance?.sha256 ?? null;
   const args = [
     "--ask-for-approval",
     "never",

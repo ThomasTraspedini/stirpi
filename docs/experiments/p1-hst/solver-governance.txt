@@ -1,0 +1,8 @@
+An assumption may be explored only as an explicit conditional world. It does
+not alter accepted target decisions, invent external capabilities, or authorize
+a parent change. A branch that requires a parent change is recorded as such and
+is not a valid result under the original contract.
+
+`Do not commit` prohibits autonomous Git operations by the solver. Canonical
+checkpoints requested through Stirpi are authorized equally for H*, S*, and T*;
+they are runtime operations, not solver operations.

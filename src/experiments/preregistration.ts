@@ -1,3 +1,11 @@
+import {
+  bindTrustedLocal,
+  assertLocalOptions,
+} from "./trusted-local-contract.js";
+import {
+  defaultLocalTools,
+  verifyLocalTools,
+} from "./trusted-local-identity.js";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
@@ -78,6 +86,114 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
     parseAuthorityJson(bytes),
     "Preflight: preregistration",
   );
+  if (pilot.schemaVersion === 3) {
+    const localTools = options.trustedLocalTools ?? defaultLocalTools();
+    const binding = bindTrustedLocal(
+      pilot,
+      process.cwd(),
+      false,
+      localTools.git,
+    );
+    const contract = binding.contract;
+    assertLocalOptions(options, contract, process.cwd(), localTools.git);
+    if (pilot.condition !== options.condition || testcase !== contract.testcase)
+      throw new Error("Preflight: trusted-local condition/testcase mismatch");
+    const tools = verifyLocalTools(contract, localTools);
+    const derived = pilotEnvelope(contract.limits);
+    for (const field of [
+      "budgets",
+      "supervision",
+      "evaluatorWallTimeMs",
+    ] as const)
+      if (
+        options[field] !== undefined &&
+        !isDeepStrictEqual(options[field], derived[field])
+      )
+        throw new Error(`Preflight: contradictory ${field}`);
+    const args = options.executor.args ?? [];
+    const adapter = resolve(process.cwd(), contract.executor.adapterPath);
+    const expected = [
+      adapter,
+      "--codex",
+      args[2],
+      "--model",
+      contract.executor.model,
+      "--effort",
+      contract.executor.effort,
+      "--timeout-ms",
+      String(contract.executor.timeoutMs),
+    ];
+    const auth =
+      args.length === 11 &&
+      args[9] === "--auth-file" &&
+      typeof args[10] === "string" &&
+      args[10].startsWith("/")
+        ? args.slice(9)
+        : [];
+    if (
+      !args[2]?.startsWith("/") ||
+      !isDeepStrictEqual(args, [...expected, ...auth]) ||
+      sha256(readFileSync(options.executor.executable)) !==
+        contract.toolchain.node.sha256 ||
+      Object.keys(options.executor).some(
+        (k) => !["id", "executable", "args"].includes(k),
+      )
+    )
+      throw new Error(
+        "Preflight: trusted-local executor override/adapter mismatch",
+      );
+    const executor = verifyExecutor(
+      { ...options.executor, executable: tools.node },
+      {
+        adapter: contract.executor.adapter,
+        executableVersion: contract.executor.executableVersion,
+        executableSha256: contract.executor.executableSha256,
+      },
+    );
+    return {
+      options: {
+        ...options,
+        ...derived,
+        maxConcurrency: 1,
+        executor: executor.command,
+        metadata: {
+          model: contract.executor.model,
+          effort: contract.executor.effort,
+        },
+        trustedLocalTools: tools,
+      },
+      evidence: {
+        verified: true,
+        executor: executor.evidence,
+        preregistration: {
+          path: resolve(options.preregistration),
+          sha256: sha256(bytes),
+          document: pilot,
+          schemaVersion: 3,
+          verificationProfile: null,
+        },
+        preregisteredLimits: contract.limits,
+        budgets: derived.budgets,
+        supervision: derived.supervision,
+        evaluator: {
+          wallTimeMs: derived.evaluatorWallTimeMs ?? null,
+          scope: "per-public-evaluator-process",
+        },
+        trustedLocal: {
+          contractSha256: sha256(binding.bytes),
+          contents: binding.bytes.toString("utf8"),
+          contract,
+          inputs: Object.fromEntries(
+            Object.entries(binding.inputs).map(([key, value]) => [
+              key,
+              { contents: value.toString("utf8"), sha256: sha256(value) },
+            ]),
+          ),
+          tools,
+        },
+      },
+    };
+  }
   const schema2 = pilot?.schemaVersion === 2;
   if (
     !pilot ||

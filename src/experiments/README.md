@@ -369,3 +369,31 @@ Database resources are removed at run completion, including operational failure.
 Dirty workspaces retain the existing diagnostic retention policy. Preparation does
 not install into the frozen source checkout. No executor/backend sandbox settings
 are changed by this infrastructure.
+
+The P1 H*/S*/T* schema-3 pilot pins a closed, public trusted-local contract in
+runtime R. Unlike schema 2 it is not an isolated verification profile. Contract
+and governance bytes, public inputs and the Codex adapter are read from the
+committed R checkout; public inputs are snapshotted after comparison with P.
+Local tool locations are deployment locators only (`trustedLocalTools` in the
+API); versions, executable hashes and npm/compiler/type-root installation
+closures must match R before compilation or solver invocation. Closure SHA-256
+v1 hashes JSON plus LF of sorted `[relative path, executable bits, file SHA256]`
+entries, with no file exclusions and no symlink entries inside the closure.
+
+The schema-3 preparation environment uses a dedicated external PATH with
+verified Node/npm/Git/Docker, empty user/global npm configuration, fixed registry
+and no inherited npm/Docker configuration or credentials. The executor receives
+a separate verified Node/npm/Git PATH without Docker. Local PostgreSQL
+image IDs have explicit OS/architecture, are inspected, and launch without pull;
+they are never relabeled as registry digests. Baseline package/lock pins are
+checked before the solver. Candidate operations are compared with baseline
+authority before each preparation step and lease reuse, including new descendant
+workspaces. Covered metadata changes require a fresh lease; uncovered operations
+or dependency resolution fail operationally and do not rewrite candidates.
+
+Governance is a separate verified context field. Adapter projection validates
+its hash; the explicit common prompt section preserves its text, while task
+stdin stays unchanged. Invocation evidence records expected prompt bytes/hash
+and hashes returned by the effective adapter. Replay validates recorded contract,
+input, governance and prompt identity without resolving toolchains or running
+preparation/checks. Historical pilots do not receive this governance.

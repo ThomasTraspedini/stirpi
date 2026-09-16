@@ -1,0 +1,15 @@
+{
+  "id": "p1-hst-codex-common-draft",
+  "executable": "/opt/homebrew/Cellar/node@24/24.20.0/bin/node",
+  "args": [
+    "R:adapters/codex/adapter.mjs",
+    "--codex",
+    "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "--model",
+    "gpt-6-astra",
+    "--effort",
+    "medium",
+    "--timeout-ms",
+    "900000"
+  ]
+}

@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+import type { TrustedLocalAuthority } from "./trusted-local-authority.js";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -74,15 +76,33 @@ export class TrustedPreparation {
   readonly records: PreparationEvidence[] = [];
   private readonly assignments = new Map<
     string,
-    { url: string; packageHash: string; lockHash: string }
+    {
+      url: string;
+      packageHash: string;
+      lockHash: string;
+      instance: string;
+      port: number;
+    }
   >();
   private readonly config: PreparationConfig;
   constructor(
     config: PreparationConfig,
     private readonly observe: () => void,
     private readonly run: TrustedProcess = trustedProcess,
+    private readonly authority?: TrustedLocalAuthority,
   ) {
     this.config = structuredClone(config);
+    if (
+      authority &&
+      !isDeepStrictEqual(config, {
+        modules: authority.contract.preparation.modules,
+        postgres: {
+          image: authority.contract.preparation.postgres.imageId,
+          prerequisites: authority.contract.preparation.postgres.prerequisites,
+        },
+      })
+    )
+      throw new Error("Preflight: preparation configuration mismatch");
     if (
       !config.modules.every((x) => /^[\w@/.-]+$/.test(x)) ||
       !config.postgres.prerequisites.every((x) => /^[a-z_][a-z0-9_]*$/.test(x))
@@ -90,7 +110,39 @@ export class TrustedPreparation {
       throw new Error("Invalid preparation configuration");
   }
   prepare(workspace: string) {
-    if (this.assignments.has(workspace)) return;
+    this.authority?.assertCandidate(workspace);
+    this.authority?.assertImage(workspace);
+    if (this.assignments.has(workspace)) {
+      const assignment = this.assignments.get(workspace)!;
+      this.authority?.assertContainer(
+        workspace,
+        assignment.instance,
+        assignment.port,
+      );
+      if (
+        !this.authority ||
+        (sha256(readFileSync(join(workspace, "package.json"))) ===
+          assignment.packageHash &&
+          sha256(readFileSync(join(workspace, "package-lock.json"))) ===
+            assignment.lockHash)
+      )
+        return;
+      // A covered metadata drift invalidates the old lease and requires fresh preparation.
+      for (const record of this.records.filter(
+        (r) =>
+          r.workspace === workspace && !r.steps.some((s) => s.id === "cleanup"),
+      )) {
+        this.run(
+          "docker",
+          ["rm", "--force", "--volumes", record.instance],
+          workspace,
+          this.authority.env(),
+        );
+        record.steps.push({ id: "cleanup", passed: true });
+        this.observe();
+      }
+      this.assignments.delete(workspace);
+    }
     const pkg = readFileSync(join(workspace, "package.json"));
     const lock = readFileSync(join(workspace, "package-lock.json"));
     const identity = JSON.parse(pkg.toString());
@@ -106,17 +158,26 @@ export class TrustedPreparation {
     this.observe();
     const step = (id: string, action: () => string) => {
       try {
+        this.authority?.assertCandidate(workspace);
         const result = action();
         record.steps.push({ id, passed: true });
         return result;
-      } catch {
+      } catch (error) {
         record.steps.push({ id, passed: false });
-        throw new Error(`Workspace preparation failed: ${id}`);
+        const detail =
+          error instanceof Error &&
+          /^(Preflight:|Trusted-local operational failure:)/.test(error.message)
+            ? `: ${error.message}`
+            : "";
+        throw new Error(`Workspace preparation failed: ${id}${detail}`);
       } finally {
         this.observe();
       }
     };
-    const env = { PATH: process.env.PATH, HOME: process.env.HOME };
+    const env = this.authority?.env() ?? {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+    };
     step("dependencies", () => this.run("npm", ["ci"], workspace, env));
     step("module-resolution", () =>
       this.run(
@@ -140,6 +201,13 @@ export class TrustedPreparation {
         [
           "run",
           "--detach",
+          ...(this.authority
+            ? [
+                "--pull=never",
+                "--platform",
+                this.authority.contract.preparation.postgres.platform!,
+              ]
+            : []),
           "--name",
           record.instance,
           "--label",
@@ -162,6 +230,11 @@ export class TrustedPreparation {
       ),
     )[0];
     record.imageId = inspection.Image;
+    if (
+      this.authority &&
+      inspection.Image !== this.authority.contract.preparation.postgres.imageId
+    )
+      throw new Error("Preflight: PostgreSQL container image mismatch");
     record.port = Number(
       inspection.NetworkSettings.Ports["5432/tcp"][0].HostPort,
     );
@@ -171,6 +244,7 @@ export class TrustedPreparation {
       record.port! > 65535
     )
       throw new Error("Invalid allocated PostgreSQL port");
+    this.authority?.assertContainer(workspace, record.instance, record.port);
     const url = `postgresql://postgres:${password}@127.0.0.1:${record.port}/experiment`;
     const dbEnv = { ...env, DATABASE_URL: url };
     step("database-connectivity", () =>
@@ -199,6 +273,8 @@ export class TrustedPreparation {
     );
     this.assignments.set(workspace, {
       url,
+      instance: record.instance,
+      port: record.port!,
       packageHash: record.packageSha256,
       lockHash: record.lockfileSha256,
     });
@@ -210,6 +286,7 @@ export class TrustedPreparation {
     base: NodeJS.ProcessEnv,
   ) {
     assertTrustedLocalCheck(check);
+    if (this.authority) this.prepare(workspace);
     const assignment = this.assignments.get(workspace);
     if (!assignment) throw new Error("Workspace has not been prepared");
     // npm scripts are command indirection: reject edits to their manifest/lockfile.
@@ -220,7 +297,9 @@ export class TrustedPreparation {
         assignment.lockHash
     )
       throw new Error("Trusted package identity changed");
-    const env = executorEnvironment(base.HOME!);
+    const env = this.authority
+      ? { ...this.authority.env(), HOME: base.HOME!, TMPDIR: base.HOME! }
+      : executorEnvironment(base.HOME!);
     if (
       check.executable === "npm" &&
       check.args.length === 1 &&
@@ -232,13 +311,20 @@ export class TrustedPreparation {
   cleanup() {
     let failed = false;
     for (const record of this.records) {
-      if (!record.steps.some((s) => s.id === "postgres")) continue;
+      if (
+        !record.steps.some((s) => s.id === "postgres") ||
+        record.steps.some((s) => s.id === "cleanup" && s.passed)
+      )
+        continue;
       try {
         this.run(
           "docker",
           ["rm", "--force", "--volumes", record.instance],
           record.workspace,
-          { PATH: process.env.PATH, HOME: process.env.HOME },
+          this.authority?.env() ?? {
+            PATH: process.env.PATH,
+            HOME: process.env.HOME,
+          },
         );
         record.steps.push({ id: "cleanup", passed: true });
       } catch {

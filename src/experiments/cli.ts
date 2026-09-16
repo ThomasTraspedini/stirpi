@@ -1,3 +1,4 @@
+import { authorityObject, parseAuthorityJson } from "../authority/json.js";
 import { parseArgs } from "node:util";
 import { readFileSync } from "node:fs";
 import { runExperiment, type RunOptions } from "./run.js";
@@ -51,6 +52,22 @@ export async function experimentCli(args: string[]) {
       !values["public-evaluator"]
     )
       throw new Error("Missing run configuration; use experiment --help");
+    for (const name of Object.keys(values)) {
+      if (
+        args.filter(
+          (arg) => arg === `--${name}` || arg.startsWith(`--${name}=`),
+        ).length > 1
+      )
+        throw new Error(`Duplicate run option --${name}`);
+    }
+    const dedicated =
+      values.preregistration &&
+      authorityObject(
+        parseAuthorityJson(readFileSync(values.preregistration)),
+        "Preregistration",
+      ).schemaVersion === 3;
+    const readConfig = (path: string) =>
+      dedicated ? parseAuthorityJson(readFileSync(path)) : read(path);
     const options: RunOptions = {
       manifest: target,
       condition: values.condition as Condition,
@@ -58,17 +75,28 @@ export async function experimentCli(args: string[]) {
         "verification-mode"
       ] as RunOptions["verificationMode"],
       source: values.source,
-      executor: read(values.executor),
+      executor: readConfig(values.executor) as RunOptions["executor"],
       output: values.output,
-      publicEvaluator: read(values["public-evaluator"]),
+      publicEvaluator: readConfig(
+        values["public-evaluator"],
+      ) as RunOptions["publicEvaluator"],
     };
     if (values.preregistration)
       options.preregistration = values.preregistration;
     if (values["evaluator-wall-time-ms"])
       options.evaluatorWallTimeMs = Number(values["evaluator-wall-time-ms"]);
-    if (values.budgets) options.budgets = read(values.budgets);
-    if (values.supervision) options.supervision = read(values.supervision);
-    if (values.metadata) options.metadata = read(values.metadata);
+    if (values.budgets)
+      options.budgets = readConfig(values.budgets) as NonNullable<
+        RunOptions["budgets"]
+      >;
+    if (values.supervision)
+      options.supervision = readConfig(values.supervision) as NonNullable<
+        RunOptions["supervision"]
+      >;
+    if (values.metadata)
+      options.metadata = readConfig(values.metadata) as NonNullable<
+        RunOptions["metadata"]
+      >;
     if (values.steps) options.maxSteps = Number(values.steps);
     if (values.concurrency) options.maxConcurrency = Number(values.concurrency);
     if (values["timeout-ms"]) options.timeoutMs = Number(values["timeout-ms"]);

@@ -44,33 +44,60 @@ export const gitEnvironment = () => ({
   GIT_CONFIG_GLOBAL: "/dev/null",
   GIT_TERMINAL_PROMPT: "0",
 });
-export function git(repo: string, ...args: string[]) {
-  return execFileSync("git", ["--no-replace-objects", "-C", repo, ...args], {
-    encoding: "utf8",
-    env: gitEnvironment(),
-    stdio: ["pipe", "pipe", "pipe"],
-    maxBuffer: 64 * 1024 * 1024,
-  }).trim();
+export function gitAt(executable: string, repo: string, ...args: string[]) {
+  return execFileSync(
+    executable,
+    ["--no-replace-objects", "-C", repo, ...args],
+    {
+      encoding: "utf8",
+      env: gitEnvironment(),
+      stdio: ["pipe", "pipe", "pipe"],
+      maxBuffer: 64 * 1024 * 1024,
+    },
+  ).trim();
 }
-export function initRepository(repo: string) {
+export function git(repo: string, ...args: string[]) {
+  return gitAt("git", repo, ...args);
+}
+export function initRepository(repo: string, gitExecutable = "git") {
   mkdirSync(repo, { recursive: true });
-  git(repo, "init", "--template=", "-b", "main");
-  git(repo, "config", "user.name", "Stirpi experiment");
-  git(repo, "config", "user.email", "experiment@example.invalid");
-  git(repo, "config", "core.hooksPath", "/dev/null");
+  gitAt(gitExecutable, repo, "init", "--template=", "-b", "main");
+  gitAt(gitExecutable, repo, "config", "user.name", "Stirpi experiment");
+  gitAt(
+    gitExecutable,
+    repo,
+    "config",
+    "user.email",
+    "experiment@example.invalid",
+  );
+  gitAt(gitExecutable, repo, "config", "core.hooksPath", "/dev/null");
 }
 // Transfer only the specified commit's reachable closure. No clone, refs, reflogs,
 // alternates, hardlinks, source config, or unrelated/dangling objects are copied.
-export function transfer(source: string, destination: string, commit: string) {
+export function transfer(
+  source: string,
+  destination: string,
+  commit: string,
+  gitExecutable = "git",
+) {
   if (
     !/^[a-f0-9]{40}$/.test(commit) ||
-    git(source, "rev-parse", "--verify", `${commit}^{commit}`) !== commit
+    gitAt(
+      gitExecutable,
+      source,
+      "rev-parse",
+      "--verify",
+      `${commit}^{commit}`,
+    ) !== commit
   )
     throw new Error("Source commit mismatch or unavailable");
-  if (git(source, "rev-parse", "--is-shallow-repository") !== "false")
+  if (
+    gitAt(gitExecutable, source, "rev-parse", "--is-shallow-repository") !==
+    "false"
+  )
     throw new Error("Source must contain complete ancestry of frozen commit");
   const pack = execFileSync(
-    "git",
+    gitExecutable,
     [
       "--no-replace-objects",
       "-C",
@@ -87,7 +114,7 @@ export function transfer(source: string, destination: string, commit: string) {
       maxBuffer: 256 * 1024 * 1024,
     },
   );
-  execFileSync("git", ["-C", destination, "index-pack", "--stdin"], {
+  execFileSync(gitExecutable, ["-C", destination, "index-pack", "--stdin"], {
     input: pack,
     env: gitEnvironment(),
     stdio: ["pipe", "pipe", "pipe"],
@@ -105,13 +132,14 @@ export function prepareSource(
   source: string,
   output: string,
   manifest: Manifest,
+  gitExecutable = "git",
 ) {
   let origin: string;
   let sourcePath: string;
   if (existsSync(source)) {
     sourcePath = resolve(source);
-    assertExternalGitState(sourcePath, [output]);
-    origin = git(sourcePath, "remote", "get-url", "origin");
+    assertExternalGitState(sourcePath, [output], gitExecutable);
+    origin = gitAt(gitExecutable, sourcePath, "remote", "get-url", "origin");
   } else {
     origin = source;
     sourcePath = join(output, "acquisition");
@@ -119,8 +147,9 @@ export function prepareSource(
   if (repositoryIdentity(origin) !== manifest.sourceRepository)
     throw new Error("Source repository identity mismatch");
   if (!existsSync(source)) {
-    initRepository(sourcePath);
-    git(
+    initRepository(sourcePath, gitExecutable);
+    gitAt(
+      gitExecutable,
       sourcePath,
       "fetch",
       "--no-tags",
@@ -130,19 +159,25 @@ export function prepareSource(
     );
   }
   const repo = join(output, "artifacts");
-  initRepository(repo);
-  transfer(sourcePath, repo, manifest.sourceCommit);
-  git(repo, "checkout", "--detach", manifest.sourceCommit);
-  verifyStart(repo, manifest.sourceCommit);
+  initRepository(repo, gitExecutable);
+  transfer(sourcePath, repo, manifest.sourceCommit, gitExecutable);
+  gitAt(gitExecutable, repo, "checkout", "--detach", manifest.sourceCommit);
+  verifyStart(repo, manifest.sourceCommit, gitExecutable);
   return repo;
 }
-export function verifyStart(repo: string, commit: string) {
-  if (git(repo, "rev-parse", "HEAD") !== commit)
+export function verifyStart(
+  repo: string,
+  commit: string,
+  gitExecutable = "git",
+) {
+  if (gitAt(gitExecutable, repo, "rev-parse", "HEAD") !== commit)
     throw new Error("Source commit mismatch");
-  if (git(repo, "status", "--porcelain", "--untracked-files=all"))
+  if (
+    gitAt(gitExecutable, repo, "status", "--porcelain", "--untracked-files=all")
+  )
     throw new Error("Run workspace is dirty");
   if (
-    git(repo, "remote") ||
+    gitAt(gitExecutable, repo, "remote") ||
     existsSync(join(repo, ".git", "objects", "info", "alternates"))
   )
     throw new Error("Workspace must not link to source history");

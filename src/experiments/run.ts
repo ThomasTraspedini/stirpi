@@ -1,3 +1,7 @@
+import { TrustedLocalAuthority } from "./trusted-local-authority.js";
+import { trustedProcess } from "./preparation.js";
+import type { LocalToolLocations } from "./trusted-local-identity.js";
+import { pathToFileURL } from "node:url";
 import {
   TrustedPreparation,
   assertTrustedLocalCheck,
@@ -39,7 +43,14 @@ import type { State } from "../domain/index.js";
 import { Store, jsonl } from "../persistence/index.js";
 import { tree } from "../render/index.js";
 import { assertExternalGitState } from "../artifacts/git.js";
-import { frozenInput, git, prepareSource, sha256, transfer } from "./inputs.js";
+import {
+  frozenInput,
+  git,
+  gitAt,
+  prepareSource,
+  sha256,
+  transfer,
+} from "./inputs.js";
 import { ExperimentArtifacts } from "./artifacts.js";
 import { control, type Condition } from "./protocol.js";
 import {
@@ -65,6 +76,7 @@ import {
 
 export interface RunOptions {
   verificationMode: VerificationMode;
+  trustedLocalTools?: LocalToolLocations;
   preparation?: PreparationConfig;
   preregistration?: string;
   evaluatorWallTimeMs?: number;
@@ -131,11 +143,37 @@ export async function runExperimentLocally(
     throw new Error("Condition must be H, S or T");
   const evaluator = options.publicEvaluator;
   validatePublicEvaluator(evaluator);
-  const preparationConfig =
-    options.preparation ??
-    (frozen.manifest.sourceRepository === "ThomasTraspedini/booking-invariants"
-      ? bookingPreparation
-      : undefined);
+  const binding =
+    preflight.evidence && "trustedLocal" in preflight.evidence
+      ? preflight.evidence.trustedLocal
+      : undefined;
+  const gitExecutable = binding?.tools.git ?? "git";
+  const runGit = (repository: string, ...args: string[]) =>
+    gitExecutable === "git"
+      ? git(repository, ...args)
+      : gitAt(gitExecutable, repository, ...args);
+  const promptModule = binding
+    ? await import(pathToFileURL(resolve("adapters/codex/contract.mjs")).href)
+    : undefined;
+  const governance = binding
+    ? {
+        text: binding.inputs.governance!.contents,
+        sha256: binding.inputs.governance!.sha256,
+      }
+    : undefined;
+  const preparationConfig = binding
+    ? {
+        modules: binding.contract.preparation.modules,
+        postgres: {
+          image: binding.contract.preparation.postgres.imageId,
+          prerequisites: binding.contract.preparation.postgres.prerequisites,
+        },
+      }
+    : (options.preparation ??
+      (frozen.manifest.sourceRepository ===
+      "ThomasTraspedini/booking-invariants"
+        ? bookingPreparation
+        : undefined));
   const verificationIds = evaluator.checks?.map((check) => check.id) ?? [];
   if (options.verificationMode === "trusted-local") {
     if (!evaluator.checks)
@@ -223,7 +261,7 @@ export async function runExperimentLocally(
     throw new Error("Invalid resource limits");
   const output = resolve(options.output);
   if (existsSync(options.source))
-    assertExternalGitState(options.source, [output]);
+    assertExternalGitState(options.source, [output], gitExecutable);
   mkdirSync(output, { recursive: true });
   const runId = randomUUID();
   const directory = join(output, runId);
@@ -341,19 +379,36 @@ export async function runExperimentLocally(
   let error: string | null = null;
   let archive: string | undefined;
   const preparationPath = join(directory, "preparation.json");
+  const authority = binding
+    ? new TrustedLocalAuthority(
+        binding.contract,
+        binding.tools,
+        directory,
+        preparationProcess ?? trustedProcess,
+      )
+    : undefined;
   const preparation = preparationConfig
     ? new TrustedPreparation(
         preparationConfig,
         () => save(preparationPath, preparation!.records),
         preparationProcess,
+        authority,
       )
     : undefined;
   if (preparation) save(preparationPath, preparation.records);
   try {
-    archive = prepareSource(options.source, directory, frozen.manifest);
+    archive = prepareSource(
+      options.source,
+      directory,
+      frozen.manifest,
+      gitExecutable,
+    );
+    authority?.assertBaseline(archive);
     const home = join(directory, "executor-home");
     mkdirSync(home);
-    const environment = executorEnvironment(home);
+    const environment = authority
+      ? authority.executorEnv(home)
+      : executorEnvironment(home);
     const verificationRuntime =
       options.verificationMode === "trusted-local"
         ? new TrustedLocalVerification(
@@ -380,9 +435,16 @@ export async function runExperimentLocally(
         // Return only this work's own spawned artifact outcomes to its object database.
         for (const child of context.results)
           for (const ref of child.artifacts ?? []) {
-            transfer(archive!, context.work.artifact!.worktree!, ref);
+            transfer(
+              archive!,
+              context.work.artifact!.worktree!,
+              ref,
+              gitExecutable,
+            );
           }
-        if (preparation) preparation.prepare(context.work.artifact!.worktree!);
+
+        if (!binding && preparation)
+          preparation.prepare(context.work.artifact!.worktree!);
         const localHome = join(home, context.work.id);
         mkdirSync(localHome, { recursive: true });
         const index = ++invocations;
@@ -390,7 +452,15 @@ export async function runExperimentLocally(
           ...context,
           task: frozen.task,
           control: control(options.condition),
+          ...(governance ? { governance } : {}),
         };
+        const promptEvidence = promptModule
+          ? promptModule.promptFrom(
+              promptModule.invocationFrom(
+                JSON.stringify({ version: 1, context: local }),
+              ),
+            ).prompt
+          : undefined;
         executorInvocationRecords.push({
           index,
           lineageId: context.work.lineageId,
@@ -406,8 +476,22 @@ export async function runExperimentLocally(
             workId: context.work.id,
             artifactBefore: context.work.artifact?.ref ?? null,
             input: local,
+            ...(promptEvidence !== undefined
+              ? {
+                  governanceSha256: governance!.sha256,
+                  promptSha256: sha256(promptEvidence),
+                  prompt: promptEvidence,
+                }
+              : {}),
           }) + "\n",
         );
+        let effectivePromptIdentity:
+          | {
+              promptSha256: string;
+              governanceSha256: string;
+              taskSha256: string;
+            }
+          | undefined;
         const processExecutor = new ProcessExecutor(options.executor, {
           environment: { ...environment, HOME: localHome, TMPDIR: localHome },
           ...(options.supervision ? { supervision: options.supervision } : {}),
@@ -437,12 +521,36 @@ export async function runExperimentLocally(
             options.observeEvent?.(structuredClone(event));
           },
           observe(observation) {
+            if (binding) {
+              try {
+                const record = JSON.parse(observation.stderr);
+                if (
+                  record.adapter === "codex-m2-v1" &&
+                  [
+                    record.promptSha256,
+                    record.governanceSha256,
+                    record.taskSha256,
+                  ].every(
+                    (value) =>
+                      typeof value === "string" && /^[a-f0-9]{64}$/.test(value),
+                  )
+                )
+                  effectivePromptIdentity = {
+                    promptSha256: record.promptSha256,
+                    governanceSha256: record.governanceSha256,
+                    taskSha256: record.taskSha256,
+                  };
+              } catch {
+                /* Failure output is not prompt evidence. */
+              }
+            }
             appendFileSync(
               invocationPath,
               JSON.stringify({
                 type: "process",
                 index,
                 ...observation,
+                ...(effectivePromptIdentity ? { effectivePromptIdentity } : {}),
                 stdout: undefined,
                 stderr: undefined,
                 stdoutBytes: Buffer.byteLength(observation.stdout),
@@ -454,11 +562,46 @@ export async function runExperimentLocally(
           },
         });
         try {
+          if (binding && preparation) {
+            try {
+              preparation.prepare(context.work.artifact!.worktree!);
+            } catch (failure) {
+              if (!binding) throw failure;
+              throw new OperationalFailure({
+                code: "TRUSTED_LOCAL_PREPARATION_FAILED",
+                message:
+                  failure instanceof Error
+                    ? failure.message
+                    : "Trusted-local preparation failed operationally",
+              });
+            }
+          }
+          if (
+            binding &&
+            sha256(readFileSync(options.executor.args![2]!)) !==
+              binding.contract.executor.executableSha256
+          )
+            throw new OperationalFailure({
+              code: "EXECUTOR_IDENTITY_MISMATCH",
+              message: "Executor bytes changed before solver invocation",
+            });
           const response = await processExecutor.execute(
             local,
             observe,
             supervise,
           );
+          if (
+            binding &&
+            (!effectivePromptIdentity ||
+              effectivePromptIdentity.promptSha256 !==
+                sha256(promptEvidence!) ||
+              effectivePromptIdentity.governanceSha256 !== governance!.sha256 ||
+              effectivePromptIdentity.taskSha256 !== frozen.manifest.taskSha256)
+          )
+            throw new OperationalFailure({
+              code: "PROMPT_IDENTITY_MISMATCH",
+              message: "Adapter effective governance/prompt/task mismatch",
+            });
           const validated = validateResponse(response);
           if (options.condition !== "T" && validated.action.type === "FORK")
             throw new OperationalFailure({
@@ -502,6 +645,7 @@ export async function runExperimentLocally(
       archive,
       join(directory, "worlds"),
       frozen.manifest.sourceCommit,
+      gitExecutable,
     );
     state = await simulateAsync(
       {
@@ -561,7 +705,7 @@ export async function runExperimentLocally(
       if (!work.artifact) continue;
       writeFileSync(
         join(directory, `${work.id}.diff`),
-        git(
+        runGit(
           archive,
           "diff",
           "--binary",
@@ -581,11 +725,11 @@ export async function runExperimentLocally(
         );
         writeFileSync(
           join(directory, `${work.id}.uncommitted.diff`),
-          git(work.artifact.worktree, "diff", "--binary", "HEAD") + "\n",
+          runGit(work.artifact.worktree, "diff", "--binary", "HEAD") + "\n",
         );
         writeFileSync(
           join(directory, `${work.id}.status.txt`),
-          git(
+          runGit(
             work.artifact.worktree,
             "status",
             "--porcelain",
@@ -598,10 +742,12 @@ export async function runExperimentLocally(
   } catch (failure) {
     error = failure instanceof Error ? failure.message : String(failure);
   }
+  let cleanupError: string | null = null;
   try {
     preparation?.cleanup();
   } catch (failure) {
-    error = failure instanceof Error ? failure.message : String(failure);
+    cleanupError = failure instanceof Error ? failure.message : String(failure);
+    error ??= cleanupError;
   }
   const completedAt = new Date().toISOString();
   const humanRequests =
@@ -619,6 +765,7 @@ export async function runExperimentLocally(
     completedAt,
     runtimeOutcome: state?.status ?? "OPERATIONAL_FAILURE",
     error,
+    cleanupError,
     lineages: state?.lineages ?? [],
     artifacts:
       state?.work.map((w) => ({
