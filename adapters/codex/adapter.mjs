@@ -15,12 +15,7 @@ import {
 import { isAbsolute, join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
-import {
-  invocationFrom,
-  instructions,
-  responseSchema,
-  responseFrom,
-} from "./contract.mjs";
+import { invocationFrom, responseContract, responseFrom } from "./contract.mjs";
 
 import {
   environmentEvidence,
@@ -148,17 +143,38 @@ function run(executable, args, options) {
 }
 
 try {
+  const optionCount = (name) =>
+    process.argv
+      .slice(2)
+      .filter((arg) => arg === `--${name}` || arg.startsWith(`--${name}=`))
+      .length;
   const { values } = parseArgs({
     options: {
       codex: { type: "string" },
       "auth-file": { type: "string" },
       model: { type: "string" },
+      effort: { type: "string" },
       "timeout-ms": { type: "string" },
     },
   });
+  const supportedEfforts = [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+    "ultra",
+  ];
   if (
     !values.codex ||
+    optionCount("codex") !== 1 ||
     !isAbsolute(values.codex) ||
+    optionCount("model") !== 1 ||
+    typeof values.model !== "string" ||
+    !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(values.model) ||
+    optionCount("effort") !== 1 ||
+    !supportedEfforts.includes(values.effort) ||
     (values["auth-file"] && !isAbsolute(values["auth-file"]))
   )
     throw new Error("INVALID_CONFIGURATION");
@@ -172,8 +188,10 @@ try {
   )
     throw new Error("INVALID_CONFIGURATION");
   record.tool = values.codex;
-  record.model = values.model ?? null;
+  record.model = values.model;
+  record.effort = values.effort;
   record.configuration = {
+    executor: { model: values.model, effort: values.effort },
     auth: {
       kind: values["auth-file"] ? "explicit_file" : "none",
       ...permissions(values["auth-file"]),
@@ -284,13 +302,14 @@ try {
     ? version.stdout.trim()
     : null;
   events.version = record.version;
+  const contract = responseContract(context);
   const schemaFile = join(temporary, "response-schema.json"),
     responseFile = join(temporary, "response.json");
-  writeFileSync(schemaFile, JSON.stringify(responseSchema), { mode: 0o600 });
+  writeFileSync(schemaFile, JSON.stringify(contract.schema), { mode: 0o600 });
   // CLI treats an explicit prompt and stdin as separate instruction/context parts.
   // Task text is an unmodified suffix: no quoting, trimming, or reconstruction.
   const prompt =
-    instructions +
+    contract.instructions +
     "\n\nLineage-local context (JSON):\n" +
     JSON.stringify(context);
   record.taskSha256 = hash(task);
@@ -308,6 +327,7 @@ try {
     "--cd",
     cwd,
     "--json",
+    "--strict-config",
     "--color",
     "never",
     "--output-schema",
@@ -328,8 +348,11 @@ try {
       .join(",")}}`,
     "-c",
     'web_search="disabled"',
+    "--model",
+    values.model,
+    "-c",
+    `model_reasoning_effort=${JSON.stringify(values.effort)}`,
   ];
-  if (values.model) args.push("--model", values.model);
   args.push(prompt);
   const result = await run(values.codex, args, {
     cwd,
@@ -360,7 +383,7 @@ try {
     throw new Error("GIT_IDENTITY_CHANGED");
   let response;
   try {
-    response = responseFrom(readFileSync(responseFile, "utf8"));
+    response = responseFrom(readFileSync(responseFile, "utf8"), contract);
   } catch {
     throw new Error("INVALID_AGENT_RESPONSE");
   }

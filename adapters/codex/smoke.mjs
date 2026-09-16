@@ -27,11 +27,12 @@ const { values } = parseArgs({
     codex: { type: "string" },
     "auth-file": { type: "string" },
     model: { type: "string" },
+    effort: { type: "string" },
   },
 });
-if (!values["real-agent"] || !values.codex)
+if (!values["real-agent"] || !values.codex || !values.model || !values.effort)
   throw new Error(
-    "Requires --real-agent --codex /absolute/executable [--auth-file /absolute/auth.json] [--model model]",
+    "Requires --real-agent --codex /absolute/executable --model model --effort effort [--auth-file /absolute/auth.json]",
   );
 const directory = realpathSync(
   mkdtempSync(join(tmpdir(), "stirpi-codex-smoke-")),
@@ -62,7 +63,7 @@ const args = [
   "--codex",
   values.codex,
 ];
-for (const key of ["auth-file", "model"])
+for (const key of ["auth-file", "model", "effort"])
   if (values[key]) args.push(`--${key}`, values[key]);
 const observations = [],
   evaluations = [];
@@ -161,6 +162,7 @@ const report = {
   tool: values.codex,
   version: evidence[0]?.version ?? null,
   model: values.model ?? null,
+  effort: values.effort ?? null,
   runtimeOutcome: state.status,
   action: evidence[0]?.response?.action ?? null,
   effects: evidence[0]?.response?.effects ?? null,

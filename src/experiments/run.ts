@@ -1,5 +1,6 @@
 import {
   TrustedPreparation,
+  assertTrustedLocalCheck,
   bookingPreparation,
   executorEnvironment,
   type PreparationConfig,
@@ -51,8 +52,19 @@ import {
 import { runPinnedRuntime } from "./runtime-identity.js";
 import { authorityObject, parseAuthorityJson } from "../authority/json.js";
 import { preregisteredOptions } from "./preregistration.js";
+import {
+  TrustedLocalVerification,
+  type VerificationMode,
+} from "./trusted-local-verification.js";
+import type { CommandCheckProcess } from "../evaluation/commands.js";
+import {
+  experimentAccounting,
+  type ExecutorInvocationRecord,
+  type IndexedOperationalObservation,
+} from "./accounting.js";
 
 export interface RunOptions {
+  verificationMode: VerificationMode;
   preparation?: PreparationConfig;
   preregistration?: string;
   evaluatorWallTimeMs?: number;
@@ -80,9 +92,16 @@ export interface RunOptions {
 }
 const save = (path: string, value: unknown) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
+function validateVerificationMode(
+  value: unknown,
+): asserts value is VerificationMode {
+  if (value !== "none" && value !== "trusted-local")
+    throw new Error("Explicit verification mode must be none or trusted-local");
+}
 export async function runExperiment(
   options: RunOptions,
 ): Promise<Awaited<ReturnType<typeof runExperimentLocally>>> {
+  validateVerificationMode(options.verificationMode);
   if (options.preregistration) {
     const pilot = authorityObject(
       parseAuthorityJson(readFileSync(options.preregistration)),
@@ -97,7 +116,9 @@ export async function runExperiment(
 export async function runExperimentLocally(
   options: RunOptions,
   preparationProcess?: TrustedProcess,
+  checkProcess?: CommandCheckProcess,
 ) {
+  validateVerificationMode(options.verificationMode);
   const frozen = frozenInput(options.manifest);
   const preflight = preregisteredOptions(options, frozen.manifest.id);
   const { signal, observeEvent, ...configuration } = preflight.options;
@@ -110,6 +131,23 @@ export async function runExperimentLocally(
     throw new Error("Condition must be H, S or T");
   const evaluator = options.publicEvaluator;
   validatePublicEvaluator(evaluator);
+  const preparationConfig =
+    options.preparation ??
+    (frozen.manifest.sourceRepository === "ThomasTraspedini/booking-invariants"
+      ? bookingPreparation
+      : undefined);
+  const verificationIds = evaluator.checks?.map((check) => check.id) ?? [];
+  if (options.verificationMode === "trusted-local") {
+    if (!evaluator.checks)
+      throw new Error(
+        "Trusted-local verification requires a public check evaluator",
+      );
+    if (!preparationConfig)
+      throw new Error(
+        "Trusted-local verification requires authoritative preparation",
+      );
+    for (const check of evaluator.checks) assertTrustedLocalCheck(check);
+  }
   for (const command of [
     options.executor,
     ...(evaluator.checks ?? [evaluator.command]),
@@ -192,6 +230,8 @@ export async function runExperimentLocally(
   mkdirSync(directory, { mode: 0o700 });
   const startedAt = new Date().toISOString();
   const start = performance.now();
+  const effectiveExecutorConfiguration =
+    preflight.evidence?.executor.configuration ?? null;
   const identity = {
     testcase: frozen.manifest.id,
     condition: options.condition,
@@ -201,14 +241,27 @@ export async function runExperimentLocally(
     sourceCommit: frozen.manifest.sourceCommit,
     taskSha256: frozen.manifest.taskSha256,
     startedAt,
+    verificationMode: options.verificationMode,
+    verificationConfigurationId: sha256(
+      JSON.stringify({
+        mode: options.verificationMode,
+        evaluatorId: evaluator.id,
+        checks: evaluator.checks ?? null,
+        completionPolicy: evaluator.completionPolicy ?? null,
+        preparation: preparationConfig ?? null,
+        evaluatorWallTimeMs: evaluatorTimeoutMs ?? null,
+      }),
+    ),
     executorConfigurationId: sha256(
       JSON.stringify({
         executor: options.executor,
+        effectiveExecutorConfiguration,
         metadata: options.metadata ?? {},
         config,
         timeoutMs,
         supervision: options.supervision,
         evaluatorWallTimeMs: evaluatorTimeoutMs,
+        verificationMode: options.verificationMode,
         control: control(options.condition),
       }),
     ),
@@ -221,7 +274,14 @@ export async function runExperimentLocally(
     TMPDIR: "experiment-local",
   });
   if (preflight.evidence)
-    Object.assign(preflight.evidence, { diagnosticEnvironment });
+    Object.assign(preflight.evidence, {
+      diagnosticEnvironment,
+      verification: {
+        mode: options.verificationMode,
+        available:
+          options.verificationMode === "trusted-local" ? verificationIds : [],
+      },
+    });
   if (preflight.evidence)
     save(join(directory, "preflight.json"), preflight.evidence);
   save(join(directory, "metadata.json"), {
@@ -231,6 +291,7 @@ export async function runExperimentLocally(
     ...identity,
     executor: options.executor,
     executorIdentity: preflight.evidence?.executor ?? null,
+    effectiveExecutorConfiguration,
     executorVersion:
       preflight.evidence?.executor.executableVersion ??
       options.metadata?.executorVersion ??
@@ -253,6 +314,11 @@ export async function runExperimentLocally(
       processOutputBytes: 1048576,
     },
     publicEvaluator: evaluator,
+    verification: {
+      mode: options.verificationMode,
+      available:
+        options.verificationMode === "trusted-local" ? verificationIds : [],
+    },
     control: control(options.condition),
     environment:
       "PATH, LANG, TZ; empty per-work HOME and TMPDIR; no inherited credentials",
@@ -265,19 +331,16 @@ export async function runExperimentLocally(
   const invocationPath = join(directory, "invocations.jsonl");
   writeFileSync(invocationPath, "", { mode: 0o600 });
   const operationalEvents: OperationalEvent[] = [];
+  const operationalObservations: IndexedOperationalObservation[] = [];
   const operationalPath = join(directory, "operational.jsonl");
   writeFileSync(operationalPath, "", { mode: 0o600 });
+  const executorInvocationRecords: ExecutorInvocationRecord[] = [];
   let invocations = 0;
   let humanGate = false;
   let state: State | undefined;
   let error: string | null = null;
   let archive: string | undefined;
   const preparationPath = join(directory, "preparation.json");
-  const preparationConfig =
-    options.preparation ??
-    (frozen.manifest.sourceRepository === "ThomasTraspedini/booking-invariants"
-      ? bookingPreparation
-      : undefined);
   const preparation = preparationConfig
     ? new TrustedPreparation(
         preparationConfig,
@@ -291,6 +354,16 @@ export async function runExperimentLocally(
     const home = join(directory, "executor-home");
     mkdirSync(home);
     const environment = executorEnvironment(home);
+    const verificationRuntime =
+      options.verificationMode === "trusted-local"
+        ? new TrustedLocalVerification(
+            evaluator.checks!,
+            preparation!,
+            environment,
+            evaluatorTimeoutMs,
+            checkProcess,
+          )
+        : undefined;
     const executor = {
       protocol: 1 as const,
       id: options.executor.id ?? options.executor.executable,
@@ -318,6 +391,11 @@ export async function runExperimentLocally(
           task: frozen.task,
           control: control(options.condition),
         };
+        executorInvocationRecords.push({
+          index,
+          lineageId: context.work.lineageId,
+          workId: context.work.id,
+        });
         appendFileSync(
           invocationPath,
           JSON.stringify({
@@ -344,6 +422,10 @@ export async function runExperimentLocally(
           ...(options.signal ? { signal: options.signal } : {}),
           observeEvent(event) {
             operationalEvents.push(structuredClone(event));
+            operationalObservations.push({
+              index,
+              event: structuredClone(event),
+            });
             appendFileSync(
               operationalPath,
               JSON.stringify({
@@ -442,6 +524,7 @@ export async function runExperimentLocally(
           ? (workspace, check) =>
               preparation.verificationEnvironment(workspace, check, environment)
           : undefined,
+        checkProcess,
       ),
       { taskId: frozen.manifest.id, runId },
       {
@@ -462,6 +545,8 @@ export async function runExperimentLocally(
           return outcome;
         },
       },
+      undefined,
+      verificationRuntime,
     );
     save(join(directory, "state.json"), state);
     writeFileSync(join(directory, "events.jsonl"), jsonl(state));
@@ -522,6 +607,12 @@ export async function runExperimentLocally(
   const humanRequests =
     state?.work.filter((w) => w.reason?.code === "HUMAN_DECISION_REQUIRED") ??
     [];
+  const accounting = experimentAccounting(
+    executorInvocationRecords,
+    operationalObservations,
+    state?.lineages ?? [],
+    state?.work ?? [],
+  );
   const result = {
     ...identity,
     phase: "finished",
@@ -542,12 +633,9 @@ export async function runExperimentLocally(
       executorInvocations: invocations,
       engineSteps: state?.resources.steps ?? 0,
       wallTimeMs: performance.now() - start,
-      logicalLineages: state?.lineages.length ?? 0,
-      scheduledLineages: new Set(
-        state?.work
-          .filter((w) => w.resources.steps > 0)
-          .map((w) => w.lineageId),
-      ).size,
+      logicalLineages: accounting.lineageCounts.created,
+      scheduledLineages: accounting.lineageCounts.scheduled,
+      lineageCounts: accounting.lineageCounts,
       artifactCommits: new Set(
         state?.artifactOperations
           ?.filter(
@@ -559,7 +647,8 @@ export async function runExperimentLocally(
           .map((o) => o.outcome.artifact!.ref),
       ).size,
       humanInterventions: 0,
-      tokens: null,
+      tokens: accounting.tokens,
+      usageCoverage: accounting.usageCoverage,
       operational: summarize(operationalEvents),
       monetaryCost: null,
     },

@@ -8,7 +8,8 @@ running a real pilot. Fixture runs validate infrastructure only.
 
 ```sh
 strpi experiment run docs/experiments/d032/manifest.json \
-  --condition T --source /absolute/path/to/source-repository \
+  --condition T --verification-mode trusted-local \
+  --source /absolute/path/to/source-repository \
   --executor /absolute/path/to/executor.json \
   --public-evaluator /absolute/path/to/public-evaluator.json \
   --output /absolute/path/outside-source/pilot-evidence
@@ -24,6 +25,12 @@ exit status belong only to the post-run report. Treat that report as private.
 The hook is a trusted local program. No semantic scoring is supplied.
 
 ## Configuration and control
+
+Every run selects `--verification-mode none|trusted-local` explicitly. Omission
+or an unknown value fails before solver execution; an error never changes modes.
+`none` exposes no VERIFY operations and exists for paths that do not request
+solver-visible verification. The approved H*/S*/T* pilot uses `trusted-local`
+symmetrically for all conditions.
 
 Executor and hook command files use M2 `{id, executable, args}` configuration.
 Use absolute executable/script paths. Configuration files and optional metadata
@@ -80,6 +87,21 @@ A nonzero command exit is a normal negative evaluation. Launch errors, timeouts
 and output-limit errors are operational failures. External JSON evaluator
 process failures retain their existing operational meaning.
 
+In `trusted-local` mode, VERIFY IDs are derived exactly from these public checks.
+That mode requires a check evaluator with `all_checks_pass`, authoritative trusted
+workspace preparation, and one of the fixed prepared operations (`npm test`,
+`npm run typecheck`, or `git diff --check`). The solver selects only an ID; it
+cannot provide command, arguments, directory, environment, timeout, database or
+policy. A request runs one selected check on that work's active workspace after
+trusted preparation, with the same per-work PostgreSQL lease and environment used
+by completion. Output is bounded, control characters are removed, and database
+URLs are redacted. A nonzero exit is normal negative evidence; preparation,
+launch, timeout and infrastructure errors are operational failures.
+
+VERIFY does not create lineage or authorize completion. COMPLETE independently
+runs the full public `all_checks_pass` policy even after a positive VERIFY, and
+verification evidence is delivered only to a later invocation of the same work.
+
 `runtime-evaluations.json` records authoritative context, overall timestamps,
 aggregate evaluation, individual checks, process observations and operational
 errors. Each check records ID, timestamps, process status, exit status, signal,
@@ -115,8 +137,12 @@ CONTINUE/SPAWN/COMPLETE/BLOCK mechanics. T exposes normal FORK semantics.
 No rationale is parsed to choose a transition or infer a semantic conclusion.
 
 `--metadata` accepts executorVersion, model, modelVersion, effort, sampling, and
-baselinePolicy strings. Missing values are null. Command/scaffold/limit metadata
-is hashed into an executor configuration identity. Steps and executor supervision
+baselinePolicy strings. For preregistered Codex runs, model and effort come from
+the required adapter arguments; matching free metadata is accepted, contradictory
+metadata fails preflight, and omitted metadata is filled from the effective
+executor configuration. That effective configuration is retained in evidence and
+hashed into the executor configuration identity. Other missing metadata values are
+null. Command/scaffold/limit metadata is also hashed into that identity. Steps and executor supervision
 are unbounded when omitted; concurrency defaults to 1. `--timeout-ms` is a legacy
 executor-only invocation wall-time option. Public evaluator timing is independent:
 `--evaluator-wall-time-ms N` explicitly bounds each public evaluator process
@@ -176,20 +202,35 @@ and status listings. Run directories are outside the source repository.
 
 The result reports runtime observations and evidence paths, not semantic scores.
 Resources aggregate all work: invocations, engine steps, measured wall time,
-logical/scheduled lineages, unique new artifact commits, and actual supplied human
-interventions (zero for these unattended runs). Required human decisions are
-recorded separately from supplied interventions. Legacy token and monetary-cost totals remain null. `resources.operational`
-reports activity/progress/resource counts, unique command/tool/item counts,
-first/last activity and progress timestamps, and the latest available usage
-observation. Missing provider usage stays absent; no costs or totals are estimated. Legacy synthetic engine
-counters remain in raw state/events for replay and are not reported as real usage.
+logical/scheduled lineages, counts for every lineage status, unique new artifact
+commits, and actual supplied human interventions (zero for these unattended
+runs). `lineageCounts.created` is the number of logical lineages created;
+`scheduled` counts distinct lineages whose work consumed at least one engine
+step. Required human decisions are recorded separately from supplied
+interventions.
+
+`resources.tokens` reports real provider `inputTokens`, `cachedInputTokens`,
+`outputTokens`, and `reasoningOutputTokens`. Usage events within one executor
+invocation are cumulative snapshots: the last available value for each field is
+used, and each invocation contributes once. Cached input remains separate from
+input. An unobserved field is `null`; an observed zero is `0`.
+`resources.usageCoverage` separately reports the executor-invocation denominator,
+invocations with any usable usage field, and measured invocation counts per
+field. `operational.jsonl` is the canonical aggregation source;
+`invocations.jsonl` supplies its denominator, while the duplicate observations
+in state are consistency evidence. `resources.operational.latestUsage` remains a
+single diagnostic snapshot and is never the run total. Missing provider usage is
+not estimated, monetary cost remains null, and legacy synthetic engine token
+counters remain only in raw state/events for replay.
 
 Replay uses recorded public evaluator outcomes as well as the existing recorded
 executor/artifact boundaries. It requires no repository, solver, public evaluator
 process or private material, and verifies the resulting engine state/events.
 It also verifies operational chronology and consistency between the incremental
-file and recorded operations. It does not deliver observations to live external
-observers or verify external artifact integrity (D031).
+file and recorded operations, reconstructs run accounting from persisted
+invocation/operational/state evidence, and rejects reported totals, coverage, or
+lineage counts that do not match. It does not deliver observations to live
+external observers or verify external artifact integrity (D031).
 
 Chronological files are written during execution; final state is saved after the
 engine returns. A process killed mid-run leaves the `running` marker and partial
@@ -316,6 +357,13 @@ These checks execute candidate code and are trusted outer operations, not a new
 sandbox for arbitrary hostile test code. Existing runtime evaluation records retain
 command results. Replay checks the preparation evidence digest and consumes recorded
 runtime outcomes without installing, provisioning, or executing checks.
+
+`metadata.json` and `result.json` record the effective verification mode and a
+verification configuration identity. Metadata also records the exact available
+public IDs. Each recorded VERIFY operation binds the requested ID, work ID and a
+bounded workspace digest; attempts are numbered per work/ID. Replay consumes only
+those recorded outcomes and never prepares a workspace, starts PostgreSQL or
+executes a check.
 
 Database resources are removed at run completion, including operational failure.
 Dirty workspaces retain the existing diagnostic retention policy. Preparation does

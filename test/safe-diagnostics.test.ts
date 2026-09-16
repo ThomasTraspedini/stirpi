@@ -73,6 +73,8 @@ test("adapter evidence uses a closed projection and auth metadata never reads or
     const record = adapterEvidence(
       JSON.stringify({
         adapter: "codex-m2-v1",
+        model: "gpt-6-astra",
+        effort: "medium",
         failure: { code: "AGENT_EXIT_FAILED", message: "credential-sentinel" },
         status: 1,
         diagnostics: {
@@ -90,6 +92,7 @@ test("adapter evidence uses a closed projection and auth metadata never reads or
           ],
         },
         configuration: {
+          executor: { model: "gpt-6-astra", effort: "medium", secret: "omit" },
           auth: {
             kind: "explicit_file",
             ...permissions(auth),
@@ -103,6 +106,15 @@ test("adapter evidence uses a closed projection and auth metadata never reads or
     );
     assert.deepEqual(record?.failure, { code: "AGENT_EXIT_FAILED" });
     assert.equal(record?.status, 1);
+    assert.equal(record?.requestedModel, "gpt-6-astra");
+    assert.equal(record?.requestedEffort, "medium");
+    assert.deepEqual(
+      (record?.configuration as Record<string, unknown>).executor,
+      {
+        model: "gpt-6-astra",
+        effort: "medium",
+      },
+    );
     assert.deepEqual(record?.counts, {
       recognized: 2,
       unknown: 1,

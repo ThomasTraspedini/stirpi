@@ -35,7 +35,15 @@ test("executor byte identity validates independent version/hash pins and records
   try {
     const config = {
       executable: "/node",
-      args: ["/adapter.mjs", "--codex", "/executor"],
+      args: [
+        "/adapter.mjs",
+        "--codex",
+        "/executor",
+        "--model",
+        "gpt-6-astra",
+        "--effort",
+        "medium",
+      ],
     };
     const pin = {
       adapter: "codex",
@@ -47,6 +55,7 @@ test("executor byte identity validates independent version/hash pins and records
       executablePath: "/executor",
       executableVersion: "codex-cli 1.2.3",
       executableSha256: digest,
+      configuration: { model: "gpt-6-astra", effort: "medium" },
     });
     assert.deepEqual(probes, ["/executor"]);
     assert.throws(
@@ -63,7 +72,12 @@ test("executor byte identity validates independent version/hash pins and records
     const relocated = verifyExecutor(
       {
         ...config,
-        args: ["/adapter.mjs", "--codex=/elsewhere"],
+        args: [
+          "/adapter.mjs",
+          "--codex=/elsewhere",
+          "--model=gpt-6-astra",
+          "--effort=medium",
+        ],
       },
       pin,
     );
@@ -82,6 +96,16 @@ test("executor byte identity validates independent version/hash pins and records
       () => verifyExecutor(config, { ...pin, executableSha256: "bad" }),
       /invalid executor identity pin/,
     );
+    for (const args of [
+      ["/adapter.mjs", "--codex", "/executor", "--effort", "medium"],
+      ["/adapter.mjs", "--codex", "/executor", "--model", "gpt-6-astra"],
+      [...config.args, "--model", "gpt-other"],
+      [...config.args, "--effort", "other"],
+    ])
+      assert.throws(
+        () => verifyExecutor({ executable: "/node", args }, pin),
+        /Codex adapter requires one|unsupported Codex effort/,
+      );
     for (const path of ["/missing", "/directory"])
       assert.throws(
         () => verifyExecutor({ executable: path }),

@@ -854,6 +854,7 @@ test("schema-2 preregistration binds every profile field and the clean runtime c
     const options = {
       preregistration: registration,
       condition: "T",
+      verificationMode: "none",
       executor: { executable: "/nonexistent-milestone1-executor" },
       output,
     } as RunOptions;
@@ -946,6 +947,7 @@ test("local schema-2 failures precede output creation and all executor activity;
       manifest,
       output,
       condition: "T",
+      verificationMode: "none",
       executor: { executable: "/nonexistent-milestone1-executor" },
     } as RunOptions;
     for (const invalid of [
@@ -1012,7 +1014,11 @@ test("launcher validates profiles from the pinned tree, before compiling or exec
     git(f.checkout, "commit", "-m", "Later registration fixture");
     const output = join(f.root, "output");
     await assert.rejects(
-      runExperiment({ preregistration, output } as RunOptions),
+      runExperiment({
+        preregistration,
+        output,
+        verificationMode: "none",
+      } as RunOptions),
       /live schemaVersion must be 2/,
     );
     assert.equal(existsSync(output), false);

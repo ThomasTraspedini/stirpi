@@ -186,6 +186,22 @@ test("checks require active artifact context and bound process output and time",
       OperationalFailure,
     );
     assert.match(outputs[1]!.error!, /ETIMEDOUT/);
+    const redacted = new CommandChecksEvaluator(
+      config,
+      {},
+      5000,
+      (result) => outputs.push(result),
+      () => ({
+        status: 0,
+        signal: null,
+        stdout: "DATABASE_URL=postgresql://secret@localhost/db\n\u001b[31mok",
+        stderr: "",
+        error: undefined,
+      }),
+    ).evaluate({ ...context, workspacePath: directory });
+    assert.equal(redacted.passed, true);
+    assert.equal(outputs[2]!.stdout.includes("secret"), false);
+    assert.equal(outputs[2]!.stdout.includes("\u001b"), false);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

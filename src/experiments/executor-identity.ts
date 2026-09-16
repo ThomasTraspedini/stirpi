@@ -10,6 +10,30 @@ export interface ExecutorPin {
   executableSha256?: string;
 }
 
+const supportedCodexEfforts = [
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+  "ultra",
+] as const;
+
+function requiredArgument(args: string[], name: string) {
+  const matches = args.flatMap((arg, index) =>
+    arg === `--${name}` || arg.startsWith(`--${name}=`) ? [index] : [],
+  );
+  if (matches.length !== 1)
+    throw new Error(`Preflight: Codex adapter requires one --${name}`);
+  const index = matches[0]!;
+  const inline = args[index]!.startsWith(`--${name}=`);
+  const value = inline ? args[index]!.slice(name.length + 3) : args[index + 1];
+  if (!value || (!inline && value.startsWith("--")))
+    throw new Error(`Preflight: Codex adapter requires one --${name}`);
+  return { index, inline, value };
+}
+
 // Resolve once and launch using this absolute path, independent of worktree cwd.
 function executablePath(executable: string) {
   if (typeof executable !== "string" || !executable.trim())
@@ -46,19 +70,25 @@ export function verifyExecutor(config: ProcessConfig, pin: ExecutorPin = {}) {
     throw new Error("Preflight: invalid executor identity pin");
   const command = { ...config, executable: executablePath(config.executable) };
   let path = command.executable;
+  let configuration: { model: string; effort: string } | undefined;
   if (pin.adapter === "codex") {
     const args = [...(config.args ?? [])];
-    const indices = args.flatMap((arg, index) =>
-      arg === "--codex" || arg.startsWith("--codex=") ? [index] : [],
-    );
-    if (indices.length !== 1)
-      throw new Error(
-        "Preflight: Codex adapter requires one --codex executable",
-      );
-    const index = indices[0]!;
-    const inline = args[index]!.startsWith("--codex=");
-    path = executablePath(inline ? args[index]!.slice(8) : args[index + 1]!);
-    args[inline ? index : index + 1] = inline ? `--codex=${path}` : path;
+    const codex = requiredArgument(args, "codex");
+    const model = requiredArgument(args, "model");
+    const effort = requiredArgument(args, "effort");
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(model.value))
+      throw new Error("Preflight: unsupported Codex model configuration");
+    if (
+      !supportedCodexEfforts.includes(
+        effort.value as (typeof supportedCodexEfforts)[number],
+      )
+    )
+      throw new Error("Preflight: unsupported Codex effort configuration");
+    configuration = { model: model.value, effort: effort.value };
+    path = executablePath(codex.value);
+    args[codex.inline ? codex.index : codex.index + 1] = codex.inline
+      ? `--codex=${path}`
+      : path;
     command.args = args;
   }
   const executableSha256 = sha256(readFileSync(path));
@@ -88,6 +118,11 @@ export function verifyExecutor(config: ProcessConfig, pin: ExecutorPin = {}) {
     throw new Error("Preflight: executor executable SHA256 mismatch");
   return {
     command,
-    evidence: { executablePath: path, executableVersion, executableSha256 },
+    evidence: {
+      executablePath: path,
+      executableVersion,
+      executableSha256,
+      ...(configuration ? { configuration } : {}),
+    },
   };
 }

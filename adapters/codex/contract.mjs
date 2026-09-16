@@ -11,38 +11,93 @@ const object = (properties) => ({
   additionalProperties: false,
 });
 const priority = nullable({ type: "integer" });
-export const responseSchema = object({
-  version: literal(1),
-  action: {
-    anyOf: [
-      object({ type: literal("CONTINUE") }),
+const actionSchemas = {
+  CONTINUE: object({ type: literal("CONTINUE") }),
+  FORK: object({
+    type: literal("FORK"),
+    alternatives: array(
       object({
-        type: literal("FORK"),
-        alternatives: array(
-          object({
-            name: text,
-            assumption: text,
-            rationale: text,
-            objective: nullable(text),
-            priority,
-          }),
-          2,
-        ),
+        name: text,
+        assumption: text,
+        rationale: text,
+        objective: nullable(text),
+        priority,
       }),
-      object({
-        type: literal("SPAWN"),
-        work: array(object({ name: text, objective: text, priority }), 1),
-      }),
-      object({ type: literal("COMPLETE"), result: string }),
-      object({
-        type: literal("BLOCK"),
-        reason: object({ code: text, message: text }),
-      }),
-    ],
-  },
-  effects: array(object({ type: literal("COMMIT"), message: text })),
-  text: string,
-});
+      2,
+    ),
+  }),
+  SPAWN: object({
+    type: literal("SPAWN"),
+    work: array(object({ name: text, objective: text, priority }), 1),
+  }),
+  COMPLETE: object({ type: literal("COMPLETE"), result: string }),
+  BLOCK: object({
+    type: literal("BLOCK"),
+    reason: object({ code: text, message: text }),
+  }),
+};
+const allActions = Object.keys(actionSchemas);
+const commitSchema = object({ type: literal("COMMIT"), message: text });
+
+const baseInstructions = `You are executing one assigned Stirpi work invocation.
+The user/problem task is supplied separately, unchanged. Use only this invocation's
+local context and assigned repository. Do not inspect other workspaces, host
+configuration, credentials, sessions, or external repositories. Do not use network
+tools to obtain additional task context. Follow assigned repository governance.
+Do not create commits, branches or worktrees, change refs, or manage Git history.
+You may inspect local files, Git history and diffs, edit files, and run local tests.
+Request coherent commits only via effects: [{"type":"COMMIT","message":"Describe change"}].
+Effects run after your response. Multiple requests are allowed, but each commits
+the then-current whole workspace; separate edits across CONTINUE invocations to
+produce separate commits. No commit is required when no changes need publishing.
+Return the native structured response, with version 1, action, effects, and text.`;
+const actionInstructions = {
+  CONTINUE:
+    "CONTINUE retains this workspace including uncommitted edits for another invocation.",
+  FORK: "FORK (main work only) creates at least two descendant lineages, each with exactly one new assumption. The parent becomes BRANCHED; siblings need not converge.",
+  SPAWN:
+    "SPAWN decomposes required work inside this lineage; parent waits and receives its own child outcomes. Child artifacts are not automatically merged.",
+  COMPLETE:
+    "COMPLETE requests public evaluation; only evaluation success completes work.",
+  BLOCK:
+    "BLOCK reports inability to proceed, with a structured reason; it is not falsification.",
+};
+
+export function responseContract(context = {}) {
+  const actions = context.control?.actions ?? allActions;
+  const verificationIds = context.verification?.available ?? [];
+  const verifySchema = verificationIds.length
+    ? object({
+        type: literal("VERIFY"),
+        id: { anyOf: verificationIds.map(literal) },
+      })
+    : undefined;
+  const schema = object({
+    version: literal(1),
+    action: { anyOf: actions.map((name) => actionSchemas[name]) },
+    effects: array({
+      anyOf: verifySchema ? [commitSchema, verifySchema] : [commitSchema],
+    }),
+    text: string,
+  });
+  const instructions = [
+    baseInstructions,
+    ...actions.map((name) => actionInstructions[name]),
+    ...(actions.some((name) => ["FORK", "SPAWN", "COMPLETE"].includes(name))
+      ? [
+          "Any available artifact-inheriting or completion action requires committed state: request COMMIT effects first if needed. Never silently discard edits.",
+        ]
+      : []),
+    ...(verificationIds.length
+      ? [
+          `With CONTINUE only, you may request one trusted verification by ID via {"type":"VERIFY","id":<ID>}. Available IDs: ${JSON.stringify(verificationIds)}. You cannot supply commands, arguments, directories, environment, timeouts, network or policy. Results appear in a later invocation's verification.latest. VERIFY does not authorize completion.`,
+        ]
+      : []),
+    "Respect supplied control restrictions. Use null for absent optional objective/priority fields in the schema.",
+    "No prior model session is authoritative: continuity is supplied by Stirpi context, workspace, canonical artifacts and recorded outcomes. Do not resume other sessions.",
+  ].join("\n");
+  return { schema, instructions, verificationIds };
+}
 
 // Only the closed schema subset above is supported, not arbitrary JSON Schema.
 export function conforms(value, schema) {
@@ -82,9 +137,15 @@ export function conforms(value, schema) {
   }
 }
 
-export function responseFrom(raw) {
+export function responseFrom(raw, contract = responseContract()) {
   const value = JSON.parse(raw);
-  if (!conforms(value, responseSchema))
+  if (!conforms(value, contract.schema))
+    throw new Error("INVALID_AGENT_RESPONSE");
+  const verifies = value.effects.filter((effect) => effect.type === "VERIFY");
+  if (
+    verifies.length > 1 ||
+    (verifies.length && value.action.type !== "CONTINUE")
+  )
     throw new Error("INVALID_AGENT_RESPONSE");
   // Native strict schemas require all properties. Null means an omitted optional
   // M2 field; no action is inferred, repaired, or selected by the adapter.
@@ -95,31 +156,6 @@ export function responseFrom(raw) {
   }
   return value;
 }
-
-export const instructions = `You are executing one assigned Stirpi work invocation.
-The user/problem task is supplied separately, unchanged. Use only this invocation's
-local context and assigned repository. Do not inspect other workspaces, host
-configuration, credentials, sessions, or external repositories. Do not use network
-tools to obtain additional task context. Follow assigned repository governance.
-Do not create commits, branches or worktrees, change refs, or manage Git history.
-You may inspect local files, Git history and diffs, edit files, and run local tests.
-Request coherent commits only via effects: [{"type":"COMMIT","message":"Describe change"}].
-Effects run after your response. Multiple requests are allowed, but each commits
-the then-current whole workspace; separate edits across CONTINUE invocations to
-produce separate commits. No commit is required when no changes need publishing.
-Return the native structured response, with version 1, action, effects, and text.
-CONTINUE retains this workspace including uncommitted edits for another invocation.
-FORK (main work only) creates at least two descendant lineages, each with exactly
-one new assumption. The parent becomes BRANCHED; siblings need not converge.
-SPAWN decomposes required work inside this lineage; parent waits and receives its
-own child outcomes. Child artifacts are not automatically merged.
-COMPLETE requests public evaluation; only evaluation success completes work.
-BLOCK reports inability to proceed, with a structured reason; it is not falsification.
-FORK, SPAWN and artifact-bearing COMPLETE require committed state: request COMMIT
-effects first if needed. Never silently discard edits. Respect supplied control
-restrictions. Use null for absent optional objective/priority fields in the schema.
-No prior model session is authoritative: continuity is supplied by Stirpi context,
-workspace, canonical artifacts and recorded outcomes. Do not resume other sessions.`;
 
 const pick = (value, keys) =>
   Object.fromEntries(
@@ -148,6 +184,60 @@ export function invocationFrom(raw) {
     throw new Error("WORKSPACE_REQUIRED");
   if (c.task !== undefined && typeof c.task !== "string")
     throw new Error("INVALID_INPUT");
+  let verification;
+  if (c.verification !== undefined) {
+    const id = (value) =>
+      typeof value === "string" &&
+      /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value);
+    const available = c.verification?.available;
+    const latest = c.verification?.latest;
+    const evidence = (value) =>
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      id(value.id) &&
+      available.includes(value.id) &&
+      Number.isSafeInteger(value.attempt) &&
+      value.attempt > 0 &&
+      typeof value.passed === "boolean" &&
+      (value.exitCode === null || Number.isSafeInteger(value.exitCode)) &&
+      typeof value.stdout === "string" &&
+      typeof value.stderr === "string" &&
+      typeof value.stdoutTruncated === "boolean" &&
+      typeof value.stderrTruncated === "boolean" &&
+      Number.isSafeInteger(value.durationMs) &&
+      value.durationMs >= 0;
+    if (
+      !c.verification ||
+      typeof c.verification !== "object" ||
+      Array.isArray(c.verification) ||
+      Object.keys(c.verification).some(
+        (key) => !["available", "latest"].includes(key),
+      ) ||
+      !Array.isArray(available) ||
+      !available.every(id) ||
+      new Set(available).size !== available.length ||
+      !Array.isArray(latest) ||
+      !latest.every(evidence)
+    )
+      throw new Error("INVALID_INPUT");
+    verification = {
+      available: [...available],
+      latest: latest.map((value) =>
+        pick(value, [
+          "id",
+          "attempt",
+          "passed",
+          "exitCode",
+          "stdout",
+          "stderr",
+          "stdoutTruncated",
+          "stderrTruncated",
+          "durationMs",
+        ]),
+      ),
+    };
+  }
   const context = {
     work: pick(c.work, [
       "id",
@@ -166,11 +256,14 @@ export function invocationFrom(raw) {
       reason: reason(r.reason),
       artifact: artifact(r.artifact),
     })),
+    ...(verification ? { verification } : {}),
   };
   if (c.control !== undefined) {
     if (
       c.control?.version !== 1 ||
       !Array.isArray(c.control.actions) ||
+      c.control.actions.length === 0 ||
+      new Set(c.control.actions).size !== c.control.actions.length ||
       !c.control.actions.every((a) =>
         ["CONTINUE", "FORK", "SPAWN", "COMPLETE", "BLOCK"].includes(a),
       )

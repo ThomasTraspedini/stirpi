@@ -177,6 +177,17 @@ export function adapterEvidence(stderr: string) {
     typeof v.model === "string" && /^gpt-[0-9][a-z0-9.-]{0,60}$/.test(v.model)
       ? v.model
       : null;
+  result.requestedEffort = [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+    "ultra",
+  ].includes(v.effort as string)
+    ? v.effort
+    : null;
   const d = object(v.diagnostics);
   result.eventTypes = Object.fromEntries(
     Object.entries(object(d.eventTypes))
@@ -203,7 +214,7 @@ export function adapterEvidence(stderr: string) {
   );
   const c = object(v.configuration);
   const safe: RecordValue = {};
-  for (const key of ["auth", "config", "state", "placements"]) {
+  for (const key of ["executor", "auth", "config", "state", "placements"]) {
     safe[key] = Object.fromEntries(
       Object.entries(object(c[key])).filter(([k, value]) => {
         if (
@@ -217,6 +228,7 @@ export function adapterEvidence(stderr: string) {
             Number(value) <= 0o777
           );
         const allowed: Record<string, string[]> = {
+          effort: ["minimal", "low", "medium", "high", "xhigh", "max", "ultra"],
           kind: ["explicit_file", "none"],
           policy: ["loaded", "ignored"],
           placement: ["system_temp", "configured_temp", "experiment_local"],
@@ -224,6 +236,11 @@ export function adapterEvidence(stderr: string) {
           CODEX_HOME: ["adapter_state"],
           TMPDIR: ["adapter_state"],
         };
+        if (k === "model")
+          return (
+            typeof value === "string" &&
+            /^gpt-[0-9][a-z0-9.-]{0,60}$/.test(value)
+          );
         return allowed[k]?.includes(value as string) ?? false;
       }),
     );

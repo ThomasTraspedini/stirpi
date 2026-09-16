@@ -102,6 +102,9 @@ else if (mode === "dirty") {
     type: "BLOCK",
     reason: { code: "INPUT_REQUIRED", message: "Preserve pending work" },
   };
+} else if (mode === "verify" && work.cursor === 0) {
+  effects = [{ type: "VERIFY", id: "full-postgres-suite" }];
+  action = { type: "CONTINUE" };
 } else {
   const name = dna.length ? work.name : "single";
   writeFileSync(`${name}.txt`, `${name} fixture result\n`);

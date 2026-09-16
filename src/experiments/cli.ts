@@ -10,6 +10,7 @@ export async function experimentCli(args: string[]) {
     allowPositionals: true,
     options: {
       condition: { type: "string" },
+      "verification-mode": { type: "string" },
       preregistration: { type: "string" },
       "evaluator-wall-time-ms": { type: "string" },
       source: { type: "string" },
@@ -30,7 +31,7 @@ export async function experimentCli(args: string[]) {
   const [command, target] = positionals;
   if (values.help || !command) {
     console.log(
-      "strpi experiment run <manifest> --condition H|S|T --source <local-repo|URL> --executor <config.json> --public-evaluator <config.json> --output <directory> [--preregistration pilot.json] [--evaluator-wall-time-ms N] [--metadata config.json] [--steps N] [--budgets config.json] [--supervision config.json] [--concurrency 1] [--timeout-ms 60000]\nstrpi experiment replay <run-directory>\nstrpi experiment evaluate <run-directory> --private-data <path> --hook <command.json>",
+      "strpi experiment run <manifest> --condition H|S|T --verification-mode none|trusted-local --source <local-repo|URL> --executor <config.json> --public-evaluator <config.json> --output <directory> [--preregistration pilot.json] [--evaluator-wall-time-ms N] [--metadata config.json] [--steps N] [--budgets config.json] [--supervision config.json] [--concurrency 1] [--timeout-ms 60000]\nstrpi experiment replay <run-directory>\nstrpi experiment evaluate <run-directory> --private-data <path> --hook <command.json>",
     );
     return;
   }
@@ -43,6 +44,7 @@ export async function experimentCli(args: string[]) {
       );
     if (
       !values.condition ||
+      !values["verification-mode"] ||
       !values.source ||
       !values.executor ||
       !values.output ||
@@ -52,6 +54,9 @@ export async function experimentCli(args: string[]) {
     const options: RunOptions = {
       manifest: target,
       condition: values.condition as Condition,
+      verificationMode: values[
+        "verification-mode"
+      ] as RunOptions["verificationMode"],
       source: values.source,
       executor: read(values.executor),
       output: values.output,

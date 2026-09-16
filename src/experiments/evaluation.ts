@@ -20,11 +20,23 @@ import {
   CommandChecksEvaluator,
   validateChecks,
   type CommandChecksConfig,
+  type CommandCheckProcess,
 } from "../evaluation/commands.js";
 import { ProcessEvaluator } from "../evaluation/process.js";
 import { OperationalFailure } from "../executor/protocol.js";
 import type { ExecutorOperation } from "../executor/protocol.js";
 import { replay } from "../replay/index.js";
+import {
+  experimentAccounting,
+  type ExecutorInvocationRecord,
+  type IndexedOperationalObservation,
+} from "./accounting.js";
+
+const jsonLines = (path: string): unknown[] =>
+  readFileSync(path, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
 
 export type PublicEvaluatorConfig = {
   id: string;
@@ -72,6 +84,7 @@ export function runtimeEvaluator(
     workspace: string,
     check: import("../evaluation/commands.js").PublicCheck,
   ) => NodeJS.ProcessEnv,
+  checkProcess?: CommandCheckProcess,
 ): Evaluator {
   validatePublicEvaluator(config);
   return {
@@ -95,6 +108,7 @@ export function runtimeEvaluator(
                 (check) => {
                   record.checks.push(check);
                 },
+                checkProcess,
               )
             : new ProcessEvaluator(
                 config.command,
@@ -123,8 +137,10 @@ export function runtimeEvaluator(
 }
 export function replayExperiment(directory: string) {
   const resultPath = join(directory, "result.json");
-  if (existsSync(resultPath)) {
-    const result = JSON.parse(readFileSync(resultPath, "utf8"));
+  const result = existsSync(resultPath)
+    ? JSON.parse(readFileSync(resultPath, "utf8"))
+    : null;
+  if (result) {
     if (result.evidence?.preparation) {
       const bytes = readFileSync(join(directory, "preparation.json"));
       if (sha256(bytes) !== result.evidence.preparationSha256)
@@ -160,12 +176,12 @@ export function replayExperiment(directory: string) {
   const records: EvaluationRecord[] = JSON.parse(
     readFileSync(join(directory, "runtime-evaluations.json"), "utf8"),
   );
-  const operations = state.events
+  const evaluationOperations = state.events
     .filter((e) => e.type === "EVALUATION_OPERATION")
     .map((e) => e.data as EvaluationOperation);
-  if (records.length !== operations.length)
+  if (records.length !== evaluationOperations.length)
     throw new Error("Replay public evaluation count mismatch");
-  for (const [index, operation] of operations.entries()) {
+  for (const [index, operation] of evaluationOperations.entries()) {
     const record = records[index]!;
     if (
       !isDeepStrictEqual(record.context, operation.context) ||
@@ -179,28 +195,85 @@ export function replayExperiment(directory: string) {
     )
       throw new Error("Replay public evaluation mismatch");
   }
+  const invocationPath = join(directory, "invocations.jsonl");
+  const invocations = jsonLines(invocationPath)
+    .filter(
+      (record): record is Record<string, unknown> =>
+        !!record &&
+        typeof record === "object" &&
+        (record as Record<string, unknown>).type === "started",
+    )
+    .map((record, position): ExecutorInvocationRecord => {
+      const index = record.index;
+      const workId = record.workId;
+      const lineageId = record.lineageId;
+      if (
+        index !== position + 1 ||
+        typeof workId !== "string" ||
+        typeof lineageId !== "string"
+      )
+        throw new Error("Replay invocation evidence mismatch");
+      return { index, workId, lineageId };
+    });
+  const executorOperations = state.events
+    .filter((event) => event.type === "EXECUTOR_OPERATION")
+    .map((event) => event.data as ExecutorOperation);
+  if (invocations.length !== executorOperations.length)
+    throw new Error("Replay invocation/state evidence mismatch");
+  for (const [position, invocation] of invocations.entries()) {
+    const operation = executorOperations[position]!;
+    if (
+      operation.context.work.id !== invocation.workId ||
+      operation.context.work.lineageId !== invocation.lineageId
+    )
+      throw new Error("Replay invocation/state evidence mismatch");
+  }
   const operationalPath = join(directory, "operational.jsonl");
-  const expected = state.events
-    .filter((e) => e.type === "EXECUTOR_OPERATION")
-    .flatMap((e, index) =>
-      ((e.data as ExecutorOperation).observations ?? []).map((event) => ({
-        index: index + 1,
-        event,
-      })),
-    );
+  const expected = executorOperations.flatMap((operation, index) =>
+    (operation.observations ?? []).map((event) => ({
+      index: index + 1,
+      event,
+    })),
+  );
+  let recorded: IndexedOperationalObservation[] = [];
   if (existsSync(operationalPath)) {
-    const recorded = readFileSync(operationalPath, "utf8")
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => JSON.parse(line));
+    recorded = jsonLines(operationalPath) as IndexedOperationalObservation[];
     const ordered = expected.map((entry, index) => ({
       sequence: index + 1,
       ...entry,
     }));
     if (!isDeepStrictEqual(recorded, ordered))
       throw new Error("Replay operational evidence mismatch");
-  } else if (expected.length)
-    throw new Error("Replay operational evidence missing");
+  } else throw new Error("Replay operational evidence missing");
+  const accounting = experimentAccounting(
+    invocations,
+    recorded,
+    state.lineages,
+    state.work,
+  );
+  const reported = result?.resources;
+  if (
+    !reported ||
+    !isDeepStrictEqual(
+      {
+        executorInvocations: reported.executorInvocations,
+        logicalLineages: reported.logicalLineages,
+        scheduledLineages: reported.scheduledLineages,
+        lineageCounts: reported.lineageCounts,
+        tokens: reported.tokens,
+        usageCoverage: reported.usageCoverage,
+      },
+      {
+        executorInvocations: invocations.length,
+        logicalLineages: accounting.lineageCounts.created,
+        scheduledLineages: accounting.lineageCounts.scheduled,
+        lineageCounts: accounting.lineageCounts,
+        tokens: accounting.tokens,
+        usageCoverage: accounting.usageCoverage,
+      },
+    )
+  )
+    throw new Error("Replay experiment accounting mismatch");
   return replay(state);
 }
 // Separate command, invoked only after the solver phase. Private input is never

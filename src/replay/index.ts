@@ -23,13 +23,30 @@ export function replay(original: State): State {
   let invocation = 0;
   let evaluationCursor = 0;
   let verificationCursor = 0;
+  const operations = original.events
+    .filter((e) => e.type === "EXECUTOR_OPERATION")
+    .map((e) => e.data as ExecutorOperation);
   const verifications = original.events
     .filter((e) => e.type === "VERIFICATION_OPERATION")
     .map((e) => e.data as VerificationOperation);
-  const verifier: VerificationExecutor | undefined = verifications.length
+  const advertised = operations
+    .map((operation) => operation.context.verification?.available)
+    .find((available) => available !== undefined);
+  if (
+    advertised &&
+    operations.some(
+      (operation) =>
+        !isDeepStrictEqual(
+          operation.context.verification?.available,
+          advertised,
+        ),
+    )
+  )
+    throw new Error("Replay verification availability mismatch");
+  const verifier: VerificationExecutor | undefined = advertised
     ? {
         available() {
-          return [...new Set(verifications.map((v) => v.request.id))];
+          return structuredClone(advertised);
         },
         perform(id, workId) {
           const operation = verifications[verificationCursor++];
@@ -55,9 +72,6 @@ export function replay(original: State): State {
   const executor = (
     original.events[0]?.data as { executor?: { protocol: 1; id: string } }
   ).executor;
-  const operations = original.events
-    .filter((e) => e.type === "EXECUTOR_OPERATION")
-    .map((e) => e.data as ExecutorOperation);
   const replayed = simulate(
     original.scenario,
     original.config,

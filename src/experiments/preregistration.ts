@@ -182,7 +182,31 @@ export function preregisteredOptions(options: RunOptions, testcase: string) {
     options.executor,
     pilot.executor as Parameters<typeof verifyExecutor>[1],
   );
-  const effective = { ...options, ...derived, executor: executor.command };
+  const executorConfiguration = executor.evidence.configuration;
+  if (
+    executorConfiguration &&
+    ((options.metadata?.model !== undefined &&
+      options.metadata.model !== executorConfiguration.model) ||
+      (options.metadata?.effort !== undefined &&
+        options.metadata.effort !== executorConfiguration.effort))
+  )
+    throw new Error(
+      "Preflight: metadata model/effort contradict Codex executor configuration",
+    );
+  const effective = {
+    ...options,
+    ...derived,
+    executor: executor.command,
+    ...(executorConfiguration
+      ? {
+          metadata: {
+            ...options.metadata,
+            model: executorConfiguration.model,
+            effort: executorConfiguration.effort,
+          },
+        }
+      : {}),
+  };
   const evidence = {
     verified: true,
     executor: executor.evidence,

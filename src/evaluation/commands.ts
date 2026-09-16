@@ -6,6 +6,7 @@ import type {
   Evaluator,
 } from "./index.js";
 import { OperationalFailure } from "../executor/protocol.js";
+import type { SpawnSyncReturns } from "node:child_process";
 
 export interface PublicCheck {
   id: string;
@@ -16,6 +17,46 @@ export interface PublicCheck {
 export interface CommandChecksConfig {
   checks: PublicCheck[];
   completionPolicy: "all_checks_pass";
+}
+export interface CommandCheckProcessOptions {
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  input: string;
+  timeoutMs?: number;
+  maxBuffer: number;
+}
+export type CommandCheckProcess = (
+  check: PublicCheck,
+  options: CommandCheckProcessOptions,
+) => Pick<
+  SpawnSyncReturns<string>,
+  "status" | "signal" | "stdout" | "stderr" | "error"
+>;
+export const commandCheckProcess: CommandCheckProcess = (check, options) =>
+  spawnSync(check.executable, check.args, {
+    cwd: options.cwd,
+    env: options.env,
+    input: options.input,
+    encoding: "utf8",
+    shell: false,
+    timeout: options.timeoutMs,
+    maxBuffer: options.maxBuffer,
+  });
+export function boundedPublicOutput(value: string, limit: number) {
+  const sanitized = value
+    .replace(
+      /(?:DATABASE_URL\s*[=:]\s*|postgres(?:ql)?:\/\/)[^\s'"`]+/gi,
+      "[REDACTED_DATABASE_URL]",
+    )
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\x1b]/g, "");
+  const bytes = Buffer.from(sanitized);
+  let end = Math.min(bytes.length, limit);
+  if (end < bytes.length)
+    while (end > 0 && (bytes[end]! & 0xc0) === 0x80) end--;
+  return {
+    value: bytes.subarray(0, end).toString("utf8"),
+    truncated: bytes.length > limit,
+  };
 }
 export function validateChecks(config: CommandChecksConfig): void {
   if (config.completionPolicy !== "all_checks_pass")
@@ -68,6 +109,7 @@ export class CommandChecksEvaluator implements Evaluator {
     },
     private readonly timeoutMs: number | undefined = undefined,
     private readonly observe: (result: CheckResult) => void = () => {},
+    private readonly run: CommandCheckProcess = commandCheckProcess,
   ) {
     validateChecks(config);
     if (
@@ -100,7 +142,7 @@ export class CommandChecksEvaluator implements Evaluator {
         error: null,
       };
       try {
-        const output = spawnSync(check.executable, check.args, {
+        const output = this.run(structuredClone(check), {
           cwd: context.workspacePath,
           env: Object.fromEntries(
             Object.entries(
@@ -113,24 +155,26 @@ export class CommandChecksEvaluator implements Evaluator {
             ).filter(([key]) => !key.startsWith("GIT_")),
           ),
           input: JSON.stringify(context) + "\n",
-          encoding: "utf8",
-          shell: false,
-          timeout: this.timeoutMs,
+          ...(this.timeoutMs !== undefined
+            ? { timeoutMs: this.timeoutMs }
+            : {}),
           maxBuffer: limit,
         });
         record.exitStatus = output.status;
         record.signal = output.signal;
-        record.stdout = Buffer.from(output.stdout ?? "")
-          .subarray(0, limit)
-          .toString("utf8");
-        record.stderr = Buffer.from(output.stderr ?? "")
-          .subarray(0, limit)
-          .toString("utf8");
+        const stdout = boundedPublicOutput(output.stdout ?? "", limit);
+        const stderr = boundedPublicOutput(output.stderr ?? "", limit);
+        record.stdout = stdout.value;
+        record.stderr = stderr.value;
         record.outputTruncated =
+          stdout.truncated ||
+          stderr.truncated ||
           Buffer.byteLength(output.stdout ?? "") +
             Buffer.byteLength(output.stderr ?? "") >
-          limit;
-        record.error = output.error?.message ?? null;
+            limit;
+        record.error = output.error
+          ? boundedPublicOutput(output.error.message, 1024).value
+          : null;
         record.processStatus = output.error
           ? "operational_error"
           : output.signal
@@ -138,7 +182,10 @@ export class CommandChecksEvaluator implements Evaluator {
             : "exited";
         record.passed = !output.error && output.status === 0;
       } catch (error) {
-        record.error = error instanceof Error ? error.message : String(error);
+        record.error = boundedPublicOutput(
+          error instanceof Error ? error.message : String(error),
+          1024,
+        ).value;
       }
       record.completedAt = new Date().toISOString();
       checks.push(record);

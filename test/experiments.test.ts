@@ -17,7 +17,11 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { experimentCli } from "../src/experiments/cli.js";
-import { runExperiment, type RunOptions } from "../src/experiments/run.js";
+import {
+  runExperiment,
+  runExperimentLocally,
+  type RunOptions,
+} from "../src/experiments/run.js";
 import {
   frozenInput,
   git,
@@ -75,6 +79,7 @@ function fixture() {
   const options = (condition: Condition, mode: string = condition) => ({
     manifest: path,
     condition,
+    verificationMode: "none" as const,
     source,
     output: join(dir, "runs"),
     executor: command(mode),
@@ -133,6 +138,216 @@ test("frozen public D032 identity and bytes match the manifest", async () => {
     "bd9ae09ac74374199c48d22ec36c739600cfee59",
   );
   assert.deepEqual(Buffer.from(input.task), input.bytes);
+});
+
+test("verification mode is explicit and trusted-local prerequisites fail before solver execution", async () => {
+  const f = fixture();
+  try {
+    const missing = { ...f.options("S") } as Partial<RunOptions>;
+    delete missing.verificationMode;
+    await assert.rejects(
+      () => runExperiment(missing as RunOptions),
+      /Explicit verification mode/,
+    );
+    await assert.rejects(
+      () =>
+        runExperiment({
+          ...f.options("S"),
+          verificationMode: "unexpected" as RunOptions["verificationMode"],
+        }),
+      /Explicit verification mode/,
+    );
+    await assert.rejects(
+      () =>
+        runExperiment({
+          ...f.options("S"),
+          verificationMode: "trusted-local",
+        }),
+      /requires a public check evaluator/,
+    );
+    const options = f.options("S");
+    await assert.rejects(
+      () =>
+        runExperiment({
+          ...options,
+          verificationMode: "trusted-local",
+          publicEvaluator: {
+            id: "checks",
+            criteria: options.publicEvaluator.criteria,
+            checks: [
+              {
+                id: "full-postgres-suite",
+                executable: "npm",
+                args: ["test"],
+              },
+            ],
+            completionPolicy: "all_checks_pass",
+          },
+        }),
+      /requires authoritative preparation/,
+    );
+    assert.equal(existsSync(join(f.dir, "runs")), false);
+  } finally {
+    f.close();
+  }
+});
+
+test("trusted-local VERIFY uses the selected public check and completion independently reruns every check", async () => {
+  const { bookingPreparation } =
+    await import("../src/experiments/preparation.js");
+  const f = fixture();
+  try {
+    git(f.source, "checkout", "--detach", f.base);
+    writeFileSync(
+      join(f.source, "package.json"),
+      '{"name":"fixture","version":"1"}',
+    );
+    writeFileSync(join(f.source, "package-lock.json"), "{}");
+    git(f.source, "add", "package.json", "package-lock.json");
+    git(f.source, "commit", "-m", "Fixture dependency identity");
+    const sourceCommit = git(f.source, "rev-parse", "HEAD");
+    writeFileSync(f.path, JSON.stringify({ ...f.manifest, sourceCommit }));
+    const preparationCalls: string[] = [];
+    const processCalls: Array<{
+      id: string;
+      input: string;
+      cwd: string;
+      databaseUrl?: string;
+    }> = [];
+    const options = f.options("S", "verify");
+    const checks = [
+      {
+        id: "full-postgres-suite",
+        executable: "npm",
+        args: ["test"],
+        workingDirectory: "candidate" as const,
+      },
+      {
+        id: "typecheck",
+        executable: "npm",
+        args: ["run", "typecheck"],
+        workingDirectory: "candidate" as const,
+      },
+      {
+        id: "diff-check",
+        executable: "git",
+        args: ["diff", "--check"],
+        workingDirectory: "candidate" as const,
+      },
+    ];
+    const run = await runExperimentLocally(
+      {
+        ...options,
+        verificationMode: "trusted-local",
+        preparation: bookingPreparation,
+        publicEvaluator: {
+          id: "booking-public-v2",
+          criteria: options.publicEvaluator.criteria,
+          checks,
+          completionPolicy: "all_checks_pass",
+        },
+      },
+      (_executable, args) => {
+        preparationCalls.push(args[0] ?? "");
+        if (args[0] === "inspect")
+          return JSON.stringify([
+            {
+              Image: "image",
+              NetworkSettings: {
+                Ports: { "5432/tcp": [{ HostPort: "49153" }] },
+              },
+            },
+          ]);
+        return "container";
+      },
+      (check, processOptions) => {
+        processCalls.push({
+          id: check.id,
+          input: processOptions.input,
+          cwd: processOptions.cwd,
+          ...(processOptions.env.DATABASE_URL
+            ? { databaseUrl: processOptions.env.DATABASE_URL }
+            : {}),
+        });
+        return processOptions.input
+          ? {
+              status: 0,
+              signal: null,
+              stdout: `${check.id} completion\n`,
+              stderr: "",
+              error: undefined,
+            }
+          : {
+              status: 0,
+              signal: null,
+              stdout:
+                "DATABASE_URL=postgresql://secret@localhost/db\n\u001b[31m" +
+                "x".repeat(70_000),
+              stderr: "verification diagnostic",
+              error: undefined,
+            };
+      },
+    );
+    assert.equal(run.result.error, null);
+    assert.equal(run.result.runtimeOutcome, "COMPLETED");
+    assert.deepEqual(
+      processCalls.map((call) => call.id),
+      ["full-postgres-suite", ...checks.map((check) => check.id)],
+    );
+    assert.equal(processCalls[0]!.input, "");
+    assert.notEqual(processCalls[1]!.input, "");
+    assert.equal(processCalls[0]!.cwd, processCalls[1]!.cwd);
+    assert.equal(processCalls[0]!.databaseUrl, processCalls[1]!.databaseUrl);
+    assert.equal(processCalls[2]!.databaseUrl, undefined);
+    assert.equal(processCalls[3]!.databaseUrl, undefined);
+    assert.ok(preparationCalls.includes("run"));
+    assert.ok(preparationCalls.includes("rm"));
+
+    const [operation] = run.state!.verificationOperations!;
+    assert.equal(operation.request.id, "full-postgres-suite");
+    assert.equal(operation.request.workId, "w1");
+    assert.match(operation.request.workspaceDigest, /^[a-f0-9]{64}$/);
+    assert.equal(operation.outcome.ok, true);
+    if (!operation.outcome.ok) return;
+    assert.equal(operation.outcome.evidence.attempt, 1);
+    assert.equal(operation.outcome.evidence.passed, true);
+    assert.equal(operation.outcome.evidence.exitCode, 0);
+    assert.equal(operation.outcome.evidence.stdout.includes("secret"), false);
+    assert.equal(operation.outcome.evidence.stdout.includes("\u001b"), false);
+    assert.equal(operation.outcome.evidence.stdoutTruncated, true);
+
+    const started = calls(run.directory).filter(
+      (entry) => entry.type === "started",
+    );
+    assert.deepEqual(
+      started[0].input.verification.available,
+      checks.map((c) => c.id),
+    );
+    assert.deepEqual(started[0].input.verification.latest, []);
+    assert.equal(
+      started[1].input.verification.latest[0].id,
+      "full-postgres-suite",
+    );
+    const evaluations = json(join(run.directory, "runtime-evaluations.json"));
+    assert.equal(evaluations.length, 1);
+    assert.deepEqual(
+      evaluations[0].checks.map((check: { id: string }) => check.id),
+      checks.map((check) => check.id),
+    );
+    const metadata = json(join(run.directory, "metadata.json"));
+    assert.equal(metadata.verificationMode, "trusted-local");
+    assert.deepEqual(
+      metadata.verification.available,
+      checks.map((c) => c.id),
+    );
+    assert.match(metadata.verificationConfigurationId, /^[a-f0-9]{64}$/);
+    assert.equal(run.result.verificationMode, "trusted-local");
+    const processCount = processCalls.length;
+    assert.deepEqual(replayExperiment(run.directory), run.state);
+    assert.equal(processCalls.length, processCount);
+  } finally {
+    f.close();
+  }
 });
 
 test("hash mismatch aborts before execution or output creation", async () => {
@@ -230,7 +445,22 @@ test("H/S/T deterministic pilots: identical input, isolated T0 history and sibli
         }
       }
       assert.equal(run.result.resources.executorInvocations, inputs.length);
-      assert.equal(run.result.resources.tokens, null);
+      assert.deepEqual(run.result.resources.tokens, {
+        inputTokens: null,
+        cachedInputTokens: null,
+        outputTokens: null,
+        reasoningOutputTokens: null,
+      });
+      assert.deepEqual(run.result.resources.usageCoverage, {
+        executorInvocations: inputs.length,
+        invocationsWithAnyUsage: 0,
+        measuredInvocations: {
+          inputTokens: 0,
+          cachedInputTokens: 0,
+          outputTokens: 0,
+          reasoningOutputTokens: 0,
+        },
+      });
       assert.equal(run.result.resources.monetaryCost, null);
       assert.equal(run.result.resources.humanInterventions, 0);
       assert.ok(run.result.resources.wallTimeMs > 0);
@@ -254,6 +484,18 @@ test("H/S/T deterministic pilots: identical input, isolated T0 history and sibli
         );
         assert.equal(run.result.resources.logicalLineages, 3);
         assert.equal(run.result.resources.scheduledLineages, 3);
+        assert.deepEqual(run.result.resources.lineageCounts, {
+          created: 3,
+          scheduled: 3,
+          statuses: {
+            ACTIVE: 0,
+            WAITING: 0,
+            BLOCKED: 0,
+            BRANCHED: 1,
+            DEAD: 0,
+            COMPLETED: 2,
+          },
+        });
         assert.notEqual(
           run.state!.work[1]!.artifact!.ref,
           run.state!.work[2]!.artifact!.ref,
@@ -289,6 +531,108 @@ test("H/S/T deterministic pilots: identical input, isolated T0 history and sibli
   } finally {
     if (previous === undefined) delete process.env.PRIVATE_ORACLE_TEST;
     else process.env.PRIVATE_ORACLE_TEST = previous;
+    f.close();
+  }
+});
+
+test("run accounting uses persisted invocation usage and replay rejects totals or coverage tampering", async () => {
+  const f = fixture();
+  try {
+    const script = join(f.dir, "usage.mjs");
+    writeFileSync(
+      script,
+      `
+      import { readFileSync, writeSync } from 'node:fs';
+      readFileSync(0, 'utf8');
+      const snapshots = [
+        { inputTokens: 10, cachedInputTokens: 3, outputTokens: 2, reasoningOutputTokens: 1 },
+        { inputTokens: 10, cachedInputTokens: 3, outputTokens: 2, reasoningOutputTokens: 1 },
+        { inputTokens: 12, outputTokens: 4 }
+      ];
+      for (const metadata of snapshots)
+        writeSync(3, JSON.stringify({ kind: 'usage', metadata }) + '\\n');
+      process.stdout.write(JSON.stringify({
+        version: 1,
+        action: { type: 'BLOCK', reason: { code: 'FIXTURE_DONE', message: 'usage captured' } },
+        effects: [],
+        text: 'usage fixture'
+      }));
+    `,
+    );
+    const run = await runExperiment({
+      ...f.options("S"),
+      executor: { executable: process.execPath, args: [script] },
+    });
+    assert.deepEqual(run.result.resources.tokens, {
+      inputTokens: 12,
+      cachedInputTokens: 3,
+      outputTokens: 4,
+      reasoningOutputTokens: 1,
+    });
+    assert.deepEqual(run.result.resources.usageCoverage, {
+      executorInvocations: 1,
+      invocationsWithAnyUsage: 1,
+      measuredInvocations: {
+        inputTokens: 1,
+        cachedInputTokens: 1,
+        outputTokens: 1,
+        reasoningOutputTokens: 1,
+      },
+    });
+    assert.deepEqual(run.result.resources.operational.latestUsage, {
+      inputTokens: 12,
+      outputTokens: 4,
+    });
+
+    rmSync(script);
+    rmSync(join(run.directory, "artifacts"), { recursive: true });
+    rmSync(join(run.directory, "worlds"), { recursive: true });
+    assert.deepEqual(replayExperiment(run.directory), run.state);
+
+    const resultPath = join(run.directory, "result.json");
+    const result = json(resultPath);
+    result.resources.tokens.inputTokens = 13;
+    writeFileSync(resultPath, JSON.stringify(result));
+    assert.throws(() => replayExperiment(run.directory), /accounting mismatch/);
+    result.resources.tokens.inputTokens = 12;
+    result.resources.usageCoverage.invocationsWithAnyUsage = 0;
+    writeFileSync(resultPath, JSON.stringify(result));
+    assert.throws(() => replayExperiment(run.directory), /accounting mismatch/);
+  } finally {
+    f.close();
+  }
+});
+
+test("replay rejects missing invocation evidence even without usage observations", async () => {
+  const f = fixture();
+  try {
+    const run = await runExperiment(f.options("S"));
+    const invocationPath = join(run.directory, "invocations.jsonl");
+    const records = readFileSync(invocationPath, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+    const removed = records.findLastIndex(
+      (record) => record.type === "started",
+    );
+    assert.notEqual(removed, -1);
+    records.splice(removed, 1);
+    writeFileSync(
+      invocationPath,
+      records.map((record) => JSON.stringify(record)).join("\n") + "\n",
+    );
+
+    const resultPath = join(run.directory, "result.json");
+    const result = json(resultPath);
+    result.resources.executorInvocations--;
+    result.resources.usageCoverage.executorInvocations--;
+    writeFileSync(resultPath, JSON.stringify(result));
+
+    assert.throws(
+      () => replayExperiment(run.directory),
+      /invocation\/state evidence mismatch/,
+    );
+  } finally {
     f.close();
   }
 });
@@ -769,6 +1113,65 @@ test("preregistered fixture preflight and runtime retain exactly the declared en
   }
 });
 
+test("preregistered Codex configuration is authoritative for metadata and run identity", async () => {
+  const f = fixture();
+  try {
+    const preregistration = join(f.dir, "codex-pilot.json");
+    writeFileSync(
+      preregistration,
+      JSON.stringify({
+        id: "fixture-codex-pilot",
+        class: "pilot",
+        testcase: "fixture",
+        condition: "T",
+        hiddenEvaluationDuringRun: false,
+        executor: { adapter: "codex" },
+        limits: { maxExecutorInvocations: 0 },
+      }),
+    );
+    const options: RunOptions = {
+      ...f.options("T"),
+      preregistration,
+      executor: {
+        executable: process.execPath,
+        args: [
+          resolve("adapters/codex/adapter.mjs"),
+          "--codex",
+          process.execPath,
+          "--model",
+          "gpt-6-astra",
+          "--effort",
+          "medium",
+        ],
+      },
+      metadata: { model: "gpt-other", effort: "medium" },
+    };
+    delete options.maxSteps;
+    await assert.rejects(
+      () => runExperiment(options),
+      /metadata model\/effort contradict Codex executor configuration/,
+    );
+    assert.equal(existsSync(join(f.dir, "runs")), false);
+
+    delete options.metadata;
+    const run = await runExperiment(options);
+    const metadata = json(join(run.directory, "metadata.json"));
+    assert.deepEqual(metadata.effectiveExecutorConfiguration, {
+      model: "gpt-6-astra",
+      effort: "medium",
+    });
+    assert.deepEqual(metadata.executorIdentity.configuration, {
+      model: "gpt-6-astra",
+      effort: "medium",
+    });
+    assert.equal(metadata.model, "gpt-6-astra");
+    assert.equal(metadata.effort, "medium");
+    assert.match(metadata.executorConfigurationId, /^[a-f0-9]{64}$/);
+  } finally {
+    f.close();
+  }
+});
+
 test("unsupported and contradictory preregistrations fail before executor or output creation", async () => {
   const f = fixture();
   try {
@@ -839,6 +1242,8 @@ test("CLI consumes a pilot file without manual limit mapping and leaves omission
       f.path,
       "--condition",
       "T",
+      "--verification-mode",
+      "none",
       "--source",
       f.source,
       "--executor",
@@ -1131,7 +1536,6 @@ test("executor identity pins gate experiment launch before output creation", asy
 });
 
 test("preparation gates executor launch and replay never repeats trusted effects", async () => {
-  const { runExperimentLocally } = await import("../src/experiments/run.js");
   const { bookingPreparation } =
     await import("../src/experiments/preparation.js");
   const f = fixture();

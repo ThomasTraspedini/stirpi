@@ -25,13 +25,19 @@ Use the existing M2 process configuration, with absolute paths:
     "--auth-file",
     "/absolute/path/to/already-authenticated/auth.json",
     "--model",
-    "your-model"
+    "your-model",
+    "--effort",
+    "medium"
   ]
 }
 ```
 
-`--codex` is required. `--model` is optional; omission uses the CLI default,
-not the user's config. There is no implicit invocation timeout. An explicitly
+`--codex`, `--model`, and `--effort` are required exactly once. Supported effort
+names are `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, and `ultra`;
+unsupported, absent, or duplicate values fail before the CLI is launched. The
+adapter passes the model through `--model`, applies effort through the verified
+`model_reasoning_effort` CLI configuration key, and enables `--strict-config`.
+There is no implicit invocation timeout. An explicitly
 supplied `--timeout-ms` is a wall-time resource limit. Exhaustion reports
 `AGENT_WALL_TIME_EXHAUSTED`; caller termination reports `AGENT_CANCELLED`.
 Both terminate the owned agent process group on this POSIX interface. The existing
@@ -53,9 +59,15 @@ otherwise the work objective is used. Generic protocol instructions and projecte
 context are a separate CLI prompt argument. No experiment files are opened.
 
 Success writes exactly one v1 `{version, action, effects, text}` JSON envelope to
-stdout. The native response schema permits CONTINUE, FORK, SPAWN, COMPLETE and
-BLOCK. The final response file is validated against the adapter's closed schema
-subset. Nullable optional priority/objective fields are removed syntactically.
+stdout. The native response schema and instructions are derived for each
+invocation from `context.control.actions`; unavailable actions are neither
+described nor accepted. Trusted IDs in `context.verification.available` add a
+closed VERIFY effect `{type:"VERIFY",id:<available ID>}` valid only with CONTINUE;
+without available IDs no VERIFY effect is exposed. The adapter preserves the
+allowlisted `available` and `latest` evidence fields but never accepts solver-owned
+verification commands, argv, cwd, environment, timeout, network, or policy. The
+final response file is validated against this invocation-specific closed schema.
+Nullable optional priority/objective fields are removed syntactically.
 No prose, intermediate events, or diagnostics select an action. Core still applies
 its authoritative semantic validation and public evaluation.
 
@@ -92,7 +104,7 @@ alone for hostile code or secret-bearing workspaces.
 
 ## Evidence and smoke test
 
-Stderr is one JSON evidence record: executable/version, configured model, task,
+Stderr is one JSON evidence record: executable/version, configured model/effort, task,
 context and prompt SHA-256, start/end, exit status/signal, structured response,
 safe event counts, stderr byte count/hash, and native usage counters. Missing
 usage/cost is null. Arbitrary raw command output and stderr are deliberately not
@@ -133,7 +145,8 @@ Explicit real-agent smoke, using a new temporary pure-function Git fixture:
 node adapters/codex/smoke.mjs --real-agent \
   --codex /absolute/path/to/codex \
   --auth-file /absolute/path/to/already-authenticated/auth.json \
-  --model your-model
+  --model your-model \
+  --effort medium
 ```
 
 This spends one real invocation. The fixture asks for `twice(n)`, focused tests,

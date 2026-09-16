@@ -58,6 +58,17 @@ export const executorEnvironment = (home: string): NodeJS.ProcessEnv => ({
   TMPDIR: home,
 });
 
+export function assertTrustedLocalCheck(check: PublicCheck) {
+  if (!(
+    (check.executable === "npm" && JSON.stringify(check.args) === '["test"]') ||
+    (check.executable === "npm" &&
+      JSON.stringify(check.args) === '["run","typecheck"]') ||
+    (check.executable === "git" &&
+      JSON.stringify(check.args) === '["diff","--check"]')
+  ))
+    throw new Error("Verification command is not allowlisted");
+}
+
 // Owned by the outer harness, never deserialized from an executor response.
 export class TrustedPreparation {
   readonly records: PreparationEvidence[] = [];
@@ -198,15 +209,7 @@ export class TrustedPreparation {
     check: PublicCheck,
     base: NodeJS.ProcessEnv,
   ) {
-    if (!(
-      (check.executable === "npm" &&
-        JSON.stringify(check.args) === '["test"]') ||
-      (check.executable === "npm" &&
-        JSON.stringify(check.args) === '["run","typecheck"]') ||
-      (check.executable === "git" &&
-        JSON.stringify(check.args) === '["diff","--check"]')
-    ))
-      throw new Error("Verification command is not allowlisted");
+    assertTrustedLocalCheck(check);
     const assignment = this.assignments.get(workspace);
     if (!assignment) throw new Error("Workspace has not been prepared");
     // npm scripts are command indirection: reject edits to their manifest/lockfile.
