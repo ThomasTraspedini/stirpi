@@ -104,6 +104,21 @@ affect broad behavior.
 
 Do not repeatedly run expensive checks without a concrete reason.
 
+Deterministic evidence is reusable across chats and agents when its exact check,
+relevant input/state identity, environment where relevant, and result are
+recorded; no relevant input changed; no unrecorded volatile state controls the
+result; and independent reproduction is not itself required by acceptance.
+Read-only review does not invalidate it. An independent reviewer is not
+automatically an independent rerunner.
+
+Rerun only when relevant inputs changed, the environment or provenance is
+insufficient, the new check establishes a different claim, independent
+reproduction is explicitly required, or the earlier check was not actually
+executed. Preserve provenance in reports and distinguish valid inherited
+evidence, invalidated/stale evidence with its reason, and checks still required.
+Keep deterministic/mechanical evidence, semantic judgment, and deliberately
+independent reproduction distinct.
+
 ## Git and task boundaries
 
 Keep commits small enough to describe one coherent change.
