@@ -379,6 +379,11 @@ API); versions, executable hashes and npm/compiler/type-root installation
 closures must match R before compilation or solver invocation. Closure SHA-256
 v1 hashes JSON plus LF of sorted `[relative path, executable bits, file SHA256]`
 entries, with no file exclusions and no symlink entries inside the closure.
+The schema-3 preflight-only CLI additionally requires an absolute external
+`--toolchain-root`. TypeScript and `@types/node` are resolved from that root's
+`package.json`, never from the clean R checkout or an implicit environment
+fallback. The root remains a locator only; evidence records the effective tool
+locations and the existing contract hash checks remain authoritative.
 
 The schema-3 preparation environment uses a dedicated external PATH with
 verified Node/npm/Git/Docker, empty user/global npm configuration, fixed registry

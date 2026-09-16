@@ -123,12 +123,25 @@ fresh clean checkout of R, a schema-3 pilot candidate that names that R, the
 controlled local target, and a new output directory outside both repositories:
 
 ```sh
-node --import tsx scripts/p3/schema3-preflight.mts \
+cd /Users/thomastraspedini/stirpi
+node --import tsx /private/tmp/stirpi-p3-c01/runtime-R/scripts/p3/schema3-preflight.mts \
   --runtime /private/tmp/stirpi-p3-c01/runtime-R \
   --pilot /absolute/path/H.schema3-preflight-candidate.json \
   --source /Users/thomastraspedini/booking-invariants \
-  --output /private/tmp/stirpi-p3-c01/schema3-preflight-H
+  --output /private/tmp/stirpi-p3-c01/schema3-preflight-H \
+  --toolchain-root /Users/thomastraspedini/stirpi
 ```
+
+`--toolchain-root` is required by this CLI and must name an absolute external
+dependency root with its own `package.json`, TypeScript and `@types/node`.
+The command starts from that external root so the TypeScript loader can launch
+the script committed in R without adding dependencies to R.
+Resolution starts from that package file and may not escape the root. The root
+is only an operational locator: it grants no authority, and the resolved
+compiler and type-root closures are still checked against the contract hashes.
+The effective leaf locators are recorded in the evidence `tools` object. R does
+not need or receive `node_modules`, symlinks, or environment-based resolution
+fallbacks such as `NODE_PATH`.
 
 This launcher permits an `unfrozen` contract only because it is a preflight
 candidate, never a run authorization. It verifies the clean R checkout and
@@ -139,7 +152,9 @@ modules, typecheck, PostgreSQL connectivity and `btree_gist`. It executes all
 allowlisted public evaluator checks and attempts disposable-container cleanup.
 
 The output `schema3-preflight-evidence.json` distinguishes an operational
-failure from a public check exit and records cleanup failure separately. It
+failure from a public check exit and records cleanup failure separately. Once
+arguments and the output location are valid, dependency discovery failure is
+recorded as an operational failure in the `bootstrap` phase. It
 contains no database URL or password. The launcher has no executor, auth,
 backend, model, run, or lineage input and records zero executor/model
 invocations and zero lineages. It is fail-closed and is not a substitute for

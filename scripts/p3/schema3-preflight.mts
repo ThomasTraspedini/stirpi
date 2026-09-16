@@ -110,6 +110,7 @@ export interface Schema3PreflightOptions {
   pilot: string;
   source: string;
   output: string;
+  toolchainRoot?: string;
   tools?: LocalToolLocations;
 }
 export interface Schema3PreflightDependencies {
@@ -162,6 +163,9 @@ export function runSchema3Preflight(
     pilot: options.pilot,
     source: options.source,
     output: options.output,
+    ...(options.toolchainRoot === undefined
+      ? {}
+      : { "toolchain root": options.toolchainRoot }),
   }))
     if (!isAbsolute(path) || path !== resolve(path))
       throw new Error(`Schema-3 preflight ${name} path must be absolute`);
@@ -185,7 +189,6 @@ export function runSchema3Preflight(
     parseAuthorityJson(pilotBytes),
     "Schema-3 preflight pilot",
   );
-  const tools = structuredClone(options.tools ?? defaultLocalTools());
   const run = dependencies.trustedProcess ?? trustedProcess;
   const runCheck = dependencies.publicCheckProcess ?? defaultPublicCheckProcess;
 
@@ -233,8 +236,17 @@ export function runSchema3Preflight(
   let preparation: TrustedPreparation | undefined;
   let workspace: string | undefined;
   let evaluator: PublicEvaluatorConfig | undefined;
+  let tools: LocalToolLocations | undefined;
   try {
     let binding: ReturnType<typeof bindTrustedLocal> | undefined;
+    phase("bootstrap", () => {
+      tools = structuredClone(
+        options.tools ?? defaultLocalTools(options.toolchainRoot),
+      );
+      // These are operational locators, not authority. The next phase checks
+      // every one against the contract's executable/closure hashes.
+      report.tools = structuredClone(tools);
+    });
     phase("runtime-authority", () => {
       if (
         typeof pilot.stirpiCommit !== "string" ||
@@ -242,8 +254,8 @@ export function runSchema3Preflight(
       )
         throw new Error("Preflight: invalid runtime pin");
       report.runtime.pinnedCommit = pilot.stirpiCommit;
-      assertRuntimeCheckout(runtime, pilot.stirpiCommit, tools.git);
-      binding = bindTrustedLocal(pilot, runtime, true, tools.git);
+      assertRuntimeCheckout(runtime, pilot.stirpiCommit, tools!.git);
+      binding = bindTrustedLocal(pilot, runtime, true, tools!.git);
       report.contract = {
         id: binding.contract.id,
         version: binding.contract.version,
@@ -258,7 +270,7 @@ export function runSchema3Preflight(
       );
     });
     phase("toolchain", () => {
-      report.tools = verifyLocalTools(binding!.contract, tools, run);
+      report.tools = verifyLocalTools(binding!.contract, tools!, run);
     });
     phase("public-inputs", () => {
       const frozen = frozenInput(
@@ -290,13 +302,13 @@ export function runSchema3Preflight(
         source,
         join(output, "transfer"),
         manifest,
-        tools.git,
+        tools!.git,
       );
-      const closure = gitAt(tools.git, workspace, "rev-list", "--all")
+      const closure = gitAt(tools!.git, workspace, "rev-list", "--all")
         .split("\n")
         .filter(Boolean);
       const ancestry = gitAt(
-        tools.git,
+        tools!.git,
         workspace,
         "rev-list",
         binding!.contract.source.commit,
@@ -307,14 +319,14 @@ export function runSchema3Preflight(
         throw new Error("Preflight: transferred target closure mismatch");
       report.transfer = {
         workspace,
-        head: gitAt(tools.git, workspace, "rev-parse", "HEAD"),
+        head: gitAt(tools!.git, workspace, "rev-parse", "HEAD"),
         closureCommits: closure,
-        fsck: gitAt(tools.git, workspace, "fsck", "--no-dangling"),
+        fsck: gitAt(tools!.git, workspace, "fsck", "--no-dangling"),
       };
     });
     const authority = new TrustedLocalAuthority(
       binding!.contract,
-      tools,
+      tools!,
       join(output, "trusted-state"),
       run,
     );
@@ -413,29 +425,38 @@ export function runSchema3Preflight(
   return report;
 }
 
-function cliOptions(argv: string[]): Schema3PreflightOptions {
+export function schema3PreflightCliOptions(
+  argv: string[],
+): Schema3PreflightOptions {
   const values = new Map<string, string>();
   for (let index = 0; index < argv.length; index += 2) {
     const name = argv[index];
     const value = argv[index + 1];
     if (
       !name ||
-      !["--runtime", "--pilot", "--source", "--output"].includes(name) ||
+      ![
+        "--runtime",
+        "--pilot",
+        "--source",
+        "--output",
+        "--toolchain-root",
+      ].includes(name) ||
       !value ||
       values.has(name)
     )
       throw new Error(
-        "Usage: schema3-preflight.mts --runtime /absolute/R --pilot /absolute/pilot.json --source /absolute/target --output /absolute/new-evidence-directory",
+        "Usage: schema3-preflight.mts --runtime /absolute/R --pilot /absolute/pilot.json --source /absolute/target --output /absolute/new-evidence-directory --toolchain-root /absolute/dependency-root",
       );
     values.set(name, value);
   }
-  if (values.size !== 4)
+  if (values.size !== 5)
     throw new Error("All schema-3 preflight paths are required");
   return {
     runtime: values.get("--runtime")!,
     pilot: values.get("--pilot")!,
     source: values.get("--source")!,
     output: values.get("--output")!,
+    toolchainRoot: values.get("--toolchain-root")!,
   };
 }
 
@@ -443,7 +464,7 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
-  const options = cliOptions(process.argv.slice(2));
+  const options = schema3PreflightCliOptions(process.argv.slice(2));
   const evidence = runSchema3Preflight(options);
   console.log(join(evidence.output, "schema3-preflight-evidence.json"));
   if (evidence.status !== "passed") process.exitCode = 1;

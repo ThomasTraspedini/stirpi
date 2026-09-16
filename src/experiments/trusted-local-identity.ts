@@ -1,6 +1,6 @@
 import { closedAuthorityObject } from "../authority/json.js";
 import { lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
-import { join, isAbsolute } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { sha256 } from "./inputs.js";
 import { executablePath } from "./executor-identity.js";
@@ -39,13 +39,71 @@ export function localTreeSha256(directory: string) {
   walk(root, "");
   return sha256(JSON.stringify(entries) + "\n");
 }
-export function defaultLocalTools(): LocalToolLocations {
-  const require = createRequire(import.meta.url);
+function dependencyPackage(
+  require: NodeJS.Require,
+  request: string,
+  toolchainRoot?: string,
+) {
+  let packageJson: string;
+  try {
+    packageJson = require.resolve(request);
+  } catch {
+    throw new Error(
+      toolchainRoot
+        ? `Preflight: ${request} unavailable from toolchain root ${toolchainRoot}`
+        : `Preflight: ${request} unavailable`,
+    );
+  }
+  if (toolchainRoot) {
+    const rel = relative(toolchainRoot, realpathSync(packageJson));
+    if (!rel || rel.startsWith("../") || isAbsolute(rel))
+      throw new Error(
+        `Preflight: ${request} resolved outside toolchain root ${toolchainRoot}`,
+      );
+  }
+  return packageJson;
+}
+
+export function defaultLocalTools(
+  explicitToolchainRoot?: string,
+): LocalToolLocations {
+  let toolchainRoot: string | undefined;
+  let require: NodeJS.Require;
+  if (explicitToolchainRoot === undefined)
+    require = createRequire(import.meta.url);
+  else {
+    if (
+      !isAbsolute(explicitToolchainRoot) ||
+      explicitToolchainRoot !== resolve(explicitToolchainRoot)
+    )
+      throw new Error("Preflight: toolchain root must be absolute");
+    try {
+      toolchainRoot = realpathSync(explicitToolchainRoot);
+      if (!lstatSync(toolchainRoot).isDirectory()) throw new Error();
+      const packageJson = join(toolchainRoot, "package.json");
+      if (!lstatSync(packageJson).isFile()) throw new Error();
+      require = createRequire(packageJson);
+    } catch {
+      throw new Error(
+        `Preflight: toolchain root unavailable ${explicitToolchainRoot}`,
+      );
+    }
+  }
+  const compilerPackage = dependencyPackage(
+    require,
+    "typescript/package.json",
+    toolchainRoot,
+  );
+  const nodeTypesPackage = dependencyPackage(
+    require,
+    "@types/node/package.json",
+    toolchainRoot,
+  );
   return {
     node: realpathSync(process.execPath),
     npmRoot: join(realpathSync(executablePath("npm")), "../.."),
-    compilerRoot: join(require.resolve("typescript/package.json"), ".."),
-    typeRoots: join(require.resolve("@types/node/package.json"), "../.."),
+    compilerRoot: dirname(compilerPackage),
+    typeRoots: dirname(dirname(nodeTypesPackage)),
     git: realpathSync(executablePath("git")),
     // Docker dispatchers can select behavior from argv0. Keep the discovered
     // executable name while readFileSync below still authenticates its target.
