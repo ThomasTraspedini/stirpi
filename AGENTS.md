@@ -119,13 +119,6 @@ If commit/push is requested:
 
 Never rewrite published history unless explicitly instructed.
 
-## Public repository
-
-Repository content must stand on its own as a technical/research project.
-
-Do not add references to job applications, prospective employers, AI Digest,
-or candidate-positioning strategy.
-
 ## Decisions
 
 `docs/DECISIONS.md` contains human-owned semantic and architectural decisions.

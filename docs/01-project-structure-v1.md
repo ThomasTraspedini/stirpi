@@ -91,7 +91,6 @@ Future principle: no hidden operational crumbs. Human decisions, blocked lineage
 
 ## Public-ready development
 Keep repository history clean and modular from first commit.
-No employer/application-specific references.
 No arbitrary LOC limits.
 Avoid monoliths.
 

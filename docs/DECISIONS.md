@@ -1392,28 +1392,6 @@ to those same identities.
 Release records preserve and verify both build identity and result artifact
 identities without conflating them.
 
-Requirements:
-
-- preserve D056–D070 unchanged;
-- do not stage any existing Phase-1 or proxy implementation changes;
-- run git diff --check;
-- stage only docs/DECISIONS.md;
-- inspect the cached diff;
-- commit exactly:
-
-docs: separate proxy build and artifact identity
-
-- push main.
-
-Report:
-
-- full commit SHA;
-- committed files;
-- push result;
-- remaining uncommitted files.
-
-Stop.
-
 ## D072 — Proxy BuildIdentityV1 is a domain-separated canonical pre-build identity
 
 Status: accepted
@@ -1473,3 +1451,30 @@ malformed and cross-binding-invalid inputs.
 The complete normative schema, semantic constraints, golden fixtures, acceptance
 requirements, and migration map are recorded in
 `docs/verification/proxy-build-identity-v1.md`.
+
+## D073 — Explicit trusted-local pilot mode
+
+Status: accepted
+
+For the approved H*/S*/T* pilot only, Stirpi may use an explicit trusted-local
+development and verification mode on controlled repositories and controlled
+inputs. This is a bounded pilot exception, not a general policy for arbitrary
+targets or future experiments, and makes no sandboxing or safety claim against
+hostile code.
+
+The mode is selected explicitly and symmetrically for all three conditions. An
+error or unavailability in either mode never authorizes an implicit transition
+between trusted-local and isolated verification.
+
+In trusted-local mode, test state and database are dedicated and disposable and
+remain outside the target repository. Dependencies, commands and checks,
+environment, credentials, database access, and every operation are authority of
+the trusted protocol or harness, rather than of an executor or candidate. The
+solver cannot broaden commands, access, network, prerequisites, or credentials.
+Stirpi state, private material and oracle material, and credentials unrelated to
+the assigned work remain outside the solver workspace and context.
+
+D058–D067 remain unchanged and govern isolated verification and every path that
+requires it. D068–D072 remain unchanged and apply whenever the proxy/release
+path is used; they are not prerequisites for this explicitly authorized
+trusted-local pilot mode.
