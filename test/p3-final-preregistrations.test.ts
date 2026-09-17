@@ -58,6 +58,24 @@ test("final controller fails closed on pilot, executor, contract and public inpu
       );
       assert.throws(check);
       writeFileSync(path, bytes);
+      if (file === "executor-common.json") {
+        const args = original.args as string[];
+        for (const alteredArgs of [
+          args.slice(0, 9),
+          args.slice(0, 10),
+          [...args.slice(0, 10), ".codex/auth.json"],
+          [...args.slice(0, 10), "/another/auth.json"],
+          [...args, "--auth-file", args[10]],
+          [...args, "--api-key", "synthetic-forbidden-value"],
+        ]) {
+          writeFileSync(
+            path,
+            JSON.stringify({ ...original, args: alteredArgs }),
+          );
+          assert.throws(check, `executor auth drift: ${alteredArgs.join(" ")}`);
+          writeFileSync(path, bytes);
+        }
+      }
       if (file !== "executor-common.json") {
         const pin = original.trustedLocalContract as Record<string, unknown>;
         for (const key of Object.keys(pin)) {

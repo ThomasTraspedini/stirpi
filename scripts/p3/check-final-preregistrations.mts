@@ -75,6 +75,8 @@ export function checkFinalPreregistrations(
         contract.executor.effort,
         "--timeout-ms",
         String(contract.executor.timeoutMs),
+        "--auth-file",
+        "/Users/thomastraspedini/.codex/auth.json",
       ],
     },
   );

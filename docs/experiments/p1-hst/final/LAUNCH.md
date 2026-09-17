@@ -1,7 +1,9 @@
 # Launch command forms — review only
 
-**Not authorized for execution.** P is `<P>` until a separately authorized
-commit distinct from R5. These forms create checkouts and launch runtime effects;
+**Not authorized for execution.** Baseline P is
+`a954f87c26f91d78d195571bee8f76b0b5a8efc2`; it does not contain the prepared auth
+provision delta. `<P>` below must select a separately authorized, reviewed input
+commit containing that delta, distinct from R5. These forms create checkouts and launch runtime effects;
 none was executed during preparation. R is fixed to
 `b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9` by each final pilot.
 Before any execution require steward review, committed P, separately authorized
@@ -14,8 +16,12 @@ fallback or immediate retry to bypass F1. Missing monetary telemetry is recorded
 as `costo monetario non disponibile`. No native monetary enforcement is claimed.
 The historical non-model backend probe does not attest current authentication,
 quota or actual model availability; its model limitation was accepted by the human.
-The common executor contains no auth file; authentication provision must be
-reviewed before launch, without broadening the frozen contract.
+The common executor explicitly selects the existing external login file with
+`--auth-file /Users/thomastraspedini/.codex/auth.json`. The unchanged R5 adapter
+links it into temporary `CODEX_HOME` without reading or copying credentials or
+inheriting personal configuration. This prepared provision requires review
+before launch; see [auth provision review](AUTH-PROVISION.md). It does not
+attest current authentication/quota or broaden the frozen contract.
 
 The build-tool wrapper runs from the active source checkout, as required by
 its dependency locator. Before launch review must confirm its exact bytes equal

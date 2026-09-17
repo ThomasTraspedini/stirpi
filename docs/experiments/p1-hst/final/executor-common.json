@@ -10,6 +10,8 @@
     "--effort",
     "medium",
     "--timeout-ms",
-    "900000"
+    "900000",
+    "--auth-file",
+    "/Users/thomastraspedini/.codex/auth.json"
   ]
 }
