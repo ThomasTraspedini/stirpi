@@ -1,0 +1,49 @@
+[
+  {
+    "workspace": "<PRIVATE_TMP>/stirpi-work-OW7GYn/checkout",
+    "packageSha256": "56fa8c5e289563a9cbbfa1e184cc255369e2bfb8c4105ed3273d53a64946dbcc",
+    "lockfileSha256": "bde87452d6e18fcedfbb025e7214296de5183689ed8d6fddcc47c74d8b7d45d6",
+    "packageIdentity": {
+      "name": "booking-invariants",
+      "version": "0.0.0"
+    },
+    "instance": "stirpi-09f66a72-930f-4e89-8852-2af8bd82b25f",
+    "steps": [
+      {
+        "id": "dependencies",
+        "passed": true
+      },
+      {
+        "id": "module-resolution",
+        "passed": true
+      },
+      {
+        "id": "typecheck",
+        "passed": true
+      },
+      {
+        "id": "postgres",
+        "passed": true
+      },
+      {
+        "id": "postgres-identity",
+        "passed": true
+      },
+      {
+        "id": "database-connectivity",
+        "passed": true
+      },
+      {
+        "id": "prerequisites",
+        "passed": true
+      },
+      {
+        "id": "cleanup",
+        "passed": true
+      }
+    ],
+    "containerId": "bd90601c625db2275900c2d28a7159353a8d145ab2acbd009438b58082dd7ca1",
+    "imageId": "sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+    "port": 32774
+  }
+]

@@ -1,0 +1,145 @@
+{
+  "testcase": "booking-invariants-d032-counterfactual-001",
+  "condition": "H",
+  "runId": "16b62f83-1139-484c-84d7-a7162ed2bf5b",
+  "kind": "pilot",
+  "sourceRepository": "public/booking-invariants",
+  "sourceCommit": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+  "taskSha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1",
+  "startedAt": "2026-09-17T11:33:50.763Z",
+  "verificationMode": "trusted-local",
+  "verificationConfigurationId": "d8cb407b0f9a98380721d517bbbe8b6cfadb106ffc346ed4db09487a3ef7ae79",
+  "executorConfigurationId": "995d477dbd920743f6c019fd86130dfcb6e1c299d7bae471ff350dcb99dd1bf9",
+  "phase": "finished",
+  "completedAt": "2026-09-17T11:43:22.547Z",
+  "runtimeOutcome": "BLOCKED",
+  "error": null,
+  "cleanupError": null,
+  "lineages": [
+    {
+      "id": "l1",
+      "name": "root",
+      "objective": "[REDACTED H 9e2da44c2441e43c]",
+      "parentId": null,
+      "assumption": null,
+      "rationale": null,
+      "priority": 0,
+      "status": "BLOCKED",
+      "reason": {
+        "code": "PROCESS_EXIT_FAILED",
+        "message": "PROCESS_EXIT_FAILED",
+        "stop": {
+          "kind": "PROCESS_PROTOCOL_FAILURE",
+          "scope": "invocation:796c0de9-282f-4bb8-8455-7da9e9a4b533",
+          "code": "PROCESS_EXIT_FAILED"
+        }
+      },
+      "artifact": {
+        "ref": "4c68b6f10b5cdb8bca9a8c120423e1839f83d54f",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "branch": "stirpi/work-a71a1c16-fb8a-419a-a627-b9df086ed6ce",
+        "worktree": "<PRIVATE_TMP>/stirpi-work-OW7GYn/checkout",
+        "cleaned": false
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "workId": "w1",
+      "lineageId": "l1",
+      "status": "BLOCKED",
+      "reason": {
+        "code": "PROCESS_EXIT_FAILED",
+        "message": "PROCESS_EXIT_FAILED",
+        "stop": {
+          "kind": "PROCESS_PROTOCOL_FAILURE",
+          "scope": "invocation:796c0de9-282f-4bb8-8455-7da9e9a4b533",
+          "code": "PROCESS_EXIT_FAILED"
+        }
+      },
+      "result": null,
+      "artifact": {
+        "ref": "4c68b6f10b5cdb8bca9a8c120423e1839f83d54f",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "branch": "stirpi/work-a71a1c16-fb8a-419a-a627-b9df086ed6ce",
+        "worktree": "<PRIVATE_TMP>/stirpi-work-OW7GYn/checkout",
+        "cleaned": false
+      }
+    }
+  ],
+  "resources": {
+    "executorInvocations": 5,
+    "engineSteps": 5,
+    "wallTimeMs": 571783.619458,
+    "logicalLineages": 1,
+    "scheduledLineages": 1,
+    "lineageCounts": {
+      "created": 1,
+      "scheduled": 1,
+      "statuses": {
+        "ACTIVE": 0,
+        "WAITING": 0,
+        "BLOCKED": 1,
+        "BRANCHED": 0,
+        "DEAD": 0,
+        "COMPLETED": 0
+      }
+    },
+    "artifactCommits": 1,
+    "humanInterventions": 0,
+    "tokens": {
+      "inputTokens": 926499,
+      "cachedInputTokens": 775680,
+      "outputTokens": 10909,
+      "reasoningOutputTokens": 374
+    },
+    "usageCoverage": {
+      "executorInvocations": 5,
+      "invocationsWithAnyUsage": 4,
+      "measuredInvocations": {
+        "inputTokens": 4,
+        "cachedInputTokens": 4,
+        "outputTokens": 4,
+        "reasoningOutputTokens": 4
+      }
+    },
+    "operational": {
+      "activityEvents": 249,
+      "progressEvents": 130,
+      "resourceEvents": 223,
+      "commandCount": 40,
+      "toolCount": 0,
+      "itemCount": 60,
+      "firstActivityAt": "2026-09-17T11:33:55.631Z",
+      "lastActivityAt": "2026-09-17T11:43:22.054Z",
+      "firstProgressAt": "2026-09-17T11:33:55.631Z",
+      "lastProgressAt": "2026-09-17T11:43:22.054Z",
+      "latestUsage": {
+        "inputTokens": 164285,
+        "cachedInputTokens": 134016,
+        "outputTokens": 1025,
+        "reasoningOutputTokens": 70,
+        "nativeType": "turn.completed",
+        "eventClass": "recognized"
+      }
+    },
+    "monetaryCost": null
+  },
+  "humanIntervention": {
+    "required": false,
+    "requests": [],
+    "supplied": 0
+  },
+  "evidence": {
+    "preparation": "preparation.json",
+    "preparationSha256": "d2b776edc59b5c2e4f4a12c30e2e2c527c51dd4bee9f4e71f4c90a125f1ea979",
+    "preflight": "preflight.json",
+    "invocations": "invocations.jsonl",
+    "operational": "operational.jsonl",
+    "runtimeEvaluations": "runtime-evaluations.json",
+    "events": "events.jsonl",
+    "state": "state.json",
+    "tree": "tree.txt",
+    "archive": "artifacts"
+  }
+}

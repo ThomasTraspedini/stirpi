@@ -1,0 +1,129 @@
+{
+  "testcase": "booking-invariants-d032-counterfactual-001",
+  "condition": "S",
+  "runId": "1cf938be-3672-4876-8e1e-b9e5d5e7e17f",
+  "kind": "pilot",
+  "sourceRepository": "public/booking-invariants",
+  "sourceCommit": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+  "taskSha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1",
+  "startedAt": "2026-09-17T11:48:19.901Z",
+  "verificationMode": "trusted-local",
+  "verificationConfigurationId": "d8cb407b0f9a98380721d517bbbe8b6cfadb106ffc346ed4db09487a3ef7ae79",
+  "executorConfigurationId": "3c6c2e3791936f72e2531bd21b4f36649e4dbee2a2f36843d57f5bccb93fd0eb",
+  "phase": "finished",
+  "completedAt": "2026-09-17T11:56:01.284Z",
+  "runtimeOutcome": "COMPLETED",
+  "error": null,
+  "cleanupError": null,
+  "lineages": [
+    {
+      "id": "l1",
+      "name": "root",
+      "objective": "[REDACTED S 9e2da44c2441e43c]",
+      "parentId": null,
+      "assumption": null,
+      "rationale": null,
+      "priority": 0,
+      "status": "COMPLETED",
+      "reason": null,
+      "artifact": {
+        "ref": "a836a4a8b2392928da406738c0a912dcad0e5528",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "branch": "stirpi/work-c6f146b7-8812-4a37-b1e5-bcd2ab7f66af",
+        "worktree": "<PRIVATE_TMP>/stirpi-work-QWlcBD/checkout",
+        "cleaned": false
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "workId": "w1",
+      "lineageId": "l1",
+      "status": "COMPLETED",
+      "reason": null,
+      "result": "[REDACTED S 34ede30ef4d1cb27]",
+      "artifact": {
+        "ref": "a836a4a8b2392928da406738c0a912dcad0e5528",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "branch": "stirpi/work-c6f146b7-8812-4a37-b1e5-bcd2ab7f66af",
+        "worktree": "<PRIVATE_TMP>/stirpi-work-QWlcBD/checkout",
+        "cleaned": false
+      }
+    }
+  ],
+  "resources": {
+    "executorInvocations": 4,
+    "engineSteps": 4,
+    "wallTimeMs": 461351.5405,
+    "logicalLineages": 1,
+    "scheduledLineages": 1,
+    "lineageCounts": {
+      "created": 1,
+      "scheduled": 1,
+      "statuses": {
+        "ACTIVE": 0,
+        "WAITING": 0,
+        "BLOCKED": 0,
+        "BRANCHED": 0,
+        "DEAD": 0,
+        "COMPLETED": 1
+      }
+    },
+    "artifactCommits": 1,
+    "humanInterventions": 0,
+    "tokens": {
+      "inputTokens": 808580,
+      "cachedInputTokens": 651008,
+      "outputTokens": 9942,
+      "reasoningOutputTokens": 480
+    },
+    "usageCoverage": {
+      "executorInvocations": 4,
+      "invocationsWithAnyUsage": 4,
+      "measuredInvocations": {
+        "inputTokens": 4,
+        "cachedInputTokens": 4,
+        "outputTokens": 4,
+        "reasoningOutputTokens": 4
+      }
+    },
+    "operational": {
+      "activityEvents": 173,
+      "progressEvents": 92,
+      "resourceEvents": 154,
+      "commandCount": 27,
+      "toolCount": 0,
+      "itemCount": 42,
+      "firstActivityAt": "2026-09-17T11:48:27.125Z",
+      "lastActivityAt": "2026-09-17T11:55:50.335Z",
+      "firstProgressAt": "2026-09-17T11:48:27.125Z",
+      "lastProgressAt": "2026-09-17T11:55:50.335Z",
+      "latestUsage": {
+        "inputTokens": 139732,
+        "cachedInputTokens": 110464,
+        "outputTokens": 797,
+        "reasoningOutputTokens": 40,
+        "nativeType": "turn.completed",
+        "eventClass": "recognized"
+      }
+    },
+    "monetaryCost": null
+  },
+  "humanIntervention": {
+    "required": false,
+    "requests": [],
+    "supplied": 0
+  },
+  "evidence": {
+    "preparation": "preparation.json",
+    "preparationSha256": "2bcf9b414ab5c46f6fc870ca8f6455159b84122f9ebb5de876cdae38e2a0ef72",
+    "preflight": "preflight.json",
+    "invocations": "invocations.jsonl",
+    "operational": "operational.jsonl",
+    "runtimeEvaluations": "runtime-evaluations.json",
+    "events": "events.jsonl",
+    "state": "state.json",
+    "tree": "tree.txt",
+    "archive": "artifacts"
+  }
+}

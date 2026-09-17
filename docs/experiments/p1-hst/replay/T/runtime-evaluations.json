@@ -1,0 +1,110 @@
+[
+  {
+    "context": {
+      "result": "[REDACTED T cc855b80600b9f0f]",
+      "criteria": {
+        "description": "Public completion contract derived from the frozen D032 task.",
+        "criteria": [
+          "Full PostgreSQL test suite passes.",
+          "TypeScript typecheck passes.",
+          "git diff --check passes."
+        ]
+      },
+      "workId": "w1",
+      "lineageId": "l1",
+      "artifactRef": "76bb8923481e89d338e907169a9c4470a80ceb69",
+      "workspacePath": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout"
+    },
+    "startedAt": "2026-09-17T12:02:33.235Z",
+    "completedAt": "2026-09-17T12:02:39.873Z",
+    "evaluation": {
+      "passed": true,
+      "reason": "All public checks passed",
+      "completionPolicy": "all_checks_pass",
+      "checks": [
+        {
+          "id": "full-postgres-suite",
+          "startedAt": "2026-09-17T12:02:33.236Z",
+          "completedAt": "2026-09-17T12:02:38.751Z",
+          "processStatus": "exited",
+          "exitStatus": 0,
+          "signal": null,
+          "stdout": "[REDACTED T 8dfcc9d92aeb0626]",
+          "stderr": "[REDACTED T e3b0c44298fc1c14]",
+          "outputTruncated": false,
+          "passed": true,
+          "error": null
+        },
+        {
+          "id": "typecheck",
+          "startedAt": "2026-09-17T12:02:38.751Z",
+          "completedAt": "2026-09-17T12:02:39.683Z",
+          "processStatus": "exited",
+          "exitStatus": 0,
+          "signal": null,
+          "stdout": "[REDACTED T 04c8b213066bd93d]",
+          "stderr": "[REDACTED T e3b0c44298fc1c14]",
+          "outputTruncated": false,
+          "passed": true,
+          "error": null
+        },
+        {
+          "id": "diff-check",
+          "startedAt": "2026-09-17T12:02:39.683Z",
+          "completedAt": "2026-09-17T12:02:39.873Z",
+          "processStatus": "exited",
+          "exitStatus": 0,
+          "signal": null,
+          "stdout": "[REDACTED T e3b0c44298fc1c14]",
+          "stderr": "[REDACTED T e3b0c44298fc1c14]",
+          "outputTruncated": false,
+          "passed": true,
+          "error": null
+        }
+      ]
+    },
+    "checks": [
+      {
+        "id": "full-postgres-suite",
+        "startedAt": "2026-09-17T12:02:33.236Z",
+        "completedAt": "2026-09-17T12:02:38.751Z",
+        "processStatus": "exited",
+        "exitStatus": 0,
+        "signal": null,
+        "stdout": "[REDACTED T 8dfcc9d92aeb0626]",
+        "stderr": "[REDACTED T e3b0c44298fc1c14]",
+        "outputTruncated": false,
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "typecheck",
+        "startedAt": "2026-09-17T12:02:38.751Z",
+        "completedAt": "2026-09-17T12:02:39.683Z",
+        "processStatus": "exited",
+        "exitStatus": 0,
+        "signal": null,
+        "stdout": "[REDACTED T 04c8b213066bd93d]",
+        "stderr": "[REDACTED T e3b0c44298fc1c14]",
+        "outputTruncated": false,
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "diff-check",
+        "startedAt": "2026-09-17T12:02:39.683Z",
+        "completedAt": "2026-09-17T12:02:39.873Z",
+        "processStatus": "exited",
+        "exitStatus": 0,
+        "signal": null,
+        "stdout": "[REDACTED T e3b0c44298fc1c14]",
+        "stderr": "[REDACTED T e3b0c44298fc1c14]",
+        "outputTruncated": false,
+        "passed": true,
+        "error": null
+      }
+    ],
+    "process": null,
+    "error": null
+  }
+]

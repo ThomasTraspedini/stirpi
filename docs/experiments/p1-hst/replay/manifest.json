@@ -1,0 +1,212 @@
+{
+  "schema": "p1-hst-public-replay-package-v2",
+  "builder": {
+    "path": "scripts/p6/build-public-replay.mjs",
+    "version": 2
+  },
+  "runtime": "b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9",
+  "input": "2be4aedc12176639b31cef6360e88cc13cd7857d",
+  "conditions": [
+    {
+      "condition": "H",
+      "runId": "16b62f83-1139-484c-84d7-a7162ed2bf5b",
+      "sourceBase": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+      "candidateRef": "4c68b6f10b5cdb8bca9a8c120423e1839f83d54f",
+      "sourceBundleManifestSha256": "7b4635b38d9d83057f0d8d9de7ba2a42593285af42075bd7a50639f5c5c85c69",
+      "sourceBundleManifestEntries": 73
+    },
+    {
+      "condition": "S",
+      "runId": "1cf938be-3672-4876-8e1e-b9e5d5e7e17f",
+      "sourceBase": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+      "candidateRef": "a836a4a8b2392928da406738c0a912dcad0e5528",
+      "sourceBundleManifestSha256": "75b3d50ea85923e84065bc3740e1857cab2e59ca5df89106908cada5ce5bfd7a",
+      "sourceBundleManifestEntries": 72
+    },
+    {
+      "condition": "T",
+      "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "sourceBase": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+      "candidateRef": "76bb8923481e89d338e907169a9c4470a80ceb69",
+      "sourceBundleManifestSha256": "180e05e717894b960db8fd170d56e282a102de279b800c27cb613d84f5b56da1",
+      "sourceBundleManifestEntries": 72
+    }
+  ],
+  "files": [
+    {
+      "path": "H/result.json",
+      "sha256": "1e01d6c8a91d3d9f0e599e5c42251fbdb2eb340c1edb2b48e1941ea322e05b22",
+      "size": 4383
+    },
+    {
+      "path": "H/metadata.json",
+      "sha256": "6b7ba110fa15f875b14c8912ba5eef13ef42b248d5b49e52a738c1f787bf0a1b",
+      "size": 26057
+    },
+    {
+      "path": "H/preflight.json",
+      "sha256": "e046a6820580aeb9eaf9731ced26ef8d1a4d81d87ed451ecb2f60103aa0fc961",
+      "size": 21220
+    },
+    {
+      "path": "H/preparation.json",
+      "sha256": "d2b776edc59b5c2e4f4a12c30e2e2c527c51dd4bee9f4e71f4c90a125f1ea979",
+      "size": 1193
+    },
+    {
+      "path": "H/task.txt",
+      "sha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1",
+      "size": 6768
+    },
+    {
+      "path": "H/invocations.jsonl",
+      "sha256": "0f88afe6a969a2f074384d9b2cd7b05946c3e5ef5e7a3514f77176c859cbac1a",
+      "size": 8665
+    },
+    {
+      "path": "H/state.json",
+      "sha256": "41b5099eedb101a2aa80b68fa04d43c4d877e781d8576b5b20dc7e518144f905",
+      "size": 370905
+    },
+    {
+      "path": "H/runtime-evaluations.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "path": "H/operational.jsonl",
+      "sha256": "490ebaf9267f255cc48000e3fd97d713aa09ee58e844b756f0d0346dbdda5d06",
+      "size": 128096
+    },
+    {
+      "path": "S/result.json",
+      "sha256": "5f2d4b84b9d17bb4910ecbb98c6000fab9e5b773922b5a34150fe71dd96f6766",
+      "size": 3871
+    },
+    {
+      "path": "S/metadata.json",
+      "sha256": "7ab5ad922b3fe5d6ac61ea2d26d7bba869284e1695432238486756f81e861d15",
+      "size": 25917
+    },
+    {
+      "path": "S/preflight.json",
+      "sha256": "e06b75e0305e92e98b0dfb70233ca60363e42d4175f46cb39eb883d2b4dc93c2",
+      "size": 21220
+    },
+    {
+      "path": "S/preparation.json",
+      "sha256": "2bcf9b414ab5c46f6fc870ca8f6455159b84122f9ebb5de876cdae38e2a0ef72",
+      "size": 1193
+    },
+    {
+      "path": "S/task.txt",
+      "sha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1",
+      "size": 6768
+    },
+    {
+      "path": "S/invocations.jsonl",
+      "sha256": "29ff9b500449a65423ff9871b2cc4750ee7dcaf082046d7fb42caa603f49a21d",
+      "size": 6956
+    },
+    {
+      "path": "S/state.json",
+      "sha256": "14c103cb941bc840c905ac377a27ee8a3bdec24d291de257ff4d6e5747e3bb2c",
+      "size": 270613
+    },
+    {
+      "path": "S/runtime-evaluations.json",
+      "sha256": "7f48c22a0698881fbba3ba641830675aa7e12d0f595986afae9223975b097c60",
+      "size": 3416
+    },
+    {
+      "path": "S/operational.jsonl",
+      "sha256": "5fb1e59a0bea2487cd4b966aa03631fa0212e23c90fb3aa3cb3b1cebb626102f",
+      "size": 88379
+    },
+    {
+      "path": "T/result.json",
+      "sha256": "a8461cbcc702538394065325f780da90914f82f975952ea8131a5c3fe8227057",
+      "size": 3879
+    },
+    {
+      "path": "T/metadata.json",
+      "sha256": "eaebac77d2cf4b5027e500b8ce5b0089278732f72d1c599a26b82e702f2c8c17",
+      "size": 26207
+    },
+    {
+      "path": "T/preflight.json",
+      "sha256": "3c5c46d531c09a86e18aeacae819562802c7081f8c1e7f330c582f1fe287db77",
+      "size": 21220
+    },
+    {
+      "path": "T/preparation.json",
+      "sha256": "76b70b49609d8642562c4d5b8792d7d3889cc18a6028d590c04d1b0585248bae",
+      "size": 1193
+    },
+    {
+      "path": "T/task.txt",
+      "sha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1",
+      "size": 6768
+    },
+    {
+      "path": "T/invocations.jsonl",
+      "sha256": "01922e822e181141e49a09006226d3230eafaa4a4603efa30ef803e5876ddfd5",
+      "size": 3478
+    },
+    {
+      "path": "T/state.json",
+      "sha256": "bd33d32180b169f005af93824c6f155a7fd40965bc63cd947498c3f7b06df01f",
+      "size": 180496
+    },
+    {
+      "path": "T/runtime-evaluations.json",
+      "sha256": "b235ab10f3379dc64ddd217c27981bf2b722df4c0d194b8b4dc767425d9aa92c",
+      "size": 3416
+    },
+    {
+      "path": "T/operational.jsonl",
+      "sha256": "f833358e89f45df853c215e4fa6a656d763f2df7482b9ea74cc5b76e5f72ba81",
+      "size": 59302
+    }
+  ],
+  "transformations": [
+    "portable replacement of host and temporary locators",
+    "redaction of solver text, completion results, and raw stdout/stderr",
+    "invocation records reduced to replay-required public fields",
+    "deterministic redacted prompts with recomputed prompt identities"
+  ],
+  "exclusions": [
+    "SQLite",
+    "Git artifacts",
+    "candidate source",
+    "raw operator logs",
+    "auth material",
+    "private evaluation"
+  ],
+  "replay": "node dist/cli/index.js experiment replay docs/experiments/p1-hst/replay/<H|S|T>",
+  "verification": {
+    "status": "replay-verified",
+    "node": "v24.20.0",
+    "cli": {
+      "entrypoint": "external absolute CLI argument",
+      "sha256": "e6bc51e07b767e39a351cdfc1132ec6309f8e6e14f78caadfbdbb22d8e3a34c0"
+    },
+    "outcomes": [
+      {
+        "condition": "H",
+        "exitCode": 0,
+        "stdout": "Experiment replay verified without external execution"
+      },
+      {
+        "condition": "S",
+        "exitCode": 0,
+        "stdout": "Experiment replay verified without external execution"
+      },
+      {
+        "condition": "T",
+        "exitCode": 0,
+        "stdout": "Experiment replay verified without external execution"
+      }
+    ]
+  }
+}

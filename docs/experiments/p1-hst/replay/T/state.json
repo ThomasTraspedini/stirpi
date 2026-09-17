@@ -1,0 +1,5024 @@
+{
+  "taskId": "booking-invariants-d032-counterfactual-001",
+  "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+  "status": "COMPLETED",
+  "reason": null,
+  "scenario": {
+    "name": "booking-invariants-d032-counterfactual-001",
+    "objective": "[REDACTED T 9e2da44c2441e43c]",
+    "publicEvaluation": {
+      "description": "Public completion contract derived from the frozen D032 task.",
+      "criteria": [
+        "Full PostgreSQL test suite passes.",
+        "TypeScript typecheck passes.",
+        "git diff --check passes."
+      ]
+    },
+    "hiddenEvaluation": {
+      "requiredText": ""
+    },
+    "scripts": {}
+  },
+  "config": {
+    "budgets": {
+      "steps": 20,
+      "invocations": 20,
+      "lineages": 20
+    },
+    "maxConcurrency": 1
+  },
+  "lineages": [
+    {
+      "id": "l1",
+      "name": "root",
+      "objective": "[REDACTED T 9e2da44c2441e43c]",
+      "parentId": null,
+      "assumption": null,
+      "rationale": null,
+      "priority": 0,
+      "status": "COMPLETED",
+      "reason": null,
+      "artifact": {
+        "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+        "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+        "cleaned": false
+      }
+    }
+  ],
+  "work": [
+    {
+      "id": "w1",
+      "lineageId": "l1",
+      "parentId": null,
+      "name": "root",
+      "objective": "[REDACTED T 9e2da44c2441e43c]",
+      "priority": 0,
+      "status": "COMPLETED",
+      "queue": 1,
+      "cursor": 2,
+      "result": "[REDACTED T cc855b80600b9f0f]",
+      "artifacts": ["76bb8923481e89d338e907169a9c4470a80ceb69"],
+      "reason": null,
+      "resources": {
+        "steps": 2,
+        "tokens": 0,
+        "cost": 0,
+        "wallTimeMs": 0
+      },
+      "artifact": {
+        "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+        "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+        "cleaned": false
+      }
+    }
+  ],
+  "events": [
+    {
+      "seq": 1,
+      "type": "RUN_STARTED",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "taskId": "booking-invariants-d032-counterfactual-001",
+        "executor": {
+          "protocol": 1,
+          "id": "p1-hst-codex-common"
+        },
+        "config": {
+          "budgets": {
+            "steps": 20,
+            "invocations": 20,
+            "lineages": 20
+          },
+          "maxConcurrency": 1
+        },
+        "root": "l1",
+        "objective": "[REDACTED T 9e2da44c2441e43c]",
+        "publicEvaluation": {
+          "description": "Public completion contract derived from the frozen D032 task.",
+          "criteria": [
+            "Full PostgreSQL test suite passes.",
+            "TypeScript typecheck passes.",
+            "git diff --check passes."
+          ]
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "type": "ARTIFACT_OPERATION",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "request": {
+          "type": "INITIALIZE",
+          "taskId": "booking-invariants-d032-counterfactual-001",
+          "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8"
+        },
+        "outcome": {
+          "ok": true,
+          "artifact": {
+            "ref": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+            "base": "bd9ae09ac74374199c48d22ec36c739600cfee59"
+          }
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "type": "SUPERVISION",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "checkpoint": "schedule",
+        "scope": "run:73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "budgets": {
+          "steps": 20,
+          "invocations": 20,
+          "lineages": 20
+        },
+        "consumption": {
+          "steps": 0,
+          "invocations": 0,
+          "lineages": 1
+        },
+        "requestedLineages": 0,
+        "stop": null
+      }
+    },
+    {
+      "seq": 4,
+      "type": "SCHEDULED",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "work": ["w1"]
+      }
+    },
+    {
+      "seq": 5,
+      "type": "SUPERVISION",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "checkpoint": "work:w1",
+        "scope": "run:73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "budgets": {
+          "steps": 20,
+          "invocations": 20,
+          "lineages": 20
+        },
+        "consumption": {
+          "steps": 0,
+          "invocations": 0,
+          "lineages": 1
+        },
+        "requestedLineages": 0,
+        "stop": null
+      }
+    },
+    {
+      "seq": 6,
+      "type": "ARTIFACT_OPERATION",
+      "subject": "w1",
+      "data": {
+        "request": {
+          "type": "OPEN",
+          "taskId": "booking-invariants-d032-counterfactual-001",
+          "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+          "lineageId": "l1",
+          "workId": "w1",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59"
+        },
+        "outcome": {
+          "ok": true,
+          "artifact": {
+            "ref": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+            "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+            "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+            "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+            "cleaned": false
+          }
+        }
+      }
+    },
+    {
+      "seq": 7,
+      "type": "EXECUTOR_OPERATION",
+      "subject": "w1",
+      "data": {
+        "executorId": "p1-hst-codex-common",
+        "context": {
+          "identity": {
+            "taskId": "booking-invariants-d032-counterfactual-001",
+            "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8"
+          },
+          "work": {
+            "id": "w1",
+            "lineageId": "l1",
+            "parentId": null,
+            "name": "root",
+            "objective": "[REDACTED T 9e2da44c2441e43c]",
+            "priority": 0,
+            "status": "ACTIVE",
+            "queue": 0,
+            "cursor": 0,
+            "result": null,
+            "artifacts": ["bd9ae09ac74374199c48d22ec36c739600cfee59"],
+            "reason": null,
+            "resources": {
+              "steps": 1,
+              "tokens": 0,
+              "cost": 0,
+              "wallTimeMs": 0
+            },
+            "artifact": {
+              "ref": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+              "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+              "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+              "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+              "cleaned": false
+            }
+          },
+          "dna": [],
+          "publicEvaluation": {
+            "description": "Public completion contract derived from the frozen D032 task.",
+            "criteria": [
+              "Full PostgreSQL test suite passes.",
+              "TypeScript typecheck passes.",
+              "git diff --check passes."
+            ]
+          },
+          "verification": {
+            "available": ["full-postgres-suite", "typecheck", "diff-check"],
+            "latest": []
+          },
+          "results": []
+        },
+        "outcome": {
+          "ok": true,
+          "response": {
+            "version": 1,
+            "action": {
+              "type": "CONTINUE"
+            },
+            "effects": [
+              {
+                "type": "VERIFY",
+                "id": "full-postgres-suite"
+              }
+            ],
+            "text": "[REDACTED T d9c69852dc21ef72]"
+          }
+        },
+        "supervision": [
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 0.39233300000068994
+            },
+            "lastProgressSequence": null,
+            "elapsedNoProgressMs": 0.39587500000016007,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 5.142125000000306
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 0.10112500000013824,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 177.82758300000023
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 172.78637499999968,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 208.18274999999994
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 203.14149999999972,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 592.3987079999997
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 587.3577500000001,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 593.2702080000008
+            },
+            "lastProgressSequence": 5,
+            "elapsedNoProgressMs": 0.03937500000029104,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 595.3367499999995
+            },
+            "lastProgressSequence": 5,
+            "elapsedNoProgressMs": 2.105959000000439,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 595.6144580000009
+            },
+            "lastProgressSequence": 7,
+            "elapsedNoProgressMs": 0.015541000000666827,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 7119.604125000001
+            },
+            "lastProgressSequence": 7,
+            "elapsedNoProgressMs": 6524.005375000001,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 1,
+              "commands": 0,
+              "wallTimeMs": 7121.027541
+            },
+            "lastProgressSequence": 9,
+            "elapsedNoProgressMs": 0.16991700000107812,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 1,
+              "commands": 0,
+              "wallTimeMs": 8410.338749999999
+            },
+            "lastProgressSequence": 9,
+            "elapsedNoProgressMs": 1289.4807920000003,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 2,
+              "commands": 1,
+              "wallTimeMs": 8410.731208000001
+            },
+            "lastProgressSequence": 11,
+            "elapsedNoProgressMs": 0.009332999999969616,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 2,
+              "commands": 1,
+              "wallTimeMs": 8424.379208000002
+            },
+            "lastProgressSequence": 12,
+            "elapsedNoProgressMs": 0.01445899999998801,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 2,
+              "commands": 1,
+              "wallTimeMs": 12126.832208
+            },
+            "lastProgressSequence": 12,
+            "elapsedNoProgressMs": 3702.4676249999993,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 3,
+              "commands": 2,
+              "wallTimeMs": 12127.267125000002
+            },
+            "lastProgressSequence": 14,
+            "elapsedNoProgressMs": 0.011999999998806743,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 3,
+              "commands": 2,
+              "wallTimeMs": 12127.503375
+            },
+            "lastProgressSequence": 15,
+            "elapsedNoProgressMs": 0.009582999999111053,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 3,
+              "commands": 2,
+              "wallTimeMs": 18848.371541
+            },
+            "lastProgressSequence": 15,
+            "elapsedNoProgressMs": 6720.877832999999,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 4,
+              "commands": 3,
+              "wallTimeMs": 18851.208666000002
+            },
+            "lastProgressSequence": 17,
+            "elapsedNoProgressMs": 0.01816599999801838,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 4,
+              "commands": 3,
+              "wallTimeMs": 18851.461041000002
+            },
+            "lastProgressSequence": 18,
+            "elapsedNoProgressMs": 0.007207999999081949,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 4,
+              "commands": 3,
+              "wallTimeMs": 24271.775791
+            },
+            "lastProgressSequence": 18,
+            "elapsedNoProgressMs": 5420.322124999999,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 24272.261541
+            },
+            "lastProgressSequence": 20,
+            "elapsedNoProgressMs": 0.01579199999832781,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 24272.485125000003
+            },
+            "lastProgressSequence": 20,
+            "elapsedNoProgressMs": 0.23924999999871943,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 24272.668916000002
+            },
+            "lastProgressSequence": 22,
+            "elapsedNoProgressMs": 0.013249999999970896,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 33400.475332999995
+            },
+            "lastProgressSequence": 22,
+            "elapsedNoProgressMs": 9127.819834000002,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 6,
+              "commands": 5,
+              "wallTimeMs": 33401.492207999996
+            },
+            "lastProgressSequence": 24,
+            "elapsedNoProgressMs": 0.03391700000065612,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 6,
+              "commands": 5,
+              "wallTimeMs": 33401.791083
+            },
+            "lastProgressSequence": 24,
+            "elapsedNoProgressMs": 0.3326669999951264,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 6,
+              "commands": 5,
+              "wallTimeMs": 33403.940291
+            },
+            "lastProgressSequence": 26,
+            "elapsedNoProgressMs": 0.011166999996930826,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 6,
+              "commands": 5,
+              "wallTimeMs": 38242.245582999996
+            },
+            "lastProgressSequence": 26,
+            "elapsedNoProgressMs": 4838.3169999999955,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 7,
+              "commands": 5,
+              "wallTimeMs": 38242.896457999996
+            },
+            "lastProgressSequence": 28,
+            "elapsedNoProgressMs": 0.015875000004598405,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 7,
+              "commands": 5,
+              "wallTimeMs": 95501.12333300001
+            },
+            "lastProgressSequence": 28,
+            "elapsedNoProgressMs": 57258.242667,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 95503.51179100001
+            },
+            "lastProgressSequence": 30,
+            "elapsedNoProgressMs": 0.011125000004540198,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 95637.844333
+            },
+            "lastProgressSequence": 30,
+            "elapsedNoProgressMs": 134.34375,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 95638.45441600001
+            },
+            "lastProgressSequence": 32,
+            "elapsedNoProgressMs": 0.012166999993496574,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 101038.71287500001
+            },
+            "lastProgressSequence": 32,
+            "elapsedNoProgressMs": 5400.270749999996,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 101039.601375
+            },
+            "lastProgressSequence": 34,
+            "elapsedNoProgressMs": 0.024541999999200925,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 101041.74833300001
+            },
+            "lastProgressSequence": 35,
+            "elapsedNoProgressMs": 1.9148339999956079,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 109833.514458
+            },
+            "lastProgressSequence": 35,
+            "elapsedNoProgressMs": 8793.677167000002,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 109836.884541
+            },
+            "lastProgressSequence": 37,
+            "elapsedNoProgressMs": 0.018791999988025054,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 109923.03570800001
+            },
+            "lastProgressSequence": 37,
+            "elapsedNoProgressMs": 86.16991699999198,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 109923.512375
+            },
+            "lastProgressSequence": 39,
+            "elapsedNoProgressMs": 0.007958000001963228,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 171277.071
+            },
+            "lastProgressSequence": 39,
+            "elapsedNoProgressMs": 61353.56662500001,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 8,
+              "wallTimeMs": 171278.731375
+            },
+            "lastProgressSequence": 41,
+            "elapsedNoProgressMs": 0.02941699998336844,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 8,
+              "wallTimeMs": 171842.414125
+            },
+            "lastProgressSequence": 41,
+            "elapsedNoProgressMs": 563.7122499999823,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 8,
+              "wallTimeMs": 171847.353
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 0.03858300001593307,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 8,
+              "wallTimeMs": 179475.66820800002
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 7628.353833000001,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 12,
+              "commands": 8,
+              "wallTimeMs": 179477.268333
+            },
+            "lastProgressSequence": 45,
+            "elapsedNoProgressMs": 0.024917000002460554,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 12,
+              "commands": 8,
+              "wallTimeMs": 180779.864291
+            },
+            "lastProgressSequence": 45,
+            "elapsedNoProgressMs": 1302.6207080000022,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 13,
+              "commands": 9,
+              "wallTimeMs": 180780.71725000002
+            },
+            "lastProgressSequence": 47,
+            "elapsedNoProgressMs": 0.04316699999617413,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 13,
+              "commands": 9,
+              "wallTimeMs": 181609.89704100002
+            },
+            "lastProgressSequence": 47,
+            "elapsedNoProgressMs": 829.2229999999981,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 13,
+              "commands": 9,
+              "wallTimeMs": 181610.48837500002
+            },
+            "lastProgressSequence": 49,
+            "elapsedNoProgressMs": 0.00741700001526624,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 13,
+              "commands": 9,
+              "wallTimeMs": 232980.93850000002
+            },
+            "lastProgressSequence": 49,
+            "elapsedNoProgressMs": 51370.45754200002,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 14,
+              "commands": 10,
+              "wallTimeMs": 232982.272291
+            },
+            "lastProgressSequence": 51,
+            "elapsedNoProgressMs": 0.01079200001549907,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 14,
+              "commands": 10,
+              "wallTimeMs": 232982.37808300002
+            },
+            "lastProgressSequence": 51,
+            "elapsedNoProgressMs": 0.11662499999511056,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 14,
+              "commands": 10,
+              "wallTimeMs": 232982.56375
+            },
+            "lastProgressSequence": 53,
+            "elapsedNoProgressMs": 0.0043329999898560345,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 14,
+              "commands": 10,
+              "wallTimeMs": 249182.529875
+            },
+            "lastProgressSequence": 53,
+            "elapsedNoProgressMs": 16199.970499999996,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 15,
+              "commands": 10,
+              "wallTimeMs": 249183.281416
+            },
+            "lastProgressSequence": 55,
+            "elapsedNoProgressMs": 0.011915999988559633,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 15,
+              "commands": 10,
+              "wallTimeMs": 249221.155458
+            },
+            "lastProgressSequence": 55,
+            "elapsedNoProgressMs": 37.88591599999927,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 15,
+              "commands": 10,
+              "wallTimeMs": 249221.3715
+            },
+            "lastProgressSequence": 57,
+            "elapsedNoProgressMs": 0.005000000004656613,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 15,
+              "commands": 10,
+              "wallTimeMs": 249376.374208
+            },
+            "lastProgressSequence": 57,
+            "elapsedNoProgressMs": 155.00775000001886,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 16,
+              "commands": 11,
+              "wallTimeMs": 249376.667875
+            },
+            "lastProgressSequence": 59,
+            "elapsedNoProgressMs": 0.010500000003958121,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 16,
+              "commands": 11,
+              "wallTimeMs": 250076.216625
+            },
+            "lastProgressSequence": 59,
+            "elapsedNoProgressMs": 699.5592079999915,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 16,
+              "commands": 11,
+              "wallTimeMs": 250077.41475
+            },
+            "lastProgressSequence": 61,
+            "elapsedNoProgressMs": 0.010667000024113804,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 16,
+              "commands": 11,
+              "wallTimeMs": 257192.58400000003
+            },
+            "lastProgressSequence": 61,
+            "elapsedNoProgressMs": 7115.180042000022,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 257194.346416
+            },
+            "lastProgressSequence": 63,
+            "elapsedNoProgressMs": 0.036583000037353486,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 257217.925291
+            },
+            "lastProgressSequence": 63,
+            "elapsedNoProgressMs": 23.615458000043873,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 257219.89883299998
+            },
+            "lastProgressSequence": 65,
+            "elapsedNoProgressMs": 0.015749999962281436,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 257220.187958
+            },
+            "lastProgressSequence": 65,
+            "elapsedNoProgressMs": 0.30483300000196323,
+            "latestUsage": {
+              "inputTokens": 416730,
+              "cachedInputTokens": 369664,
+              "outputTokens": 6881,
+              "reasoningOutputTokens": 222,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 257965.340416
+            },
+            "lastProgressSequence": 65,
+            "elapsedNoProgressMs": 745.4573329999694,
+            "latestUsage": {
+              "inputTokens": 416730,
+              "cachedInputTokens": 369664,
+              "outputTokens": 6881,
+              "reasoningOutputTokens": 222,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 258007.74700000003
+            },
+            "lastProgressSequence": 65,
+            "elapsedNoProgressMs": 787.8637909999816,
+            "latestUsage": {
+              "inputTokens": 416730,
+              "cachedInputTokens": 369664,
+              "outputTokens": 6881,
+              "reasoningOutputTokens": 222,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 258014.10137500003
+            },
+            "lastProgressSequence": 65,
+            "elapsedNoProgressMs": 794.2182080000057,
+            "latestUsage": {
+              "inputTokens": 416730,
+              "cachedInputTokens": 369664,
+              "outputTokens": 6881,
+              "reasoningOutputTokens": 222,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:303c4624-8e25-4277-8773-496e534efca7",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 17,
+              "commands": 11,
+              "wallTimeMs": 258014.18783300003
+            },
+            "lastProgressSequence": 65,
+            "elapsedNoProgressMs": 794.3046660000109,
+            "latestUsage": {
+              "inputTokens": 416730,
+              "cachedInputTokens": 369664,
+              "outputTokens": 6881,
+              "reasoningOutputTokens": 222,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          }
+        ],
+        "observations": [
+          {
+            "kind": "process",
+            "scope": "912a7f3d4fd69685610c4a1331e0ef84dfa70e36b9a81c9e5edf7403ba4bc6fd",
+            "status": "started",
+            "sequence": 1,
+            "timestamp": "2026-09-17T11:56:52.499Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "output",
+            "scope": "6ef50efa39796d7c409a24a3fd93ae001d876ae1a53715a45d0b5a121068e860",
+            "metadata": {
+              "bytes": 391,
+              "outputHash": "df6847d893cb928fa5d3365e027ddeca0c4a8442310a62565e7c3a43d3b23d55"
+            },
+            "sequence": 2,
+            "timestamp": "2026-09-17T11:56:52.671Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "6ef50efa39796d7c409a24a3fd93ae001d876ae1a53715a45d0b5a121068e860",
+            "metadata": {
+              "bytes": 39,
+              "outputHash": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721"
+            },
+            "sequence": 3,
+            "timestamp": "2026-09-17T11:56:52.702Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 77,
+              "outputHash": "67fa73236e1e501bc74a5550876304928a314b1051baabcd757dc9b3b0a352be"
+            },
+            "sequence": 4,
+            "timestamp": "2026-09-17T11:56:53.086Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "thread",
+            "scope": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+            "status": "started",
+            "metadata": {
+              "nativeType": "thread.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18"
+            },
+            "sequence": 5,
+            "timestamp": "2026-09-17T11:56:53.087Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 24,
+              "outputHash": "cf515a4acc6e41e0f111f01c78b13ba4253f611de9374474864f01e69a90c08f"
+            },
+            "sequence": 6,
+            "timestamp": "2026-09-17T11:56:53.089Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "turn",
+            "scope": "f0cb3fe167282173b14c5af8c4264609f878450015a5bb9677ac4f2943cb7412",
+            "status": "started",
+            "metadata": {
+              "nativeType": "turn.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18"
+            },
+            "sequence": 7,
+            "timestamp": "2026-09-17T11:56:53.089Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 351,
+              "outputHash": "e1f4aa09d67fb6a14ff2da256579d297766aaf2cd58a8f40b348f71b5864a1e2"
+            },
+            "sequence": 8,
+            "timestamp": "2026-09-17T11:56:59.613Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "88892fd3580ff8a5ccfdf168275eb79b4226e3161828315c467728ac6b3ca829",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "2f58b7d7725eac66c32ab446bb53a188688dc1d76fcc40cf31f5cf6509181ce8",
+              "bytes": 268,
+              "outputHash": "f88a3ff71561d9fc88f9a992896a725d8931aa3c9a2e9c38c43b138001b9340b"
+            },
+            "sequence": 9,
+            "timestamp": "2026-09-17T11:56:59.615Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 542,
+              "outputHash": "cbc5717a591580e809d7fdf9e16562844b0d4672ebef743a9ee1b68ad64290c0"
+            },
+            "sequence": 10,
+            "timestamp": "2026-09-17T11:57:00.904Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "16b8772c5f0b55f96734e8e33ab1f472ca5e495e37a01cd41014c06e265686cb",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "32012c4c32888ee2c4ba4331e3c77ece9acd811a4b3abb708363123591abfea2",
+              "commandHash": "64ba4375d8132e3f7cdc187d561df6b0aedc03e468e5dbf0bfae33292b61ba7d",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 11,
+            "timestamp": "2026-09-17T11:57:00.905Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "16b8772c5f0b55f96734e8e33ab1f472ca5e495e37a01cd41014c06e265686cb",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "32012c4c32888ee2c4ba4331e3c77ece9acd811a4b3abb708363123591abfea2",
+              "durationMs": 0,
+              "commandHash": "64ba4375d8132e3f7cdc187d561df6b0aedc03e468e5dbf0bfae33292b61ba7d",
+              "exitCode": 127,
+              "bytes": 70,
+              "outputHash": "4848cb11d672196a8d4db5b78f382df880179bed083c1c7d4a229d6ccde9b8b4"
+            },
+            "sequence": 12,
+            "timestamp": "2026-09-17T11:57:00.905Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 564,
+              "outputHash": "0d206427cec6279079f009de4d86019e8578b279ccc3b2b79834cce8ba7d9792"
+            },
+            "sequence": 13,
+            "timestamp": "2026-09-17T11:57:04.620Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "b658171c9f6d65ac7f57b1a1d9db3656842330e4ad83cbb2847aa100ba31932c",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "6a9722cdf589a2a068832c955a8253b9df87983501c03dd92e95debae1f409da",
+              "commandHash": "ea2adb01eaffabe13dd541523cc33f2eb6f46dfc8ec05e9183d0da4aeecc46a6",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 14,
+            "timestamp": "2026-09-17T11:57:04.621Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "b658171c9f6d65ac7f57b1a1d9db3656842330e4ad83cbb2847aa100ba31932c",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "6a9722cdf589a2a068832c955a8253b9df87983501c03dd92e95debae1f409da",
+              "durationMs": 0,
+              "commandHash": "ea2adb01eaffabe13dd541523cc33f2eb6f46dfc8ec05e9183d0da4aeecc46a6",
+              "exitCode": 127,
+              "bytes": 60,
+              "outputHash": "7b72548004781b9476d6d7628d2e2e357f88a5ea874650a2da46cd9f62578e90"
+            },
+            "sequence": 15,
+            "timestamp": "2026-09-17T11:57:04.621Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 2007,
+              "outputHash": "a8dce154b9d6b295ab5e1e0793fc5f6340e40e28a27e6cf9e253f87899aa525f"
+            },
+            "sequence": 16,
+            "timestamp": "2026-09-17T11:57:11.342Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "030d549c6f6b9c2487bd9ed7362310212b3cc390003c12ca29cdacf45f688d3c",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "4a317b6972e2f1834050485420bd71fe6fc2d87cd25d572cb4b8b327b37bc030",
+              "commandHash": "a88aadb1c4b03374a40c734093e410b48bcd6b4e4d6e4115b4ecf0c5f27b3e49",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 17,
+            "timestamp": "2026-09-17T11:57:11.345Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "030d549c6f6b9c2487bd9ed7362310212b3cc390003c12ca29cdacf45f688d3c",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "4a317b6972e2f1834050485420bd71fe6fc2d87cd25d572cb4b8b327b37bc030",
+              "durationMs": 0,
+              "commandHash": "a88aadb1c4b03374a40c734093e410b48bcd6b4e4d6e4115b4ecf0c5f27b3e49",
+              "exitCode": 0,
+              "bytes": 1441,
+              "outputHash": "33f1ef931a47a318cdb24630004876f475896b7374cce18489517c8bb208ac03"
+            },
+            "sequence": 18,
+            "timestamp": "2026-09-17T11:57:11.345Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 16859,
+              "outputHash": "d94bca3f23e0a0e430ff681f37725ace58e083866ea18e9694b85ba3e9439b64"
+            },
+            "sequence": 19,
+            "timestamp": "2026-09-17T11:57:16.766Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "617dc2d3beec1ea674ef8d516aa1781fea33554fab627d900b8c3e53905b6ecd",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "57dbfc296665f072254d15345fb3a2bbf457ae03cbb6ee8f6020e8f11d4b056b",
+              "commandHash": "093f9e5073f66bdc74dfb90c248928057c84537aa271b2152759ec22ad830dbb",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 20,
+            "timestamp": "2026-09-17T11:57:16.766Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 1,
+              "outputHash": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+            },
+            "sequence": 21,
+            "timestamp": "2026-09-17T11:57:16.766Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "617dc2d3beec1ea674ef8d516aa1781fea33554fab627d900b8c3e53905b6ecd",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "57dbfc296665f072254d15345fb3a2bbf457ae03cbb6ee8f6020e8f11d4b056b",
+              "durationMs": 0,
+              "commandHash": "093f9e5073f66bdc74dfb90c248928057c84537aa271b2152759ec22ad830dbb",
+              "exitCode": 0,
+              "bytes": 16022,
+              "outputHash": "fd439ebdeaf10d08231920127dc0e6086b10123a1a8a093bf16e5efe6b9e3ae5"
+            },
+            "sequence": 22,
+            "timestamp": "2026-09-17T11:57:16.767Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 263,
+              "outputHash": "a772e5725b44b4e66bd529f3b4131c6de51f8bb45a0331952a23085ea7e438f7"
+            },
+            "sequence": 23,
+            "timestamp": "2026-09-17T11:57:25.894Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "df0a15fcd43cf93052e6b5e41cfd73d6db3e0e032ba20318f679b69b2a04bb92",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "9462965f2002ffb6e5ebf84d633936910b584441932a9dee26f8497eb9d82c75",
+              "commandHash": "223cc4a2aecb535ee258115f0152792dcc4b40aa4bccd7d8ee42f3dfc9ba775a",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 24,
+            "timestamp": "2026-09-17T11:57:25.895Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 41350,
+              "outputHash": "f27b7f3ec45a3d19062138e440fc9ca29ad38909ba9f2dab4eabd35c6784f72d"
+            },
+            "sequence": 25,
+            "timestamp": "2026-09-17T11:57:25.896Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "df0a15fcd43cf93052e6b5e41cfd73d6db3e0e032ba20318f679b69b2a04bb92",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "9462965f2002ffb6e5ebf84d633936910b584441932a9dee26f8497eb9d82c75",
+              "durationMs": 0,
+              "commandHash": "223cc4a2aecb535ee258115f0152792dcc4b40aa4bccd7d8ee42f3dfc9ba775a",
+              "exitCode": 0,
+              "bytes": 40249,
+              "outputHash": "0a3d41b84a74f6e3cd6e0bee1a77b926153694a4d6d563481bbfc4c005ec473d"
+            },
+            "sequence": 26,
+            "timestamp": "2026-09-17T11:57:25.896Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 429,
+              "outputHash": "73a42f17839f4138f3d00b5b80bee3c4a0c5b3a7ce6fc044b09dce1af4328e84"
+            },
+            "sequence": 27,
+            "timestamp": "2026-09-17T11:57:30.736Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "98a6044600623aa910556d9b8db84e90238a80258387170a141869b925b7aecf",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "919299b8b8860441036a08b8ce4a6486ee1712366afaec2286c8579387359f27",
+              "bytes": 346,
+              "outputHash": "82fb71b21c3f6f89adb07703a8497c16ae1bc5b1ec1b8279a31f64f4c2d7277d"
+            },
+            "sequence": 28,
+            "timestamp": "2026-09-17T11:57:30.737Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 458,
+              "outputHash": "9f128a9f6c0f2722a0c82e508b3b6169cbab4ec60c763812f38587ab25862b00"
+            },
+            "sequence": 29,
+            "timestamp": "2026-09-17T11:58:27.993Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "file",
+            "scope": "1842dcfa7a23ac2904f5b4804bc3cc52e53e53bf3c3a3406f323442615fb147f",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "3f21b4ea2fbe67cd553dbcfae108e6632bdb6c655218a1e4ad5a543cc24800f4",
+              "files": 4,
+              "fileChangesHash": "18a89c3e206f50366e5c229893820821141757ac97c35b5a5fded58125b223eb"
+            },
+            "sequence": 30,
+            "timestamp": "2026-09-17T11:58:27.998Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 458,
+              "outputHash": "e36c920eb6a7a6af00f53d41696147c663ffe4315a41ab665df32d31816286d8"
+            },
+            "sequence": 31,
+            "timestamp": "2026-09-17T11:58:28.132Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity"]
+          },
+          {
+            "kind": "file",
+            "scope": "1842dcfa7a23ac2904f5b4804bc3cc52e53e53bf3c3a3406f323442615fb147f",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "3f21b4ea2fbe67cd553dbcfae108e6632bdb6c655218a1e4ad5a543cc24800f4",
+              "durationMs": 139,
+              "files": 4,
+              "fileChangesHash": "18a89c3e206f50366e5c229893820821141757ac97c35b5a5fded58125b223eb"
+            },
+            "sequence": 32,
+            "timestamp": "2026-09-17T11:58:28.132Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 10194,
+              "outputHash": "77b666064f1453df6971d854f60168ddfc6567be7368b422d7bda97de64e65d6"
+            },
+            "sequence": 33,
+            "timestamp": "2026-09-17T11:58:33.533Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "8423cfddb5e0b3b1c86d8101ca4f3ce8c748ff0ff2f73874e5058fba7a828994",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "f4fdd034b54297294baf2c6977028dba2f4e8949c52e921b04118670cad8192e",
+              "commandHash": "38f3aa7bb5a55801a3be3969c358e841792535d6a5746afbfb053388b376e0b0",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 34,
+            "timestamp": "2026-09-17T11:58:33.534Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "8423cfddb5e0b3b1c86d8101ca4f3ce8c748ff0ff2f73874e5058fba7a828994",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "f4fdd034b54297294baf2c6977028dba2f4e8949c52e921b04118670cad8192e",
+              "durationMs": 1,
+              "commandHash": "38f3aa7bb5a55801a3be3969c358e841792535d6a5746afbfb053388b376e0b0",
+              "exitCode": 0,
+              "bytes": 9434,
+              "outputHash": "9c991b28b336195743a522352e542723a5cb79760698ed842357af5bf5420851"
+            },
+            "sequence": 35,
+            "timestamp": "2026-09-17T11:58:33.534Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 617,
+              "outputHash": "74d0b0127a4e50d49619c5ed73b3c19abe9641878f000d32a5826a45e4329fd6"
+            },
+            "sequence": 36,
+            "timestamp": "2026-09-17T11:58:42.321Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "f032072ced7239f0e4d68d0353199340b20b80486d8e53212689f43d7088beee",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "cfc5c391b5ba915c081c7d09c3edfc599f5369196d03ab00aa96b73369f89b5f",
+              "commandHash": "0e58943264edafa78fe09206de4f57fd07a19661b74db3a8cc2372debcf91357",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 37,
+            "timestamp": "2026-09-17T11:58:42.331Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 614,
+              "outputHash": "16d4a36dcbb0203a84ccbd8daeb1feaa9e7ed61c4430746700b25bf4e50fe260"
+            },
+            "sequence": 38,
+            "timestamp": "2026-09-17T11:58:42.417Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "f032072ced7239f0e4d68d0353199340b20b80486d8e53212689f43d7088beee",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "cfc5c391b5ba915c081c7d09c3edfc599f5369196d03ab00aa96b73369f89b5f",
+              "durationMs": 97,
+              "commandHash": "0e58943264edafa78fe09206de4f57fd07a19661b74db3a8cc2372debcf91357",
+              "exitCode": 0,
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 39,
+            "timestamp": "2026-09-17T11:58:42.418Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 7541,
+              "outputHash": "9ef17739281914329b119308bbdd7a3b4f09a54171738f46201c87e239c6d20b"
+            },
+            "sequence": 40,
+            "timestamp": "2026-09-17T11:59:43.766Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "9403f30addc528ce9b5d139dcf03b76856cc0baa01d51e0afe5e16c68732df7d",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "a26c6de8780e4e792e8ad6df3fb6ac31fe229b7b2f8bc2aa29c602e8d647918c",
+              "commandHash": "fdc43a1c0501800b58d5d7446ba5bf80c6ab981db64d6560af439249e20bf4f7",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 41,
+            "timestamp": "2026-09-17T11:59:43.773Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 14381,
+              "outputHash": "7634e69e871b18176bf009826bf8baa9e721b88a1c2e32b2a093481812fa947c"
+            },
+            "sequence": 42,
+            "timestamp": "2026-09-17T11:59:44.336Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "9403f30addc528ce9b5d139dcf03b76856cc0baa01d51e0afe5e16c68732df7d",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "a26c6de8780e4e792e8ad6df3fb6ac31fe229b7b2f8bc2aa29c602e8d647918c",
+              "durationMs": 570,
+              "commandHash": "fdc43a1c0501800b58d5d7446ba5bf80c6ab981db64d6560af439249e20bf4f7",
+              "exitCode": 1,
+              "bytes": 6674,
+              "outputHash": "9f03bb6d1bf655339f5678cec35839731f7933e3a46c29bf1e2229d893a14556"
+            },
+            "sequence": 43,
+            "timestamp": "2026-09-17T11:59:44.342Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 398,
+              "outputHash": "f038aecaabdc2833c09abba38fd3b3b4fc1b6b2ca763db85bdabca9d56c75a5e"
+            },
+            "sequence": 44,
+            "timestamp": "2026-09-17T11:59:51.967Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "c18aa4f75341deb4a6b65cf6c95f35f982fb781055c37f3b968d34fc573cbda6",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "00bf463c9d57c76acacd039e798555d6101dbddf9708e68d232d71a4c30e0633",
+              "bytes": 314,
+              "outputHash": "897422fec1271db25a16fd30e7c70945e6d8cf569e4c2eeadfce2097a43d96ac"
+            },
+            "sequence": 45,
+            "timestamp": "2026-09-17T11:59:51.972Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 229,
+              "outputHash": "58115b9b82551607de888d350cd4fab6a227038a8724148a513112db8474d236"
+            },
+            "sequence": 46,
+            "timestamp": "2026-09-17T11:59:53.274Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "a6f3b83d3cb80469db79fd133581a1dbc82da76c7c5a709822b535bfb7d4a7c9",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "fcf995ce3ce15e435101e7a49adbafdc79fcf9203eefbab40b5d124cae39b03f",
+              "commandHash": "22056dbd9a2cc394f5e4f7b3ddff8c441032f1a4774bab592794825c77a963c5",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 47,
+            "timestamp": "2026-09-17T11:59:53.275Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 226,
+              "outputHash": "e024a842f3e8ef7c97c00e29a1029fc0b559b4b63343323ba874f7f8fd9ea8c8"
+            },
+            "sequence": 48,
+            "timestamp": "2026-09-17T11:59:54.105Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "a6f3b83d3cb80469db79fd133581a1dbc82da76c7c5a709822b535bfb7d4a7c9",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "fcf995ce3ce15e435101e7a49adbafdc79fcf9203eefbab40b5d124cae39b03f",
+              "durationMs": 832,
+              "commandHash": "22056dbd9a2cc394f5e4f7b3ddff8c441032f1a4774bab592794825c77a963c5",
+              "exitCode": 0,
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 49,
+            "timestamp": "2026-09-17T11:59:54.105Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 7740,
+              "outputHash": "fc713c049290b7dafd85a4f99fc6a052020f2fc43f575a50031bc95d42198e0a"
+            },
+            "sequence": 50,
+            "timestamp": "2026-09-17T12:00:45.475Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "a1513df86226196136780cf8bd0a7f184e3c5f14180e8dd0c60a4a522b4860ba",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "b40ee9c64c8028e7786be4b1266661a398dfa60613358262a0ce9e36bddd365d",
+              "commandHash": "7c98f4fc3998d1ac12ee176fca5273e35f9ce4920ff78992e4ea64374de164a6",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 51,
+            "timestamp": "2026-09-17T12:00:45.477Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 7737,
+              "outputHash": "7634f063f23f9bef65bcb439e239b38cfc5430df95277f2ab53b941fdd8a4bcc"
+            },
+            "sequence": 52,
+            "timestamp": "2026-09-17T12:00:45.477Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "a1513df86226196136780cf8bd0a7f184e3c5f14180e8dd0c60a4a522b4860ba",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "b40ee9c64c8028e7786be4b1266661a398dfa60613358262a0ce9e36bddd365d",
+              "durationMs": 0,
+              "commandHash": "7c98f4fc3998d1ac12ee176fca5273e35f9ce4920ff78992e4ea64374de164a6",
+              "exitCode": 0,
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 53,
+            "timestamp": "2026-09-17T12:00:45.478Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 203,
+              "outputHash": "d60b0ccee92a506c5894e7ffbe3c695df6d17716c41e36de52cf8a0ba5e8b06f"
+            },
+            "sequence": 54,
+            "timestamp": "2026-09-17T12:01:01.677Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "file",
+            "scope": "30ea051e8801e4c7e0a1ff710a0c3ea3ca7ccbe34c4d40370a3e3693bb1998e5",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "9d348a4243d4ca091c5a70d9e547c9f8a44b7c9f9d9326ec2086feeee1e440b9",
+              "files": 1,
+              "fileChangesHash": "6084ad12e8162f4f52b15fe9b086411b2a596be6ab0bab0dab56fec2cdb97136"
+            },
+            "sequence": 55,
+            "timestamp": "2026-09-17T12:01:01.678Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 203,
+              "outputHash": "d6bdb4dc4c6084ed3b60e3a2ca90fe31982f3d63013c7abffed8dfd0f48edaa0"
+            },
+            "sequence": 56,
+            "timestamp": "2026-09-17T12:01:01.716Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity"]
+          },
+          {
+            "kind": "file",
+            "scope": "30ea051e8801e4c7e0a1ff710a0c3ea3ca7ccbe34c4d40370a3e3693bb1998e5",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "9d348a4243d4ca091c5a70d9e547c9f8a44b7c9f9d9326ec2086feeee1e440b9",
+              "durationMs": 39,
+              "files": 1,
+              "fileChangesHash": "6084ad12e8162f4f52b15fe9b086411b2a596be6ab0bab0dab56fec2cdb97136"
+            },
+            "sequence": 57,
+            "timestamp": "2026-09-17T12:01:01.716Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 246,
+              "outputHash": "58c33326fe1f6eeafa51d594fb5d87681d9c047e7cb7fbc70b8c6e0774cdc4da"
+            },
+            "sequence": 58,
+            "timestamp": "2026-09-17T12:01:01.871Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "9654e284ba7254d77d8900ce15744703d65d113f9fa188846b17f96688ab8105",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "8fdb99dc4306238c16aab4f1834bc653b29af2e24fa23ffba130daeb8403a4fc",
+              "commandHash": "ca473db87b548b94e8aa5de81e337dba1916557ded37b48dd9248ec2e597cfcb",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 59,
+            "timestamp": "2026-09-17T12:01:01.872Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 243,
+              "outputHash": "422a92f2033b6e1b5488e77ca86c53a3227d49f4340b6f5f15c75a91cccd7007"
+            },
+            "sequence": 60,
+            "timestamp": "2026-09-17T12:01:02.571Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "9654e284ba7254d77d8900ce15744703d65d113f9fa188846b17f96688ab8105",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "8fdb99dc4306238c16aab4f1834bc653b29af2e24fa23ffba130daeb8403a4fc",
+              "durationMs": 700,
+              "commandHash": "ca473db87b548b94e8aa5de81e337dba1916557ded37b48dd9248ec2e597cfcb",
+              "exitCode": 0,
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 61,
+            "timestamp": "2026-09-17T12:01:02.572Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 532,
+              "outputHash": "5db74dda4a162cf7f636f86096d5f15779399e01cf47f344b6887e6fd246fb01"
+            },
+            "sequence": 62,
+            "timestamp": "2026-09-17T12:01:09.687Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "eb2c8d210068211333c376221cde6b0d0d66088690f9f99588ba070b0c8f9fc1",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18",
+              "itemHash": "e241483af4c21cbfcc6e68aebae085c699bf4f57a3af50be0eb0e5bb2d8b0b3e",
+              "bytes": 427,
+              "outputHash": "d9f8c03d5585ef1011e1fbe3ec3763f30d976b797bf9a7dae5423d4b0076a20e"
+            },
+            "sequence": 63,
+            "timestamp": "2026-09-17T12:01:09.689Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 167,
+              "outputHash": "1a609050eecbf56bd41414f5d49e74c316b58c42ee666c5685f28f268e114902"
+            },
+            "sequence": 64,
+            "timestamp": "2026-09-17T12:01:09.713Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "turn",
+            "scope": "f0cb3fe167282173b14c5af8c4264609f878450015a5bb9677ac4f2943cb7412",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "turn.completed",
+              "eventClass": "recognized",
+              "threadHash": "bcb6b3cd18bfa4f4c1ba77641afbd215d2aff6b5f7cd975b5c8f0b2b5be4eb18"
+            },
+            "sequence": 65,
+            "timestamp": "2026-09-17T12:01:09.715Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "usage",
+            "scope": "f0cb3fe167282173b14c5af8c4264609f878450015a5bb9677ac4f2943cb7412",
+            "metadata": {
+              "inputTokens": 416730,
+              "cachedInputTokens": 369664,
+              "outputTokens": 6881,
+              "reasoningOutputTokens": 222,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "sequence": 66,
+            "timestamp": "2026-09-17T12:01:09.715Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "63d42d26156fcc761e57da4128e9881d5bdf3bf933f0f6e9c93d6e26b9b90ae7",
+            "metadata": {
+              "bytes": 428,
+              "outputHash": "81707ede66645f7f32e3af30208ad10bfe36ed5b46996c42954d41c0f64ae8cf"
+            },
+            "sequence": 67,
+            "timestamp": "2026-09-17T12:01:10.460Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "7e6b710b765404cccbad9eedcff7615fc37b269d6db12cd81a58be541d93083c",
+            "metadata": {
+              "bytes": 2830,
+              "outputHash": "d2c62ce2b490a27d8e73d52cbadc4dcc225251ffdaac62f17428795c6d08ae65"
+            },
+            "sequence": 68,
+            "timestamp": "2026-09-17T12:01:10.503Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "process",
+            "scope": "912a7f3d4fd69685610c4a1331e0ef84dfa70e36b9a81c9e5edf7403ba4bc6fd",
+            "status": "completed",
+            "metadata": {
+              "durationMs": 258016,
+              "exitCode": 0
+            },
+            "sequence": 69,
+            "timestamp": "2026-09-17T12:01:10.509Z",
+            "invocationId": "303c4624-8e25-4277-8773-496e534efca7",
+            "categories": ["activity", "progress", "resource"]
+          }
+        ]
+      }
+    },
+    {
+      "seq": 8,
+      "type": "ACTION",
+      "subject": "w1",
+      "data": {
+        "type": "CONTINUE"
+      }
+    },
+    {
+      "seq": 9,
+      "type": "VERIFICATION_OPERATION",
+      "subject": "w1",
+      "data": {
+        "request": {
+          "id": "full-postgres-suite",
+          "workId": "w1",
+          "workspaceDigest": "8dc2d668144475d94ea4a966829c86d7f00a03e1601a63f04350312431a8fea5"
+        },
+        "outcome": {
+          "ok": true,
+          "evidence": {
+            "id": "full-postgres-suite",
+            "attempt": 1,
+            "passed": true,
+            "exitCode": 0,
+            "stdout": "[REDACTED T 24a9bb16d903ab4e]",
+            "stderr": "[REDACTED T 2c3e597b5ccf7b2d]",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "durationMs": 6923
+          }
+        }
+      }
+    },
+    {
+      "seq": 10,
+      "type": "RESOURCES",
+      "subject": "w1",
+      "data": {
+        "steps": 1,
+        "tokens": 0,
+        "cost": 0,
+        "wallTimeMs": 0
+      }
+    },
+    {
+      "seq": 11,
+      "type": "SUPERVISION",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "checkpoint": "schedule",
+        "scope": "run:73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "budgets": {
+          "steps": 20,
+          "invocations": 20,
+          "lineages": 20
+        },
+        "consumption": {
+          "steps": 1,
+          "invocations": 1,
+          "lineages": 1
+        },
+        "requestedLineages": 0,
+        "stop": null
+      }
+    },
+    {
+      "seq": 12,
+      "type": "SCHEDULED",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "work": ["w1"]
+      }
+    },
+    {
+      "seq": 13,
+      "type": "SUPERVISION",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "checkpoint": "work:w1",
+        "scope": "run:73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "budgets": {
+          "steps": 20,
+          "invocations": 20,
+          "lineages": 20
+        },
+        "consumption": {
+          "steps": 1,
+          "invocations": 1,
+          "lineages": 1
+        },
+        "requestedLineages": 0,
+        "stop": null
+      }
+    },
+    {
+      "seq": 14,
+      "type": "EXECUTOR_OPERATION",
+      "subject": "w1",
+      "data": {
+        "executorId": "p1-hst-codex-common",
+        "context": {
+          "identity": {
+            "taskId": "booking-invariants-d032-counterfactual-001",
+            "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8"
+          },
+          "work": {
+            "id": "w1",
+            "lineageId": "l1",
+            "parentId": null,
+            "name": "root",
+            "objective": "[REDACTED T 9e2da44c2441e43c]",
+            "priority": 0,
+            "status": "ACTIVE",
+            "queue": 1,
+            "cursor": 1,
+            "result": null,
+            "artifacts": ["bd9ae09ac74374199c48d22ec36c739600cfee59"],
+            "reason": null,
+            "resources": {
+              "steps": 2,
+              "tokens": 0,
+              "cost": 0,
+              "wallTimeMs": 0
+            },
+            "artifact": {
+              "ref": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+              "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+              "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+              "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+              "cleaned": false
+            }
+          },
+          "dna": [],
+          "publicEvaluation": {
+            "description": "Public completion contract derived from the frozen D032 task.",
+            "criteria": [
+              "Full PostgreSQL test suite passes.",
+              "TypeScript typecheck passes.",
+              "git diff --check passes."
+            ]
+          },
+          "verification": {
+            "available": ["full-postgres-suite", "typecheck", "diff-check"],
+            "latest": [
+              {
+                "id": "full-postgres-suite",
+                "attempt": 1,
+                "passed": true,
+                "exitCode": 0,
+                "stdout": "[REDACTED T 24a9bb16d903ab4e]",
+                "stderr": "[REDACTED T 2c3e597b5ccf7b2d]",
+                "stdoutTruncated": false,
+                "stderrTruncated": false,
+                "durationMs": 6923
+              }
+            ]
+          },
+          "results": []
+        },
+        "outcome": {
+          "ok": true,
+          "response": {
+            "version": 1,
+            "action": {
+              "type": "COMPLETE",
+              "result": "[REDACTED T cc855b80600b9f0f]"
+            },
+            "effects": [
+              {
+                "type": "COMMIT",
+                "message": "Implement HOLD-gated provider delivery and UNKNOWN reconciliation"
+              }
+            ],
+            "text": "[REDACTED T 9caf5a8cf62e1f76]"
+          }
+        },
+        "supervision": [
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 0.01041699998313561
+            },
+            "lastProgressSequence": null,
+            "elapsedNoProgressMs": 0.01087499997811392,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 4.248958999989554
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 0.013417000009212643,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 99.49045899999328
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 95.25495799997589,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 125.83829200000037
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 121.60279199999059,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 506.3509169999743
+            },
+            "lastProgressSequence": 1,
+            "elapsedNoProgressMs": 502.11537499999395,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 506.9201250000042
+            },
+            "lastProgressSequence": 5,
+            "elapsedNoProgressMs": 0.007165999966673553,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 508.15045899996767
+            },
+            "lastProgressSequence": 5,
+            "elapsedNoProgressMs": 1.2374999999883585,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 508.2972089999821
+            },
+            "lastProgressSequence": 7,
+            "elapsedNoProgressMs": 0.003708000003825873,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 0,
+              "commands": 0,
+              "wallTimeMs": 9754.787291999965
+            },
+            "lastProgressSequence": 7,
+            "elapsedNoProgressMs": 9246.49437500001,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 1,
+              "commands": 0,
+              "wallTimeMs": 9756.015625
+            },
+            "lastProgressSequence": 9,
+            "elapsedNoProgressMs": 0.03033300000242889,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 1,
+              "commands": 0,
+              "wallTimeMs": 12271.55141700001
+            },
+            "lastProgressSequence": 9,
+            "elapsedNoProgressMs": 2515.565667000017,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 2,
+              "commands": 1,
+              "wallTimeMs": 12271.833249999967
+            },
+            "lastProgressSequence": 11,
+            "elapsedNoProgressMs": 0.021499999973457307,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 2,
+              "commands": 1,
+              "wallTimeMs": 12271.978084000002
+            },
+            "lastProgressSequence": 12,
+            "elapsedNoProgressMs": 0.005291000008583069,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 2,
+              "commands": 1,
+              "wallTimeMs": 17815.77562500001
+            },
+            "lastProgressSequence": 12,
+            "elapsedNoProgressMs": 5543.803041000036,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 3,
+              "commands": 2,
+              "wallTimeMs": 17816.162291999965
+            },
+            "lastProgressSequence": 14,
+            "elapsedNoProgressMs": 0.008542000025045127,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 3,
+              "commands": 2,
+              "wallTimeMs": 17816.33933399996
+            },
+            "lastProgressSequence": 15,
+            "elapsedNoProgressMs": 0.0051250000251457095,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 3,
+              "commands": 2,
+              "wallTimeMs": 31008.12504199997
+            },
+            "lastProgressSequence": 15,
+            "elapsedNoProgressMs": 13191.790957999998,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 4,
+              "commands": 3,
+              "wallTimeMs": 31008.37070899998
+            },
+            "lastProgressSequence": 17,
+            "elapsedNoProgressMs": 0.007332999957725406,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 4,
+              "commands": 3,
+              "wallTimeMs": 31008.50437499996
+            },
+            "lastProgressSequence": 18,
+            "elapsedNoProgressMs": 0.004167000006418675,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 4,
+              "commands": 3,
+              "wallTimeMs": 42146.97787499998
+            },
+            "lastProgressSequence": 18,
+            "elapsedNoProgressMs": 11138.477792000049,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 42147.21183399996
+            },
+            "lastProgressSequence": 20,
+            "elapsedNoProgressMs": 0.007792000018525869,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 42147.38983399997
+            },
+            "lastProgressSequence": 20,
+            "elapsedNoProgressMs": 0.18575000000419095,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 42147.517208999954
+            },
+            "lastProgressSequence": 22,
+            "elapsedNoProgressMs": 0.00375000003259629,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 5,
+              "commands": 4,
+              "wallTimeMs": 50711.890625
+            },
+            "lastProgressSequence": 22,
+            "elapsedNoProgressMs": 8564.377957999997,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 6,
+              "commands": 4,
+              "wallTimeMs": 50713.008583999996
+            },
+            "lastProgressSequence": 24,
+            "elapsedNoProgressMs": 0.013458999979775399,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 6,
+              "commands": 4,
+              "wallTimeMs": 52607.749583999976
+            },
+            "lastProgressSequence": 24,
+            "elapsedNoProgressMs": 1894.754499999981,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 7,
+              "commands": 5,
+              "wallTimeMs": 52608.08908399998
+            },
+            "lastProgressSequence": 26,
+            "elapsedNoProgressMs": 0.00870900001609698,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 7,
+              "commands": 5,
+              "wallTimeMs": 53221.299666999956
+            },
+            "lastProgressSequence": 26,
+            "elapsedNoProgressMs": 613.2193340000231,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 7,
+              "commands": 5,
+              "wallTimeMs": 53221.55974999996
+            },
+            "lastProgressSequence": 28,
+            "elapsedNoProgressMs": 0.005249999987427145,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 7,
+              "commands": 5,
+              "wallTimeMs": 65370.289833999996
+            },
+            "lastProgressSequence": 28,
+            "elapsedNoProgressMs": 12148.735458999989,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 65370.76458399999
+            },
+            "lastProgressSequence": 30,
+            "elapsedNoProgressMs": 0.009250000002793968,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 65413.04008399998
+            },
+            "lastProgressSequence": 30,
+            "elapsedNoProgressMs": 42.28479200002039,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 65413.234916999994
+            },
+            "lastProgressSequence": 32,
+            "elapsedNoProgressMs": 0.005249999987427145,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 8,
+              "commands": 5,
+              "wallTimeMs": 65568.61079199996
+            },
+            "lastProgressSequence": 32,
+            "elapsedNoProgressMs": 155.381166999985,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 65568.85699999996
+            },
+            "lastProgressSequence": 34,
+            "elapsedNoProgressMs": 0.006374999997206032,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 66073.89454199997
+            },
+            "lastProgressSequence": 34,
+            "elapsedNoProgressMs": 505.0439999999944,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 66074.19412499998
+            },
+            "lastProgressSequence": 36,
+            "elapsedNoProgressMs": 0.0054579999996349216,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 9,
+              "commands": 6,
+              "wallTimeMs": 66114.98887499998
+            },
+            "lastProgressSequence": 36,
+            "elapsedNoProgressMs": 40.800208000000566,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 66115.21712499997
+            },
+            "lastProgressSequence": 38,
+            "elapsedNoProgressMs": 0.005750000011175871,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 66115.32808399998
+            },
+            "lastProgressSequence": 39,
+            "elapsedNoProgressMs": 0.00483300001360476,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 10,
+              "commands": 7,
+              "wallTimeMs": 73193.73987499997
+            },
+            "lastProgressSequence": 39,
+            "elapsedNoProgressMs": 7078.41733299999,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 73194.78274999995
+            },
+            "lastProgressSequence": 41,
+            "elapsedNoProgressMs": 0.031541000003926456,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 73239.36604200001
+            },
+            "lastProgressSequence": 41,
+            "elapsedNoProgressMs": 44.61462499998743,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 73240.38845899998
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 0.02695800003129989,
+            "latestUsage": null,
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 73240.86524999997
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 0.5034159999922849,
+            "latestUsage": {
+              "inputTokens": 225777,
+              "cachedInputTokens": 187520,
+              "outputTokens": 1047,
+              "reasoningOutputTokens": 91,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 74141.18533399998
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 900.823458000028,
+            "latestUsage": {
+              "inputTokens": 225777,
+              "cachedInputTokens": 187520,
+              "outputTokens": 1047,
+              "reasoningOutputTokens": 91,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 74164.27491699997
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 923.9129580000299,
+            "latestUsage": {
+              "inputTokens": 225777,
+              "cachedInputTokens": 187520,
+              "outputTokens": 1047,
+              "reasoningOutputTokens": 91,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 74166.157
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 925.7950410000049,
+            "latestUsage": {
+              "inputTokens": 225777,
+              "cachedInputTokens": 187520,
+              "outputTokens": 1047,
+              "reasoningOutputTokens": 91,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          },
+          {
+            "scope": "invocation:66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "policy": {
+              "budgets": {
+                "items": 200,
+                "commands": 100,
+                "wallTimeMs": 900000
+              },
+              "noProgressMs": 180000
+            },
+            "consumption": {
+              "items": 11,
+              "commands": 7,
+              "wallTimeMs": 74166.246292
+            },
+            "lastProgressSequence": 43,
+            "elapsedNoProgressMs": 925.8843329999945,
+            "latestUsage": {
+              "inputTokens": 225777,
+              "cachedInputTokens": 187520,
+              "outputTokens": 1047,
+              "reasoningOutputTokens": 91,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "stop": null
+          }
+        ],
+        "observations": [
+          {
+            "kind": "process",
+            "scope": "2cf6a7b2403bae47667392f57508a830849eb3a98f2ac17758426c7a1b0c71e1",
+            "status": "started",
+            "sequence": 1,
+            "timestamp": "2026-09-17T12:01:18.967Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "output",
+            "scope": "6ef50efa39796d7c409a24a3fd93ae001d876ae1a53715a45d0b5a121068e860",
+            "metadata": {
+              "bytes": 391,
+              "outputHash": "44bf32dd9e645b3ebbb75b328a4b13c1028fab0860099003f417bd4d1b5e240c"
+            },
+            "sequence": 2,
+            "timestamp": "2026-09-17T12:01:19.062Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "6ef50efa39796d7c409a24a3fd93ae001d876ae1a53715a45d0b5a121068e860",
+            "metadata": {
+              "bytes": 39,
+              "outputHash": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721"
+            },
+            "sequence": 3,
+            "timestamp": "2026-09-17T12:01:19.088Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 77,
+              "outputHash": "5020c9ed04eeff1c6c9939a8779a5d62884797e5d97149736ed53dc79e3c1584"
+            },
+            "sequence": 4,
+            "timestamp": "2026-09-17T12:01:19.469Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "thread",
+            "scope": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+            "status": "started",
+            "metadata": {
+              "nativeType": "thread.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7"
+            },
+            "sequence": 5,
+            "timestamp": "2026-09-17T12:01:19.469Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 24,
+              "outputHash": "cf515a4acc6e41e0f111f01c78b13ba4253f611de9374474864f01e69a90c08f"
+            },
+            "sequence": 6,
+            "timestamp": "2026-09-17T12:01:19.471Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "turn",
+            "scope": "86bbae86937eb3f0ce364e46f64c660ad286a4c96e3e78e3d35bc9826f04d606",
+            "status": "started",
+            "metadata": {
+              "nativeType": "turn.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7"
+            },
+            "sequence": 7,
+            "timestamp": "2026-09-17T12:01:19.471Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 320,
+              "outputHash": "cd3d622fe1b303c8fdb7e60327459cdf2346ac292948e2c5562fa53167534e81"
+            },
+            "sequence": 8,
+            "timestamp": "2026-09-17T12:01:28.717Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "a9f9c47b16b4428452de3c241bfe258a5b3a22ba7ab6a67535e0d4d2b62ef199",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "2f58b7d7725eac66c32ab446bb53a188688dc1d76fcc40cf31f5cf6509181ce8",
+              "bytes": 237,
+              "outputHash": "a17e1844449268162c0ed6ae7097ccfce3f1765baaae8fdc68344e3608845d2f"
+            },
+            "sequence": 9,
+            "timestamp": "2026-09-17T12:01:28.718Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 944,
+              "outputHash": "278a66b4ff1e5070dea04a2462648fffe72a8b52a0f2dffb324c698cc9975780"
+            },
+            "sequence": 10,
+            "timestamp": "2026-09-17T12:01:31.234Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "203e9ac29d2d1cf6a641a97dc3c6eb60b58c3b09bc6c223c06bac71d9c1d6121",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "32012c4c32888ee2c4ba4331e3c77ece9acd811a4b3abb708363123591abfea2",
+              "commandHash": "f301ec6d1cd9ef0f62dfdae087d973f503e94bac6e4cbe68483fc91703d3c8ea",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 11,
+            "timestamp": "2026-09-17T12:01:31.234Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "203e9ac29d2d1cf6a641a97dc3c6eb60b58c3b09bc6c223c06bac71d9c1d6121",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "32012c4c32888ee2c4ba4331e3c77ece9acd811a4b3abb708363123591abfea2",
+              "durationMs": 0,
+              "commandHash": "f301ec6d1cd9ef0f62dfdae087d973f503e94bac6e4cbe68483fc91703d3c8ea",
+              "exitCode": 127,
+              "bytes": 276,
+              "outputHash": "53b9549bce2af87c238e682ed83303e9ccd3b56f573b95075c742af13ddd756e"
+            },
+            "sequence": 12,
+            "timestamp": "2026-09-17T12:01:31.234Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 1156,
+              "outputHash": "910133a33148189413e3645fe1b1d742435b5a3618dcce9c595ee40b29ff6427"
+            },
+            "sequence": 13,
+            "timestamp": "2026-09-17T12:01:36.778Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "217388ae2f9fd89b187218146b2936ac9ea9e669ed68e6589d3363cb16a20a65",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "6a9722cdf589a2a068832c955a8253b9df87983501c03dd92e95debae1f409da",
+              "commandHash": "f22580afae0285264666dd5cae0d99eb3d9ead312b7b17d3b1da33a1379d177f",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 14,
+            "timestamp": "2026-09-17T12:01:36.779Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "217388ae2f9fd89b187218146b2936ac9ea9e669ed68e6589d3363cb16a20a65",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "6a9722cdf589a2a068832c955a8253b9df87983501c03dd92e95debae1f409da",
+              "durationMs": 0,
+              "commandHash": "f22580afae0285264666dd5cae0d99eb3d9ead312b7b17d3b1da33a1379d177f",
+              "exitCode": 127,
+              "bytes": 565,
+              "outputHash": "ba399582f4c726b570756ddbd250d4f825327747ff72c67f76c5757caef23254"
+            },
+            "sequence": 15,
+            "timestamp": "2026-09-17T12:01:36.779Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 9196,
+              "outputHash": "bbf77c7ac29087b933a77687fde4ec59e76fb90006cf2768620af702cae04292"
+            },
+            "sequence": 16,
+            "timestamp": "2026-09-17T12:01:49.971Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "0d384c0d7686384b392fbd39943b02a5d0cc26f59696638be520cd469da8497f",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "4a317b6972e2f1834050485420bd71fe6fc2d87cd25d572cb4b8b327b37bc030",
+              "commandHash": "48c12c848672f9e8e7d323b1ffadaf39ca8af6f73ab1a0e1a884dd5060a97953",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 17,
+            "timestamp": "2026-09-17T12:01:49.971Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "0d384c0d7686384b392fbd39943b02a5d0cc26f59696638be520cd469da8497f",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "4a317b6972e2f1834050485420bd71fe6fc2d87cd25d572cb4b8b327b37bc030",
+              "durationMs": 0,
+              "commandHash": "48c12c848672f9e8e7d323b1ffadaf39ca8af6f73ab1a0e1a884dd5060a97953",
+              "exitCode": 0,
+              "bytes": 8325,
+              "outputHash": "d77cf04ddfb68bd93dc56932a68a875f1f29c020fa6ef18deb49749bac8556e8"
+            },
+            "sequence": 18,
+            "timestamp": "2026-09-17T12:01:49.971Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 326,
+              "outputHash": "399a1c668549286a449d4ffc8f90b170128d1b17cb8d0b4dfc0cd7bcdc455b6a"
+            },
+            "sequence": 19,
+            "timestamp": "2026-09-17T12:02:01.110Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "8741373225f7a7b9af2c433e6f58ad7867a1b936ca70da3fdb74248117e39400",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "57dbfc296665f072254d15345fb3a2bbf457ae03cbb6ee8f6020e8f11d4b056b",
+              "commandHash": "3cf7b685a48055bbcb050ae4bdc1bc9911b827f5443bb2d912edaed175c47042",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 20,
+            "timestamp": "2026-09-17T12:02:01.110Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 21801,
+              "outputHash": "6542d534b13df5cabcdf3c69b205fa289b047b5364d94a75f2e0af46924044a1"
+            },
+            "sequence": 21,
+            "timestamp": "2026-09-17T12:02:01.110Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "8741373225f7a7b9af2c433e6f58ad7867a1b936ca70da3fdb74248117e39400",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "57dbfc296665f072254d15345fb3a2bbf457ae03cbb6ee8f6020e8f11d4b056b",
+              "durationMs": 0,
+              "commandHash": "3cf7b685a48055bbcb050ae4bdc1bc9911b827f5443bb2d912edaed175c47042",
+              "exitCode": 0,
+              "bytes": 21083,
+              "outputHash": "9764304a7e0c74ff3c5433952e1972f7e965d0a9ed489f7a95d51820c0c99658"
+            },
+            "sequence": 22,
+            "timestamp": "2026-09-17T12:02:01.110Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 373,
+              "outputHash": "36b28b414a86fa4e781cb37da742f59c93a6fe54e75b00f4a1c81527329b00d9"
+            },
+            "sequence": 23,
+            "timestamp": "2026-09-17T12:02:09.674Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "d5f2019823868f90d5db7b875cab6724b662abeb29bdf87562c0f8ed07015ad3",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "9462965f2002ffb6e5ebf84d633936910b584441932a9dee26f8497eb9d82c75",
+              "bytes": 290,
+              "outputHash": "5084c20dcc39b83e0d1841eea2eb7d2befd695061269bcdf79c290d98a62161c"
+            },
+            "sequence": 24,
+            "timestamp": "2026-09-17T12:02:09.676Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 288,
+              "outputHash": "4434980c4d0a11ad8b9d795905066a3ff69b8186b3aba93d3df1fd1c07d4825e"
+            },
+            "sequence": 25,
+            "timestamp": "2026-09-17T12:02:11.570Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "f77883de0caba310bb547f3c09647c1cc8892c343209c37bddfd9ca5cf889707",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "919299b8b8860441036a08b8ce4a6486ee1712366afaec2286c8579387359f27",
+              "commandHash": "4528d6914e03ac0634b0af31dc52e16cab288eec5db378c0328f67896a614851",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 26,
+            "timestamp": "2026-09-17T12:02:11.571Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 5792,
+              "outputHash": "cbbf91cf9ac1a1a0921ac2cd7aa05831310223b0a7aa685f811d6eecc9f2e672"
+            },
+            "sequence": 27,
+            "timestamp": "2026-09-17T12:02:12.184Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "f77883de0caba310bb547f3c09647c1cc8892c343209c37bddfd9ca5cf889707",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "919299b8b8860441036a08b8ce4a6486ee1712366afaec2286c8579387359f27",
+              "durationMs": 614,
+              "commandHash": "4528d6914e03ac0634b0af31dc52e16cab288eec5db378c0328f67896a614851",
+              "exitCode": 0,
+              "bytes": 5385,
+              "outputHash": "1a13de9b22680a1131db40e5564870dcf895950f35dc75883ba396666b866f6d"
+            },
+            "sequence": 28,
+            "timestamp": "2026-09-17T12:02:12.184Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 186,
+              "outputHash": "896cb796b7a91f84d380c84cecc9791778d785f156883949065343f3e4f1ab0d"
+            },
+            "sequence": 29,
+            "timestamp": "2026-09-17T12:02:24.333Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "file",
+            "scope": "ba28e046f0967e1791f4db2334199ca7d1e642ff234a33189605a7b7713b337b",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "3f21b4ea2fbe67cd553dbcfae108e6632bdb6c655218a1e4ad5a543cc24800f4",
+              "files": 1,
+              "fileChangesHash": "4738833fcc2d5036a5f5fd8c71c846535ede8b3f0eedc550e70d9aec670f8e15"
+            },
+            "sequence": 30,
+            "timestamp": "2026-09-17T12:02:24.333Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 186,
+              "outputHash": "067d2d176d1e8359a1fb6c3c82a558611212981667d015a2c3baa1ba461f94ec"
+            },
+            "sequence": 31,
+            "timestamp": "2026-09-17T12:02:24.376Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity"]
+          },
+          {
+            "kind": "file",
+            "scope": "ba28e046f0967e1791f4db2334199ca7d1e642ff234a33189605a7b7713b337b",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "3f21b4ea2fbe67cd553dbcfae108e6632bdb6c655218a1e4ad5a543cc24800f4",
+              "durationMs": 43,
+              "files": 1,
+              "fileChangesHash": "4738833fcc2d5036a5f5fd8c71c846535ede8b3f0eedc550e70d9aec670f8e15"
+            },
+            "sequence": 32,
+            "timestamp": "2026-09-17T12:02:24.376Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 210,
+              "outputHash": "799fe1c966e93d15ec1d0124a43725847fcac6b6f824c8a06417445fc6e71497"
+            },
+            "sequence": 33,
+            "timestamp": "2026-09-17T12:02:24.531Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "25c558e12ed05df38f8bd8f9b3d7a98fab36339e48ff9b0f8107a29fd3ccf521",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "f4fdd034b54297294baf2c6977028dba2f4e8949c52e921b04118670cad8192e",
+              "commandHash": "5f1697ebfbf5311b6b6be515a03f8729d5c3c8b20ca3df1e6eae2ff5bd03e8ab",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 34,
+            "timestamp": "2026-09-17T12:02:24.532Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 207,
+              "outputHash": "dac138cc43e8f727269c008e21f4dca88a68c71cd7e9079dc67687a06b67faa7"
+            },
+            "sequence": 35,
+            "timestamp": "2026-09-17T12:02:25.037Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "25c558e12ed05df38f8bd8f9b3d7a98fab36339e48ff9b0f8107a29fd3ccf521",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "f4fdd034b54297294baf2c6977028dba2f4e8949c52e921b04118670cad8192e",
+              "durationMs": 506,
+              "commandHash": "5f1697ebfbf5311b6b6be515a03f8729d5c3c8b20ca3df1e6eae2ff5bd03e8ab",
+              "exitCode": 0,
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 36,
+            "timestamp": "2026-09-17T12:02:25.037Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 359,
+              "outputHash": "570db93dac9f87466b098cf936fb69ff8aaa73ecfe0439e6ba131a0841c9c7b7"
+            },
+            "sequence": 37,
+            "timestamp": "2026-09-17T12:02:25.078Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "6a996ef5ce293d4e78a0610f663cfe4e2876e67fe4eb336e5e31bf4af168d489",
+            "status": "started",
+            "metadata": {
+              "nativeType": "item.started",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "cfc5c391b5ba915c081c7d09c3edfc599f5369196d03ab00aa96b73369f89b5f",
+              "commandHash": "9aa13693df9cc0ef5d7246fcdfd225ab0c3e1cae8b2addda932f323eb5e00b60",
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 38,
+            "timestamp": "2026-09-17T12:02:25.078Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "command",
+            "scope": "6a996ef5ce293d4e78a0610f663cfe4e2876e67fe4eb336e5e31bf4af168d489",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "cfc5c391b5ba915c081c7d09c3edfc599f5369196d03ab00aa96b73369f89b5f",
+              "durationMs": 0,
+              "commandHash": "9aa13693df9cc0ef5d7246fcdfd225ab0c3e1cae8b2addda932f323eb5e00b60",
+              "exitCode": 0,
+              "bytes": 0,
+              "outputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "sequence": 39,
+            "timestamp": "2026-09-17T12:02:25.078Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 772,
+              "outputHash": "36819de6dd6716920433d73eaf022613b3420c996428e85895f36186c5293199"
+            },
+            "sequence": 40,
+            "timestamp": "2026-09-17T12:02:32.156Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "agent",
+            "scope": "d027ec095857e6cf745259dc0b1eed1169059655c37d261c0c14336a49f8d3d7",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "item.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7",
+              "itemHash": "a26c6de8780e4e792e8ad6df3fb6ac31fe229b7b2f8bc2aa29c602e8d647918c",
+              "bytes": 663,
+              "outputHash": "83a5c0592e83907d7e0f3d70f3d604086b171e46341137cc23cb7484b908dbff"
+            },
+            "sequence": 41,
+            "timestamp": "2026-09-17T12:02:32.157Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "34bed8a584c1ec218a070f3e2eab7c4f73aba38b444fbd2b4351d988c73243a2",
+            "metadata": {
+              "bytes": 166,
+              "outputHash": "6fe59e249fa89910e0dcff99e1a3846127a044da4863618f402cc44fb8126a54"
+            },
+            "sequence": 42,
+            "timestamp": "2026-09-17T12:02:32.202Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "turn",
+            "scope": "86bbae86937eb3f0ce364e46f64c660ad286a4c96e3e78e3d35bc9826f04d606",
+            "status": "completed",
+            "metadata": {
+              "nativeType": "turn.completed",
+              "eventClass": "recognized",
+              "threadHash": "c741307c8dbeaf12e06ab2905063e2eb25134dc87341e93bdac44d5804e42ad7"
+            },
+            "sequence": 43,
+            "timestamp": "2026-09-17T12:02:32.203Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress"]
+          },
+          {
+            "kind": "usage",
+            "scope": "86bbae86937eb3f0ce364e46f64c660ad286a4c96e3e78e3d35bc9826f04d606",
+            "metadata": {
+              "inputTokens": 225777,
+              "cachedInputTokens": 187520,
+              "outputTokens": 1047,
+              "reasoningOutputTokens": 91,
+              "nativeType": "turn.completed",
+              "eventClass": "recognized"
+            },
+            "sequence": 44,
+            "timestamp": "2026-09-17T12:02:32.204Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "63d42d26156fcc761e57da4128e9881d5bdf3bf933f0f6e9c93d6e26b9b90ae7",
+            "metadata": {
+              "bytes": 664,
+              "outputHash": "0900f7083ecbeaec51def0aa54a244fdecf8e9fb3f76b007fca1f5f2a2f8408f"
+            },
+            "sequence": 45,
+            "timestamp": "2026-09-17T12:02:33.104Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "output",
+            "scope": "7e6b710b765404cccbad9eedcff7615fc37b269d6db12cd81a58be541d93083c",
+            "metadata": {
+              "bytes": 3063,
+              "outputHash": "5a6aa773e86ee5ce7169eadf820d2e6ab66a4b285caf3de3b0adcdd0714be85a"
+            },
+            "sequence": 46,
+            "timestamp": "2026-09-17T12:02:33.127Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "resource"]
+          },
+          {
+            "kind": "process",
+            "scope": "2cf6a7b2403bae47667392f57508a830849eb3a98f2ac17758426c7a1b0c71e1",
+            "status": "completed",
+            "metadata": {
+              "durationMs": 74167,
+              "exitCode": 0
+            },
+            "sequence": 47,
+            "timestamp": "2026-09-17T12:02:33.129Z",
+            "invocationId": "66df349a-9c03-4ad6-a439-1564fea8c8e2",
+            "categories": ["activity", "progress", "resource"]
+          }
+        ]
+      }
+    },
+    {
+      "seq": 15,
+      "type": "ARTIFACT_OPERATION",
+      "subject": "w1",
+      "data": {
+        "request": {
+          "type": "COMMIT",
+          "taskId": "booking-invariants-d032-counterfactual-001",
+          "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+          "lineageId": "l1",
+          "workId": "w1",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "message": "Implement HOLD-gated provider delivery and UNKNOWN reconciliation"
+        },
+        "outcome": {
+          "ok": true,
+          "artifact": {
+            "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+            "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+            "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+            "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+            "cleaned": false
+          }
+        }
+      }
+    },
+    {
+      "seq": 16,
+      "type": "ARTIFACT_OPERATION",
+      "subject": "w1",
+      "data": {
+        "request": {
+          "type": "CHECK",
+          "taskId": "booking-invariants-d032-counterfactual-001",
+          "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+          "lineageId": "l1",
+          "workId": "w1",
+          "base": "76bb8923481e89d338e907169a9c4470a80ceb69"
+        },
+        "outcome": {
+          "ok": true,
+          "artifact": {
+            "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+            "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+            "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+            "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+            "cleaned": false
+          }
+        }
+      }
+    },
+    {
+      "seq": 17,
+      "type": "EVALUATION_OPERATION",
+      "subject": "w1",
+      "data": {
+        "context": {
+          "result": "[REDACTED T cc855b80600b9f0f]",
+          "criteria": {
+            "description": "Public completion contract derived from the frozen D032 task.",
+            "criteria": [
+              "Full PostgreSQL test suite passes.",
+              "TypeScript typecheck passes.",
+              "git diff --check passes."
+            ]
+          },
+          "workId": "w1",
+          "lineageId": "l1",
+          "artifactRef": "76bb8923481e89d338e907169a9c4470a80ceb69",
+          "workspacePath": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout"
+        },
+        "outcome": {
+          "ok": true,
+          "evaluation": {
+            "passed": true,
+            "reason": "All public checks passed",
+            "completionPolicy": "all_checks_pass",
+            "checks": [
+              {
+                "id": "full-postgres-suite",
+                "startedAt": "2026-09-17T12:02:33.236Z",
+                "completedAt": "2026-09-17T12:02:38.751Z",
+                "processStatus": "exited",
+                "exitStatus": 0,
+                "signal": null,
+                "stdout": "[REDACTED T 8dfcc9d92aeb0626]",
+                "stderr": "[REDACTED T e3b0c44298fc1c14]",
+                "outputTruncated": false,
+                "passed": true,
+                "error": null
+              },
+              {
+                "id": "typecheck",
+                "startedAt": "2026-09-17T12:02:38.751Z",
+                "completedAt": "2026-09-17T12:02:39.683Z",
+                "processStatus": "exited",
+                "exitStatus": 0,
+                "signal": null,
+                "stdout": "[REDACTED T 04c8b213066bd93d]",
+                "stderr": "[REDACTED T e3b0c44298fc1c14]",
+                "outputTruncated": false,
+                "passed": true,
+                "error": null
+              },
+              {
+                "id": "diff-check",
+                "startedAt": "2026-09-17T12:02:39.683Z",
+                "completedAt": "2026-09-17T12:02:39.873Z",
+                "processStatus": "exited",
+                "exitStatus": 0,
+                "signal": null,
+                "stdout": "[REDACTED T e3b0c44298fc1c14]",
+                "stderr": "[REDACTED T e3b0c44298fc1c14]",
+                "outputTruncated": false,
+                "passed": true,
+                "error": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "seq": 18,
+      "type": "ACTION",
+      "subject": "w1",
+      "data": {
+        "type": "COMPLETE",
+        "result": "[REDACTED T cc855b80600b9f0f]"
+      }
+    },
+    {
+      "seq": 19,
+      "type": "COMPLETED",
+      "subject": "w1",
+      "data": {
+        "result": "[REDACTED T cc855b80600b9f0f]",
+        "evaluation": {
+          "passed": true,
+          "reason": "All public checks passed",
+          "completionPolicy": "all_checks_pass",
+          "checks": [
+            {
+              "id": "full-postgres-suite",
+              "startedAt": "2026-09-17T12:02:33.236Z",
+              "completedAt": "2026-09-17T12:02:38.751Z",
+              "processStatus": "exited",
+              "exitStatus": 0,
+              "signal": null,
+              "stdout": "[REDACTED T 8dfcc9d92aeb0626]",
+              "stderr": "[REDACTED T e3b0c44298fc1c14]",
+              "outputTruncated": false,
+              "passed": true,
+              "error": null
+            },
+            {
+              "id": "typecheck",
+              "startedAt": "2026-09-17T12:02:38.751Z",
+              "completedAt": "2026-09-17T12:02:39.683Z",
+              "processStatus": "exited",
+              "exitStatus": 0,
+              "signal": null,
+              "stdout": "[REDACTED T 04c8b213066bd93d]",
+              "stderr": "[REDACTED T e3b0c44298fc1c14]",
+              "outputTruncated": false,
+              "passed": true,
+              "error": null
+            },
+            {
+              "id": "diff-check",
+              "startedAt": "2026-09-17T12:02:39.683Z",
+              "completedAt": "2026-09-17T12:02:39.873Z",
+              "processStatus": "exited",
+              "exitStatus": 0,
+              "signal": null,
+              "stdout": "[REDACTED T e3b0c44298fc1c14]",
+              "stderr": "[REDACTED T e3b0c44298fc1c14]",
+              "outputTruncated": false,
+              "passed": true,
+              "error": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 20,
+      "type": "RESOURCES",
+      "subject": "w1",
+      "data": {
+        "steps": 2,
+        "tokens": 0,
+        "cost": 0,
+        "wallTimeMs": 0
+      }
+    },
+    {
+      "seq": 21,
+      "type": "ARTIFACT_OPERATION",
+      "subject": "w1",
+      "data": {
+        "request": {
+          "type": "RELEASE",
+          "taskId": "booking-invariants-d032-counterfactual-001",
+          "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+          "lineageId": "l1",
+          "workId": "w1",
+          "base": "76bb8923481e89d338e907169a9c4470a80ceb69"
+        },
+        "outcome": {
+          "ok": true,
+          "artifact": {
+            "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+            "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+            "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+            "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+            "cleaned": false
+          }
+        }
+      }
+    },
+    {
+      "seq": 22,
+      "type": "RUN_FINISHED",
+      "subject": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+      "data": {
+        "status": "COMPLETED",
+        "reason": null,
+        "resources": {
+          "steps": 2,
+          "tokens": 0,
+          "cost": 0,
+          "wallTimeMs": 0
+        }
+      }
+    }
+  ],
+  "resources": {
+    "steps": 2,
+    "tokens": 0,
+    "cost": 0,
+    "wallTimeMs": 0
+  },
+  "nextQueue": 2,
+  "artifactOperations": [
+    {
+      "request": {
+        "type": "INITIALIZE",
+        "taskId": "booking-invariants-d032-counterfactual-001",
+        "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8"
+      },
+      "outcome": {
+        "ok": true,
+        "artifact": {
+          "ref": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59"
+        }
+      }
+    },
+    {
+      "request": {
+        "type": "OPEN",
+        "taskId": "booking-invariants-d032-counterfactual-001",
+        "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "lineageId": "l1",
+        "workId": "w1",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59"
+      },
+      "outcome": {
+        "ok": true,
+        "artifact": {
+          "ref": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+          "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+          "cleaned": false
+        }
+      }
+    },
+    {
+      "request": {
+        "type": "COMMIT",
+        "taskId": "booking-invariants-d032-counterfactual-001",
+        "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "lineageId": "l1",
+        "workId": "w1",
+        "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+        "message": "Implement HOLD-gated provider delivery and UNKNOWN reconciliation"
+      },
+      "outcome": {
+        "ok": true,
+        "artifact": {
+          "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+          "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+          "cleaned": false
+        }
+      }
+    },
+    {
+      "request": {
+        "type": "CHECK",
+        "taskId": "booking-invariants-d032-counterfactual-001",
+        "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "lineageId": "l1",
+        "workId": "w1",
+        "base": "76bb8923481e89d338e907169a9c4470a80ceb69"
+      },
+      "outcome": {
+        "ok": true,
+        "artifact": {
+          "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+          "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+          "cleaned": false
+        }
+      }
+    },
+    {
+      "request": {
+        "type": "RELEASE",
+        "taskId": "booking-invariants-d032-counterfactual-001",
+        "runId": "73446a9e-8edc-44ba-8ad2-3780d0b6d2d8",
+        "lineageId": "l1",
+        "workId": "w1",
+        "base": "76bb8923481e89d338e907169a9c4470a80ceb69"
+      },
+      "outcome": {
+        "ok": true,
+        "artifact": {
+          "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+          "base": "bd9ae09ac74374199c48d22ec36c739600cfee59",
+          "branch": "stirpi/work-b2a2962a-6bb9-4e1d-a665-a3147c7bf7cb",
+          "worktree": "<PRIVATE_TMP>/stirpi-work-U0pgf1/checkout",
+          "cleaned": false
+        }
+      }
+    }
+  ],
+  "verificationOperations": [
+    {
+      "request": {
+        "id": "full-postgres-suite",
+        "workId": "w1",
+        "workspaceDigest": "8dc2d668144475d94ea4a966829c86d7f00a03e1601a63f04350312431a8fea5"
+      },
+      "outcome": {
+        "ok": true,
+        "evidence": {
+          "id": "full-postgres-suite",
+          "attempt": 1,
+          "passed": true,
+          "exitCode": 0,
+          "stdout": "[REDACTED T 24a9bb16d903ab4e]",
+          "stderr": "[REDACTED T 2c3e597b5ccf7b2d]",
+          "stdoutTruncated": false,
+          "stderrTruncated": false,
+          "durationMs": 6923
+        }
+      }
+    }
+  ]
+}

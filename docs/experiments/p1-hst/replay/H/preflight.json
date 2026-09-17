@@ -1,0 +1,214 @@
+{
+  "verified": true,
+  "executor": {
+    "executablePath": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "executableVersion": "codex-cli 0.154.0-alpha.6.2",
+    "executableSha256": "a1d2f191e70023ed7afd619bc70530f26067a085926e03bae50cf5c0f8298bcf",
+    "configuration": {
+      "model": "gpt-6-astra",
+      "effort": "medium"
+    }
+  },
+  "preregistration": {
+    "path": "<PRIVATE_TMP>/stirpi-p4-hst/launcher-checkout/docs/experiments/p1-hst/final/H.json",
+    "sha256": "8c3cf21bf139c936f77f85624bc6980a2393b40511a475034e2c6c83fb8842dd",
+    "document": {
+      "schemaVersion": 3,
+      "id": "p1-hst-H-001",
+      "class": "pilot",
+      "testcase": "booking-invariants-d032-counterfactual-001",
+      "condition": "H",
+      "stirpiCommit": "b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9",
+      "trustedLocalContract": {
+        "id": "p1-hst-common-001",
+        "version": 1,
+        "path": "docs/experiments/p1-hst/trusted-local-contract.json",
+        "sha256": "361e9ff3a8fee6bc6ae5308791dd2d233c78b9fc8c504541aa6ff2c6eac6babe"
+      },
+      "hiddenEvaluationDuringRun": false
+    },
+    "schemaVersion": 3,
+    "verificationProfile": null,
+    "containingCommit": "2be4aedc12176639b31cef6360e88cc13cd7857d",
+    "contents": "{\n  \"schemaVersion\": 3,\n  \"id\": \"p1-hst-H-001\",\n  \"class\": \"pilot\",\n  \"testcase\": \"booking-invariants-d032-counterfactual-001\",\n  \"condition\": \"H\",\n  \"stirpiCommit\": \"b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9\",\n  \"trustedLocalContract\": {\n    \"id\": \"p1-hst-common-001\",\n    \"version\": 1,\n    \"path\": \"docs/experiments/p1-hst/trusted-local-contract.json\",\n    \"sha256\": \"361e9ff3a8fee6bc6ae5308791dd2d233c78b9fc8c504541aa6ff2c6eac6babe\"\n  },\n  \"hiddenEvaluationDuringRun\": false\n}\n"
+  },
+  "preregisteredLimits": {
+    "maxSteps": 20,
+    "maxExecutorInvocations": 20,
+    "maxLineages": 20,
+    "maxItemsPerInvocation": 200,
+    "maxCommandsPerInvocation": 100,
+    "noProgressMs": 180000,
+    "maxWallTimePerInvocationMs": 900000,
+    "maxEvaluatorWallTimeMs": 300000
+  },
+  "budgets": {
+    "steps": 20,
+    "invocations": 20,
+    "lineages": 20
+  },
+  "supervision": {
+    "budgets": {
+      "items": 200,
+      "commands": 100,
+      "wallTimeMs": 900000
+    },
+    "noProgressMs": 180000
+  },
+  "evaluator": {
+    "wallTimeMs": 300000,
+    "scope": "per-public-evaluator-process"
+  },
+  "trustedLocal": {
+    "contractSha256": "361e9ff3a8fee6bc6ae5308791dd2d233c78b9fc8c504541aa6ff2c6eac6babe",
+    "contents": "{\n  \"kind\": \"p1-hst-trusted-local\",\n  \"version\": 1,\n  \"id\": \"p1-hst-common-001\",\n  \"status\": \"frozen\",\n  \"verificationMode\": \"trusted-local\",\n  \"testcase\": \"booking-invariants-d032-counterfactual-001\",\n  \"source\": {\n    \"repository\": \"public/booking-invariants\",\n    \"commit\": \"bd9ae09ac74374199c48d22ec36c739600cfee59\"\n  },\n  \"inputs\": {\n    \"manifest\": {\n      \"path\": \"docs/experiments/d032-counterfactual/manifest.json\",\n      \"sha256\": \"71796559990151977d19875cdfe46ca0cbb12a1910ac2de72e1c36ec2ccf2031\"\n    },\n    \"task\": {\n      \"path\": \"docs/experiments/d032-counterfactual/task.txt\",\n      \"sha256\": \"9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1\"\n    },\n    \"evaluator\": {\n      \"path\": \"docs/experiments/d032/public-evaluator-v2.json\",\n      \"sha256\": \"9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1\"\n    },\n    \"governance\": {\n      \"path\": \"docs/experiments/p1-hst/solver-governance.txt\",\n      \"sha256\": \"3d772fc6c57042b73933523bf5583a05c5371a981f93cd8cd56e187db85f2f75\"\n    }\n  },\n  \"baseline\": {\n    \"scope\": \"baseline-only\",\n    \"packageSha256\": \"56fa8c5e289563a9cbbfa1e184cc255369e2bfb8c4105ed3273d53a64946dbcc\",\n    \"lockfileSha256\": \"bde87452d6e18fcedfbb025e7214296de5183689ed8d6fddcc47c74d8b7d45d6\"\n  },\n  \"toolchain\": {\n    \"platform\": \"darwin\",\n    \"architecture\": \"arm64\",\n    \"node\": {\n      \"version\": \"v24.20.0\",\n      \"sha256\": \"c8eedc7651a438fb7d2ceb36fd70032676c855586a36c950ba5a662f0b7853bd\"\n    },\n    \"npm\": {\n      \"version\": \"11.19.0\",\n      \"treeSha256\": \"c066785d7fb176d15e3bb415bb5f6b972c820bac3628c98394b5aaad5974ed1f\"\n    },\n    \"compiler\": {\n      \"treeSha256\": \"64fe5260c74da919d44661f4835c7745f23595d71627f77246f9f44a4def202d\"\n    },\n    \"typeRoots\": {\n      \"treeSha256\": \"2e430908e676f78c504e3f7371c1cf12a4cd7a1e2ebf1a3328643193a2686e5b\"\n    },\n    \"git\": {\n      \"sha256\": \"179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818\"\n    },\n    \"docker\": {\n      \"sha256\": \"9a12c3a0fdc02ce3d6040042e1b8ed257d35dba7f007f76d967995b79b82f903\"\n    },\n    \"shell\": {\n      \"locator\": \"/bin/sh\",\n      \"sha256\": \"ad5c194b05f83bc5e793c1cd67b148a4b680467b5a5730ab1a31fe4e6460ee9f\"\n    }\n  },\n  \"preparation\": {\n    \"modules\": [\n      \"pg\",\n      \"typescript\",\n      \"@types/pg/package.json\",\n      \"@types/node/package.json\"\n    ],\n    \"postgres\": {\n      \"kind\": \"local-image-id\",\n      \"imageId\": \"sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94\",\n      \"platform\": \"linux/arm64\",\n      \"prerequisites\": [\n        \"btree_gist\"\n      ],\n      \"pull\": \"never\",\n      \"transport\": \"loopback\",\n      \"state\": \"disposable\"\n    },\n    \"npm\": {\n      \"registry\": \"https://registry.npmjs.org/\",\n      \"userConfig\": \"empty\",\n      \"globalConfig\": \"empty\",\n      \"candidateConfig\": \"unsupported-operationally\",\n      \"install\": \"ci\",\n      \"lifecycle\": \"baseline-authority\"\n    }\n  },\n  \"executor\": {\n    \"adapter\": \"codex\",\n    \"executableVersion\": \"0.154.0-alpha.6.2\",\n    \"executableSha256\": \"a1d2f191e70023ed7afd619bc70530f26067a085926e03bae50cf5c0f8298bcf\",\n    \"model\": \"gpt-6-astra\",\n    \"effort\": \"medium\",\n    \"adapterPath\": \"adapters/codex/adapter.mjs\",\n    \"timeoutMs\": 900000\n  },\n  \"limits\": {\n    \"maxSteps\": 20,\n    \"maxExecutorInvocations\": 20,\n    \"maxLineages\": 20,\n    \"maxItemsPerInvocation\": 200,\n    \"maxCommandsPerInvocation\": 100,\n    \"noProgressMs\": 180000,\n    \"maxWallTimePerInvocationMs\": 900000,\n    \"maxEvaluatorWallTimeMs\": 300000\n  },\n  \"maxConcurrency\": 1,\n  \"procedure\": {\n    \"order\": [\n      \"H\",\n      \"S\",\n      \"T\"\n    ],\n    \"replacement\": \"at-most-one-operational-per-condition\"\n  }\n}\n",
+    "contract": {
+      "kind": "p1-hst-trusted-local",
+      "version": 1,
+      "id": "p1-hst-common-001",
+      "status": "frozen",
+      "verificationMode": "trusted-local",
+      "testcase": "booking-invariants-d032-counterfactual-001",
+      "source": {
+        "repository": "public/booking-invariants",
+        "commit": "bd9ae09ac74374199c48d22ec36c739600cfee59"
+      },
+      "inputs": {
+        "manifest": {
+          "path": "docs/experiments/d032-counterfactual/manifest.json",
+          "sha256": "71796559990151977d19875cdfe46ca0cbb12a1910ac2de72e1c36ec2ccf2031"
+        },
+        "task": {
+          "path": "docs/experiments/d032-counterfactual/task.txt",
+          "sha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1"
+        },
+        "evaluator": {
+          "path": "docs/experiments/d032/public-evaluator-v2.json",
+          "sha256": "9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1"
+        },
+        "governance": {
+          "path": "docs/experiments/p1-hst/solver-governance.txt",
+          "sha256": "3d772fc6c57042b73933523bf5583a05c5371a981f93cd8cd56e187db85f2f75"
+        }
+      },
+      "baseline": {
+        "scope": "baseline-only",
+        "packageSha256": "56fa8c5e289563a9cbbfa1e184cc255369e2bfb8c4105ed3273d53a64946dbcc",
+        "lockfileSha256": "bde87452d6e18fcedfbb025e7214296de5183689ed8d6fddcc47c74d8b7d45d6"
+      },
+      "toolchain": {
+        "platform": "darwin",
+        "architecture": "arm64",
+        "node": {
+          "version": "v24.20.0",
+          "sha256": "c8eedc7651a438fb7d2ceb36fd70032676c855586a36c950ba5a662f0b7853bd"
+        },
+        "npm": {
+          "version": "11.19.0",
+          "treeSha256": "c066785d7fb176d15e3bb415bb5f6b972c820bac3628c98394b5aaad5974ed1f"
+        },
+        "compiler": {
+          "treeSha256": "64fe5260c74da919d44661f4835c7745f23595d71627f77246f9f44a4def202d"
+        },
+        "typeRoots": {
+          "treeSha256": "2e430908e676f78c504e3f7371c1cf12a4cd7a1e2ebf1a3328643193a2686e5b"
+        },
+        "git": {
+          "sha256": "179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818"
+        },
+        "docker": {
+          "sha256": "9a12c3a0fdc02ce3d6040042e1b8ed257d35dba7f007f76d967995b79b82f903"
+        },
+        "shell": {
+          "locator": "/bin/sh",
+          "sha256": "ad5c194b05f83bc5e793c1cd67b148a4b680467b5a5730ab1a31fe4e6460ee9f"
+        }
+      },
+      "preparation": {
+        "modules": [
+          "pg",
+          "typescript",
+          "@types/pg/package.json",
+          "@types/node/package.json"
+        ],
+        "postgres": {
+          "kind": "local-image-id",
+          "imageId": "sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+          "platform": "linux/arm64",
+          "prerequisites": ["btree_gist"],
+          "pull": "never",
+          "transport": "loopback",
+          "state": "disposable"
+        },
+        "npm": {
+          "registry": "https://registry.npmjs.org/",
+          "userConfig": "empty",
+          "globalConfig": "empty",
+          "candidateConfig": "unsupported-operationally",
+          "install": "ci",
+          "lifecycle": "baseline-authority"
+        }
+      },
+      "executor": {
+        "adapter": "codex",
+        "executableVersion": "0.154.0-alpha.6.2",
+        "executableSha256": "a1d2f191e70023ed7afd619bc70530f26067a085926e03bae50cf5c0f8298bcf",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "adapterPath": "adapters/codex/adapter.mjs",
+        "timeoutMs": 900000
+      },
+      "limits": {
+        "maxSteps": 20,
+        "maxExecutorInvocations": 20,
+        "maxLineages": 20,
+        "maxItemsPerInvocation": 200,
+        "maxCommandsPerInvocation": 100,
+        "noProgressMs": 180000,
+        "maxWallTimePerInvocationMs": 900000,
+        "maxEvaluatorWallTimeMs": 300000
+      },
+      "maxConcurrency": 1,
+      "procedure": {
+        "order": ["H", "S", "T"],
+        "replacement": "at-most-one-operational-per-condition"
+      }
+    },
+    "inputs": {
+      "manifest": {
+        "contents": "{\n  \"id\": \"booking-invariants-d032-counterfactual-001\",\n  \"sourceRepository\": \"public/booking-invariants\",\n  \"sourceCommit\": \"bd9ae09ac74374199c48d22ec36c739600cfee59\",\n  \"taskFile\": \"task.txt\",\n  \"taskSha256\": \"9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1\",\n  \"publicEvaluatorFile\": \"../d032/public-evaluator-v2.json\",\n  \"publicEvaluatorSha256\": \"9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1\",\n  \"historicalTestcase\": \"booking-invariants-d032-001\",\n  \"historicalTaskFile\": \"../d032/task.txt\",\n  \"historicalTaskSha256\": \"cd3f96130ae313eaf212b5b643afdcd0cf0c620e904356278f54aa96b02b840e\",\n  \"intentionalTaskSemanticChange\": \"The only intentional task-level semantic change is removal of the historical mandatory-stop instruction for a new lock-order protocol. No replacement guidance or positive branching instruction is introduced.\"\n}\n",
+        "sha256": "71796559990151977d19875cdfe46ca0cbb12a1910ac2de72e1c36ec2ccf2031"
+      },
+      "task": {
+        "contents": "Implement the next narrow slice: provider delivery with HOLD eligibility,\nstrong outbound idempotency, and UNKNOWN outcome handling.\n\nDo not implement webhooks yet.\nDo not implement refund execution.\nDo not add HTTP or a real provider SDK.\n\nGOAL\n\nModel the boundary between:\n\n1. provider never contacted;\n2. provider may already have been contacted.\n\nA first provider side effect is allowed only while the associated HOLD is valid.\n\nAfter a provider call may have happened, external uncertainty must be reconciled,\nnot silently converted to failure.\n\nFAKE PROVIDER\n\nIntroduce the smallest deterministic fake provider needed for this experiment.\n\nIt must support a payment operation keyed by:\n\nPaymentAttempt.id\n\nThe fake provider contract for this project is:\n\nsame PaymentAttempt.id + same economic request\n=> same external operation / same eventual result\n\nsame PaymentAttempt.id + different economic request\n=> explicit provider idempotency mismatch error\n\nNo random behavior.\nTests must control provider outcomes deterministically.\n\nPAYMENT STATE\n\nExtend PaymentAttempt only with states required by this slice.\n\nUse the smallest meaningful model.\n\nAt minimum distinguish:\n\nCREATED\nUNKNOWN\nSUCCEEDED\nFAILED\n\nDo not introduce PROCESSING unless a concrete scenario requires it.\n\nFIRST DELIVERY ELIGIBILITY\n\nBefore the first provider call:\n\n1. identify the associated Unit;\n2. acquire the Unit serialization boundary;\n3. sample authoritative PostgreSQL clock after Unit lock;\n4. materialize expiry;\n5. verify the associated HOLD is still valid and belongs to the claimant.\n\nIf HOLD is expired:\n\n- do not call provider;\n- persist an explicit durable outcome showing delivery was suppressed because\n  inventory rights expired;\n- mark the outbox work as no longer deliverable / completed in the smallest\n  semantically clear way;\n- do not create refund work because no provider side effect occurred.\n\nChoose the smallest state/outcome representation and document it.\n\nDo not overload FAILED if the reason is not a provider payment failure.\n\nIMPORTANT\n\nThe HOLD validity gate applies only before the FIRST possible provider side effect.\n\nOnce a provider call may have happened, do not suppress reconciliation merely\nbecause the HOLD has expired.\n\nPROVIDER CALL\n\nUse PaymentAttempt.id as provider idempotency identity.\n\nDo not generate another provider idempotency key.\n\nThe economic request sent to provider must correspond exactly to the immutable\nPaymentAttempt intent.\n\nOUTCOME HANDLING\n\nProvider explicit success:\n- persist PaymentAttempt SUCCEEDED;\n- mark outbox delivery resolved.\n\nProvider explicit failure:\n- persist PaymentAttempt FAILED;\n- mark outbox delivery resolved.\n- do not release or extend HOLD.\n\nProvider response loss / timeout after the call may have been issued:\n- persist PaymentAttempt UNKNOWN;\n- keep reconciliation work pending;\n- do not mark it FAILED;\n- do not assume provider side effect did not happen.\n\nRETRY AFTER UNKNOWN\n\nRetry the same PaymentAttempt using the same PaymentAttempt.id and same economic\nrequest.\n\nDo NOT reapply the \"first delivery HOLD must still be valid\" gate as a reason to\nabandon reconciliation after UNKNOWN.\n\nThe provider may already have charged.\n\nIf retry/reconciliation returns:\n\n- SUCCEEDED => persist SUCCEEDED;\n- FAILED => persist FAILED;\n- still unknown => remain UNKNOWN.\n\nAn expired HOLD at this stage affects future reservation confirmation, not whether\nthe economic outcome must be discovered.\n\nOUTBOX\n\nKeep the existing durable outbox minimal.\n\nEvolve it only as much as needed to distinguish:\n\n- work that still requires first delivery;\n- work that still requires reconciliation after uncertain delivery;\n- work that is resolved / suppressed.\n\nDo not build a generic queue or event framework.\n\nDo not add worker infrastructure beyond a direct service method suitable for\ndeterministic tests.\n\nCONCURRENCY / IDEMPOTENCY\n\nProvider delivery of one PaymentAttempt must not create duplicate provider\noperations under concurrent/retried execution.\n\nUse PostgreSQL/local serialization only where needed.\n\nDo not introduce a new global bottleneck.\n\nPreserve existing inventory lock-order discipline.\n\nThink carefully about any lock ordering involving:\n- command receipt;\n- Unit;\n- PaymentAttempt/outbox.\n\nSCENARIOS\n\nAdd deterministic coverage for at least:\n\n1. HOLD valid at first delivery\n   -> provider called once\n   -> SUCCEEDED\n   -> outbox resolved.\n\n2. HOLD expired before provider ever contacted\n   -> provider never called\n   -> explicit durable delivery-suppressed outcome\n   -> no pending external work.\n\n3. Provider call issued, response lost\n   -> PaymentAttempt UNKNOWN\n   -> HOLD later expires\n   -> retry/reconciliation still calls provider with same PaymentAttempt.id\n   -> provider reports SUCCEEDED\n   -> PaymentAttempt becomes SUCCEEDED.\n\n4. Same as above but provider reports FAILED\n   -> PaymentAttempt becomes FAILED.\n\n5. Repeated UNKNOWN\n   -> remains UNKNOWN\n   -> no duplicate external operation.\n\n6. Concurrent delivery/retry for same PaymentAttempt\n   -> no duplicate provider operation / inconsistent terminal state.\n\n7. Provider idempotency key reused with different immutable economic payload\n   -> explicit provider mismatch error in fake provider.\n\n8. Provider explicit FAILED does not release or extend HOLD.\n\n9. First delivery waiting on Unit contention until after HOLD expiry\n   -> provider is never contacted\n   -> suppressed outcome.\n\nIMPORTANT BOUNDARY\n\nDo not implement reservation confirmation yet.\n\nA PaymentAttempt may become SUCCEEDED while its HOLD is expired.\n\nThat is intentional and will be handled in the next slice as:\n\nSUCCEEDED + valid HOLD -> CONFIRMED\nSUCCEEDED + expired HOLD -> REFUND_REQUIRED\n\nDo not implement that transition yet.\n\nDOCUMENTATION\n\nUpdate README / architecture / scenario catalog to explain:\n\n- first-delivery eligibility gate;\n- provider-never-contacted vs provider-may-have-been-contacted distinction;\n- UNKNOWN != FAILED;\n- same PaymentAttempt.id is reused for reconciliation;\n- expired HOLD cannot suppress reconciliation after possible external side effect;\n- payment success still does not imply reservation confirmation.\n\nVERIFICATION\n\nRun:\n- focused provider-delivery tests;\n- full PostgreSQL suite;\n- typecheck;\n- git diff --check.\n\nRefresh temp review packet.\n\nIn review.md report:\n- PaymentAttempt/outbox state changes;\n- exact first-delivery eligibility path;\n- how the system knows provider may have been contacted;\n- provider idempotency behavior;\n- UNKNOWN recovery evidence;\n- HOLD-expired-before-first-send evidence;\n- concurrent delivery evidence;\n- lock ordering;\n- results;\n- ambiguities/deferred work.\n\nDo not commit.\nDo not implement webhooks.\nDo not implement reservation confirmation or refund execution.\n\nStop.\n",
+        "sha256": "9e2da44c2441e43cb9fe394ecf12bb20953c39861df2ecdfb10ec4a48b1f76f1"
+      },
+      "evaluator": {
+        "contents": "{\n  \"id\": \"booking-invariants-d032-public-evaluator-v2\",\n  \"criteria\": {\n    \"description\": \"Public completion contract derived from the frozen D032 task.\",\n    \"criteria\": [\n      \"Full PostgreSQL test suite passes.\",\n      \"TypeScript typecheck passes.\",\n      \"git diff --check passes.\"\n    ]\n  },\n  \"checks\": [\n    {\n      \"id\": \"full-postgres-suite\",\n      \"executable\": \"npm\",\n      \"args\": [\"test\"],\n      \"workingDirectory\": \"candidate\"\n    },\n    {\n      \"id\": \"typecheck\",\n      \"executable\": \"npm\",\n      \"args\": [\"run\", \"typecheck\"],\n      \"workingDirectory\": \"candidate\"\n    },\n    {\n      \"id\": \"diff-check\",\n      \"executable\": \"git\",\n      \"args\": [\"diff\", \"--check\"],\n      \"workingDirectory\": \"candidate\"\n    }\n  ],\n  \"completionPolicy\": \"all_checks_pass\"\n}\n",
+        "sha256": "9215c50aa69af9218b3530f22959552cbd41e75c43eb71260b9a732cad950bc1"
+      },
+      "governance": {
+        "contents": "An assumption may be explored only as an explicit conditional world. It does\nnot alter accepted target decisions, invent external capabilities, or authorize\na parent change. A branch that requires a parent change is recorded as such and\nis not a valid result under the original contract.\n\n`Do not commit` prohibits autonomous Git operations by the solver. Canonical\ncheckpoints requested through Stirpi are authorized equally for H*, S*, and T*;\nthey are runtime operations, not solver operations.\n",
+        "sha256": "3d772fc6c57042b73933523bf5583a05c5371a981f93cd8cd56e187db85f2f75"
+      }
+    },
+    "tools": {
+      "node": "/opt/homebrew/Cellar/node@24/24.20.0/bin/node",
+      "npmRoot": "/opt/homebrew/Cellar/node@24/24.20.0/lib/node_modules/npm",
+      "compilerRoot": "<HOST_HOME>/stirpi/node_modules/typescript",
+      "typeRoots": "<HOST_HOME>/stirpi/node_modules/@types",
+      "git": "/usr/bin/git",
+      "docker": "/usr/local/bin/docker",
+      "shell": "/bin/sh"
+    }
+  },
+  "verification": {
+    "mode": "trusted-local",
+    "available": ["full-postgres-suite", "typecheck", "diff-check"]
+  },
+  "runtime": {
+    "pinnedCommit": "b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9",
+    "actualCommit": "b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9",
+    "isolation": "clean-checkout-compiled-outside-tree"
+  }
+}
