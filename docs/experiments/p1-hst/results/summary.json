@@ -1,0 +1,104 @@
+{
+  "schema": "p1-hst-public-summary-v1",
+  "level": "NOT_REACHED",
+  "identities": {
+    "runtime": "b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9",
+    "input": "2be4aedc12176639b31cef6360e88cc13cd7857d",
+    "sourceBase": "bd9ae09ac74374199c48d22ec36c739600cfee59"
+  },
+  "conditions": [
+    {
+      "id": "H",
+      "ref": "4c68b6f10b5cdb8bca9a8c120423e1839f83d54f",
+      "runtime": "BLOCKED",
+      "reason": "PROCESS_EXIT_FAILED",
+      "invocations": 5,
+      "usageCoverage": { "measured": 4, "total": 5 },
+      "publicBinding": "INDETERMINATE"
+    },
+    {
+      "id": "S",
+      "ref": "a836a4a8b2392928da406738c0a912dcad0e5528",
+      "runtime": "COMPLETED",
+      "invocations": 4,
+      "usageCoverage": { "measured": 4, "total": 4 },
+      "publicChecks": "96/96"
+    },
+    {
+      "id": "T",
+      "ref": "76bb8923481e89d338e907169a9c4470a80ceb69",
+      "runtime": "COMPLETED",
+      "invocations": 2,
+      "usageCoverage": { "measured": 2, "total": 2 },
+      "publicChecks": "95/95 plus typecheck and diff-check"
+    }
+  ],
+  "tree": {
+    "roots": 3,
+    "lineage": "l1",
+    "dna": [],
+    "commitsPerCondition": 1,
+    "forks": 0
+  },
+  "findings": [
+    {
+      "id": "F-01",
+      "scope": ["H", "S", "T"],
+      "kind": "contract-gap",
+      "summary": "UNKNOWN is committed before pay, so pre-call crash and expiry histories cannot be handled consistently by create-or-repeat pay."
+    },
+    {
+      "id": "F-02",
+      "scope": ["S"],
+      "kind": "static-concurrency-limitation",
+      "summary": "A waiter can retain Unit while indirectly awaiting provider I/O through the attempt lock; no deadlock was observed."
+    }
+  ],
+  "accounting": {
+    "monetaryCost": null,
+    "notes": [
+      "Cached input must not be added to input.",
+      "Reasoning output can overlap output.",
+      "H usage is incomplete."
+    ],
+    "tokens": {
+      "H": {
+        "input": 926499,
+        "cachedInput": 775680,
+        "output": 10909,
+        "reasoningOutput": 374
+      },
+      "S": {
+        "input": 808580,
+        "cachedInput": 651008,
+        "output": 9942,
+        "reasoningOutput": 480
+      },
+      "T": {
+        "input": 642507,
+        "cachedInput": 557184,
+        "output": 7928,
+        "reasoningOutput": 313
+      }
+    }
+  },
+  "claims": {
+    "supported": [
+      "One controlled H/S/T pilot executed with auditable original bundles retained privately.",
+      "S and T completed the public runtime contract.",
+      "T did not use FORK, so the threshold was not reached.",
+      "Post-run evaluation found F-01 and F-02."
+    ],
+    "unsupported": [
+      "Stirpi or FORK improved quality, reliability, cost, or speed.",
+      "Any candidate is semantically valid overall.",
+      "A specific cause for H's operational failure.",
+      "A complete monetary comparison or general benchmark."
+    ]
+  },
+  "distribution": {
+    "originalBundles": "private",
+    "publicReplayPackage": "redacted-offline-replay-verified",
+    "summaryIsOriginalEvidence": false
+  }
+}

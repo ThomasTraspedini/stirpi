@@ -1,6 +1,18 @@
-# Final H*/S*/T* preregistrations — review preparation
+# Final H*/S*/T* preregistrations — frozen inputs used for the pilot
 
-Status: auth provision delta prepared for steward review, uncommitted; no launch authorization.
+Status: these are the frozen preregistrations used by the subsequently executed
+H/S/T pilot. The paragraphs below preserve their pre-run provenance; they are
+not a statement that launch or preflight remains pending today.
+
+Post-run status: the pilot used final input commit P
+`2be4aedc12176639b31cef6360e88cc13cd7857d`. H ended BLOCKED after an operational
+process failure; S and T completed the public runtime contract. Post-run
+evaluation found contract and concurrency limitations, and the pilot did not
+reach its minimum threshold because T did not use FORK. See the public
+[results report](../RESULTS.md) and the derived [redacted offline replay
+package](../REPLAY.md). The original audit bundles remain private.
+
+## Preserved pre-run provenance
 
 All three schema-3 pilots pin runtime R5
 `b8cab81b0889d912c48b11bcf1c3eeec6f3c77d9` and the frozen contract SHA-256
@@ -15,10 +27,9 @@ authorized subsequent commit before any launch can consume it. The launch forms
 retain `<P>` for that future reviewed input commit; no document includes its own
 future commit or content hash.
 
-The common executor now explicitly selects the existing login file
-`/Users/thomastraspedini/.codex/auth.json` with `--auth-file`. Only this locator
-is stored here; credentials remain outside the repository. See
-[auth provision review](AUTH-PROVISION.md) for metadata checks, F1 limits and
+The common executor's pre-run configuration selected a local login file through
+`--auth-file`; credentials remained outside the repository. See the historical
+[auth provision review](AUTH-PROVISION.md) for the pre-run metadata and
 verification provenance.
 
 The read-only controller `scripts/p3/check-final-preregistrations.mts` checks
@@ -28,6 +39,7 @@ integrity only. It neither assesses current authentication/quota nor verifies
 operational R5 or grants permission to launch. The historical R4 preflight
 remains evidence for R4, not operational evidence for R5.
 
-See [launch command forms](LAUNCH.md). Steward review, separate P commit,
-required milestone/operational verification and explicit execution authorization
-remain outstanding. No preflight, Docker or model invocation occurred here.
+See the historical [launch command forms](LAUNCH.md). The pre-run review,
+separate P commit, verification and execution authorization described there were
+completed before the pilot; their historical wording is preserved rather than
+rewritten. This directory is not a replay package.

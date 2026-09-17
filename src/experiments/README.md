@@ -2,9 +2,13 @@
 
 The `strpi experiment` command runs one pilot at a time. It uses the M2 process
 boundary, the existing engine and Git workspace lifecycle. It contains no D032
-answer, semantic evaluator, provider integration, or repeated-run scheduler.
-The actual D032 public evaluator configuration must be frozen separately before
-running a real pilot. Fixture runs validate infrastructure only.
+answer, semantic evaluator, or repeated-run scheduler. It includes a concrete
+Codex adapter used by the preregistered H/S/T pilot, while M2 itself remains
+provider-neutral and this guide does not claim general provider support.
+
+The D032 public evaluator configuration was frozen for that pilot before launch.
+Fixture runs validate infrastructure only; see the [H/S/T results](../../docs/experiments/p1-hst/RESULTS.md)
+for the post-run outcome and its limits.
 
 ```sh
 strpi experiment run docs/experiments/d032/manifest.json \
@@ -235,9 +239,10 @@ external observers or verify external artifact integrity (D031).
 Chronological files are written during execution; final state is saved after the
 engine returns. A process killed mid-run leaves the `running` marker and partial
 evidence. Recovery/resumption is deferred. Post-run hooks have a 60-second limit
-and may be invoked only once per run directory. Real coding-agent adapters,
-D032 public evaluator freezing, private semantic evaluation and repeated-run
-scheduling remain separate work.
+and may be invoked only once per run directory. Private semantic evaluation and
+repeated-run scheduling remain separate work. The concrete adapter and frozen
+public evaluator used by the H/S/T pilot are documented as pilot-specific inputs,
+not as a general coding-agent API contract.
 
 `runExperiment` now returns a Promise. Callers may supply an AbortSignal; CLI
 SIGINT/SIGTERM request cancellation. Collected events, failure records and dirty

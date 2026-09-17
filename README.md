@@ -1,6 +1,6 @@
 # Stirpi
 
-Stirpi is a lineage runtime with a Git artifact backend. The CLI is `strpi`. M0 explores conditional lineages with a deterministic executor; M1 adds isolated artifact work; M2 adds a provider-neutral external process executor. There is no Codex, Claude, or other provider integration.
+Stirpi is a lineage runtime with a Git artifact backend. The CLI is `strpi`. M0 explores conditional lineages with a deterministic executor; M1 adds isolated artifact work; M2 adds a provider-neutral external process executor. M2 is provider-neutral; this repository also contains an experimental, preregistered Codex adapter for the documented H/S/T pilot. It is not a general provider-integration layer. The pilot's derived [results](docs/experiments/p1-hst/RESULTS.md) and [redacted offline replay package](docs/experiments/p1-hst/REPLAY.md) distinguish recorded runtime completion from semantic validity.
 
 ## Quick start
 
@@ -54,7 +54,7 @@ Tests cover the reference scenario, branch preservation, DNA, scheduling, local 
 
 ## Deferred beyond M0
 
-Crash recovery/checkpointing during a run, migrations between released schemas, true asynchronous workers, stronger token/cost/time budgets, unblocking/resurrection policies, alternative evaluator implementations, secrets/access controls, and artifact integration policies are deferred. There is no LLM integration, auto-merge, explicit JOIN, confidence scoring, GUI, semantic search or distributed execution.
+Crash recovery/checkpointing during a run, migrations between released schemas, true asynchronous workers, stronger token/cost/time budgets, unblocking/resurrection policies, alternative evaluator implementations, secrets/access controls, and artifact integration policies are deferred. There is no general LLM-provider integration, auto-merge, explicit JOIN, confidence scoring, GUI, semantic search or distributed execution.
 
 Run status is limited to ACTIVE, BLOCKED and COMPLETED, preserving M0 aggregation. Lineage and work status types remain separate names for the existing lifecycle; main work records BRANCHED after FORK, while spawned work is forbidden from forking. DEAD remains representable but has no M0 transition.
 
@@ -219,8 +219,10 @@ worlds, one of which spawns same-lineage work. Use a fresh run ID and log path.
 `strpi experiment` prepares isolated frozen-input H/S/T pilot runs through M2,
 records auditable evidence, and separates public runtime completion from optional
 post-run private evaluation. See [harness usage](src/experiments/README.md).
-Deterministic fixtures validate the infrastructure; the real D032 pilot and its
-public evaluator configuration are separate, deferred work.
+The documented H/S/T pilot was executed on its frozen inputs; its concise public
+outcome and limits are in [the results report](docs/experiments/p1-hst/RESULTS.md).
+The harness remains useful beyond that single pilot, but the adapter and pilot
+results do not establish general provider support or semantic correctness.
 
 See [operational events](docs/operational-events.md) for transport, classification,
 evidence, cancellation and replay details.
