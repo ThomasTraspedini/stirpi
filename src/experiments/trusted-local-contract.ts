@@ -39,6 +39,7 @@ export interface TrustedLocalContract {
     typeRoots: { treeSha256: string | null };
     git: { sha256: string | null };
     docker: { sha256: string | null };
+    shell: { locator: "/bin/sh"; sha256: string };
   };
   preparation: {
     modules: string[];
@@ -205,11 +206,19 @@ export function parseTrustedLocalContract(
       "typeRoots",
       "git",
       "docker",
+      "shell",
     ],
     "toolchain",
   );
   if (!text(tools.platform) || !text(tools.architecture))
     throw new Error("Preflight: missing toolchain platform");
+  const shell = closedAuthorityObject(
+    tools.shell,
+    ["locator", "sha256"],
+    "toolchain shell",
+  );
+  if (shell.locator !== "/bin/sh" || !digest(shell.sha256))
+    throw new Error("Preflight: invalid shell pin");
   for (const name of [
     "node",
     "npm",

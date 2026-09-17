@@ -124,6 +124,8 @@ test("controller rejects drift even when pilot contract hashes are updated consi
     for (const [keys, value] of [
       [["toolchain", "node", "version"], "different"],
       [["toolchain", "npm", "treeSha256"], "0".repeat(64)],
+      [["toolchain", "shell", "locator"], "/usr/bin/sh"],
+      [["toolchain", "shell", "sha256"], "0".repeat(64)],
       [["baseline", "packageSha256"], "0".repeat(64)],
       [["executor", "executableVersion"], "different"],
       [["inputs", "manifest", "sha256"], "0".repeat(64)],

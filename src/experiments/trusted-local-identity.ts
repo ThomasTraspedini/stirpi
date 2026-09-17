@@ -14,6 +14,7 @@ export interface LocalToolLocations {
   typeRoots: string;
   git: string;
   docker: string;
+  shell: string;
 }
 /** v1: sorted [relative POSIX path, executable bits, SHA256(bytes)] JSON + LF.
  * No exclusions or symlink following inside an installation closure. */
@@ -108,7 +109,22 @@ export function defaultLocalTools(
     // Docker dispatchers can select behavior from argv0. Keep the discovered
     // executable name while readFileSync below still authenticates its target.
     docker: executablePath("docker"),
+    // Preserve the human-approved operational locator; do not canonicalize it.
+    shell: "/bin/sh",
   };
+}
+export function verifyLocalShell(
+  contract: TrustedLocalContract,
+  locations: LocalToolLocations,
+) {
+  if (
+    locations.shell !== "/bin/sh" ||
+    locations.shell !== contract.toolchain.shell.locator
+  )
+    throw new Error("Preflight: shell locator mismatch");
+  if (sha256(readFileSync(locations.shell)) !== contract.toolchain.shell.sha256)
+    throw new Error("Preflight: shell bytes mismatch/missing");
+  return locations.shell;
 }
 export function verifyLocalTools(
   contract: TrustedLocalContract,
@@ -117,7 +133,7 @@ export function verifyLocalTools(
 ) {
   closedAuthorityObject(
     locations,
-    ["node", "npmRoot", "compilerRoot", "typeRoots", "git", "docker"],
+    ["node", "npmRoot", "compilerRoot", "typeRoots", "git", "docker", "shell"],
     "Preflight: local tool locations",
   );
   if (
@@ -129,6 +145,7 @@ export function verifyLocalTools(
   const pin = contract.toolchain;
   if (pin.platform !== process.platform || pin.architecture !== process.arch)
     throw new Error("Preflight: toolchain platform mismatch");
+  verifyLocalShell(contract, locations);
   for (const name of ["node", "git", "docker"] as const)
     if (
       !pin[name].sha256 ||

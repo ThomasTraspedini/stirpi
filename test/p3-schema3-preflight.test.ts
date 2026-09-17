@@ -409,6 +409,13 @@ test("schema-3 preflight-only fails closed on missing or drifting pins before ta
       },
       /npm closure mismatch\/missing/,
     ],
+    [
+      "shell-drift",
+      (contract: TrustedLocalContract) => {
+        contract.toolchain.shell.sha256 = "0".repeat(64);
+      },
+      /shell bytes mismatch\/missing/,
+    ],
   ] as const) {
     const f = bindingFixture();
     try {

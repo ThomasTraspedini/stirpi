@@ -108,6 +108,15 @@ is `/usr/local/bin/docker`, which preserves the required argv0; reading that
 symlink authenticates the pinned OrbStack target bytes. A canonical target path
 is not substituted as the executable locator.
 
+The npm script-shell authority is separately closed to the operational locator
+`/bin/sh` and SHA-256
+`ad5c194b05f83bc5e793c1cd67b148a4b680467b5a5730ab1a31fe4e6460ee9f`.
+The locator remains literal rather than canonicalized, its bytes are verified
+before each trusted environment use, and npm receives it explicitly through
+`NPM_CONFIG_SCRIPT_SHELL`. `/bin` is not added to PATH, no `sh` symlink is
+created in the trusted bin, and the executor environment receives neither the
+setting nor the shell.
+
 The corrected global help parse accepts `--ask-for-approval never` before
 `exec`; the previous CLI incompatibility conclusion is invalid. No CLI policy
 change follows, and a help parse does not establish auth/backend availability.

@@ -11,6 +11,7 @@ import { parseAuthorityJson, authorityObject } from "../authority/json.js";
 import { sha256 } from "./inputs.js";
 import type { TrustedLocalContract } from "./trusted-local-contract.js";
 import {
+  verifyLocalShell,
   verifyLocalTools,
   type LocalToolLocations,
 } from "./trusted-local-identity.js";
@@ -72,6 +73,7 @@ export class TrustedLocalAuthority {
       NPM_CONFIG_USERCONFIG: userNpmrc,
       NPM_CONFIG_GLOBALCONFIG: globalNpmrc,
       NPM_CONFIG_REGISTRY: contract.preparation.npm.registry,
+      NPM_CONFIG_SCRIPT_SHELL: this.locations.shell,
       NPM_CONFIG_IGNORE_SCRIPTS: "false",
       NPM_CONFIG_AUDIT: "false",
       NPM_CONFIG_FUND: "false",
@@ -82,6 +84,9 @@ export class TrustedLocalAuthority {
     };
   }
   env() {
+    // Exposing the npm shell authority is an authorized use, so authenticate
+    // its current bytes every time before returning the environment.
+    verifyLocalShell(this.config, this.locations);
     return { ...this.environment };
   }
   executorEnv(home: string) {

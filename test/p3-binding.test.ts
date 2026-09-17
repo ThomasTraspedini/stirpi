@@ -11,6 +11,7 @@ import {
   existsSync,
   chmodSync,
   readlinkSync,
+  readdirSync,
   symlinkSync,
 } from "node:fs";
 import { delimiter, join } from "node:path";
@@ -84,6 +85,13 @@ test("closed dedicated contract rejects missing/extra/duplicates, escapes, place
     for (const [path, value] of [
       [["source", "commit"], undefined],
       [["toolchain", "npm", "extra"], true],
+      [["toolchain", "shell"], undefined],
+      [["toolchain", "shell", "locator"], undefined],
+      [["toolchain", "shell", "locator"], "bin/sh"],
+      [["toolchain", "shell", "locator"], "/usr/bin/sh"],
+      [["toolchain", "shell", "sha256"], undefined],
+      [["toolchain", "shell", "sha256"], null],
+      [["toolchain", "shell", "extra"], true],
       [["inputs", "task", "path"], "../escape"],
       [["inputs", "task", "path"], "/absolute"],
       [["inputs", "task", "path"], "input/../task.txt"],
@@ -103,6 +111,16 @@ test("closed dedicated contract rejects missing/extra/duplicates, escapes, place
       () =>
         parseTrustedLocalContract(
           f.contractBytes.replace('"version":1', '"version":1,"version":1'),
+        ),
+      /duplicate/,
+    );
+    assert.throws(
+      () =>
+        parseTrustedLocalContract(
+          f.contractBytes.replace(
+            '"locator":"/bin/sh"',
+            '"locator":"/bin/sh","locator":"/bin/sh"',
+          ),
         ),
       /duplicate/,
     );
@@ -259,11 +277,12 @@ test("baseline-only authority covers harmless metadata but rejects new operation
   }
 });
 
-test("trusted npm environment gives npm 11 distinct empty authority configs", () => {
+test("trusted npm executes an innocuous script with only the pinned absolute shell authority", () => {
   const f = bindingFixture();
   try {
     const state = join(f.directory, "trusted-state");
     const local = defaultLocalTools();
+    assert.equal(local.shell, "/bin/sh");
     const authority = new TrustedLocalAuthority(
       f.contract,
       { ...f.tools, node: local.node, npmRoot: local.npmRoot },
@@ -283,6 +302,7 @@ test("trusted npm environment gives npm 11 distinct empty authority configs", ()
     assert.equal(env.HOME, join(state, "preparation-home"));
     assert.equal(env.TMPDIR, env.HOME);
     assert.equal(env.NPM_CONFIG_REGISTRY, "https://registry.npmjs.org/");
+    assert.equal(env.NPM_CONFIG_SCRIPT_SHELL, "/bin/sh");
     assert.equal(env.NPM_CONFIG_IGNORE_SCRIPTS, "false");
     assert.equal(env.NPM_CONFIG_AUDIT, "false");
     assert.equal(env.NPM_CONFIG_FUND, "false");
@@ -292,6 +312,14 @@ test("trusted npm environment gives npm 11 distinct empty authority configs", ()
       ),
       false,
     );
+    assert.equal(env.PATH!.split(delimiter).includes("/bin"), false);
+    assert.deepEqual(readdirSync(env.PATH!).sort(), [
+      "docker",
+      "git",
+      "node",
+      "npm",
+    ]);
+    assert.equal(existsSync(join(env.PATH!, "sh")), false);
 
     const npm = spawnSync("npm", ["--version"], {
       cwd: f.source,
@@ -302,6 +330,92 @@ test("trusted npm environment gives npm 11 distinct empty authority configs", ()
     assert.equal(npm.error, undefined);
     assert.equal(npm.status, 0, npm.stderr);
     assert.match(npm.stdout, /^\d+\.\d+\.\d+\s*$/);
+
+    const scriptWorkspace = join(f.directory, "npm-shell-fixture");
+    mkdirSync(scriptWorkspace);
+    writeFileSync(
+      join(scriptWorkspace, "package.json"),
+      JSON.stringify({
+        name: "npm-shell-fixture",
+        version: "1.0.0",
+        scripts: { probe: "printf 'trusted-shell-ok\\n'" },
+      }),
+    );
+    const script = spawnSync("npm", ["run", "--silent", "probe"], {
+      cwd: scriptWorkspace,
+      env,
+      encoding: "utf8",
+      shell: false,
+    });
+    assert.equal(script.error, undefined);
+    assert.equal(script.status, 0, script.stderr);
+    assert.equal(script.stdout, "trusted-shell-ok\n");
+
+    const executorEnv = authority.executorEnv(join(state, "executor-home"));
+    assert.equal(executorEnv.NPM_CONFIG_SCRIPT_SHELL, undefined);
+    assert.equal(executorEnv.PATH!.split(delimiter).includes("/bin"), false);
+    assert.equal(existsSync(join(executorEnv.PATH!, "sh")), false);
+    assert.equal(Object.values(executorEnv).includes("/bin/sh"), false);
+  } finally {
+    f.close();
+  }
+});
+
+test("shell locator and bytes are closed, pinned, verified without execution, and fail closed", () => {
+  const f = bindingFixture();
+  try {
+    const calls: { executable: string; args: string[] }[] = [];
+    const run: TrustedProcess = (executable, args) => {
+      calls.push({ executable, args: [...args] });
+      return args.length === 1
+        ? f.contract.toolchain.node.version
+        : f.contract.toolchain.npm.version;
+    };
+    assert.deepEqual(verifyLocalTools(f.contract, f.tools, run), f.tools);
+    assert.equal(
+      calls.some(({ executable }) => executable === f.tools.shell),
+      false,
+    );
+
+    const missing = { ...f.tools } as Partial<typeof f.tools>;
+    delete missing.shell;
+    assert.throws(
+      () =>
+        verifyLocalTools(
+          f.contract,
+          missing as typeof f.tools,
+          fakePreparation(f, []),
+        ),
+      /local tool locations/,
+    );
+    assert.throws(
+      () =>
+        verifyLocalTools(
+          f.contract,
+          { ...f.tools, extra: "/not-authority" } as typeof f.tools,
+          fakePreparation(f, []),
+        ),
+      /local tool locations/,
+    );
+    for (const shell of ["bin/sh", "/usr/bin/sh"])
+      assert.throws(
+        () =>
+          verifyLocalTools(
+            f.contract,
+            { ...f.tools, shell },
+            fakePreparation(f, []),
+          ),
+        /shell locator mismatch|absolute locators/,
+      );
+
+    const drift = structuredClone(f.contract);
+    drift.toolchain.shell.sha256 = "0".repeat(64);
+    const driftCalls: { args: string[]; env: NodeJS.ProcessEnv }[] = [];
+    assert.throws(
+      () => verifyLocalTools(drift, f.tools, fakePreparation(f, driftCalls)),
+      /shell bytes mismatch/,
+    );
+    assert.equal(driftCalls.length, 0);
   } finally {
     f.close();
   }

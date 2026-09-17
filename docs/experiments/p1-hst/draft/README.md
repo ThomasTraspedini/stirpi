@@ -40,6 +40,12 @@ the argv0-sensitive dispatcher is invoked, while the hash identifies the bytes.
 Neither value is inferred from the other, and neither changes the local image
 ID into a registry manifest digest.
 
+The npm script shell is a distinct closed authority: literal operational locator
+`/bin/sh` plus SHA-256
+`ad5c194b05f83bc5e793c1cd67b148a4b680467b5a5730ab1a31fe4e6460ee9f`.
+It is supplied explicitly to npm after byte verification. It does not add
+`/bin` to PATH, create a trusted-bin `sh`, or enter the executor environment.
+
 The chosen database variant is **local Docker image ID** on `linux/arm64`, with
 `--pull=never`. An image ID is not a registry manifest digest. Image inspection
 checks ID/OS/architecture before use; container inspection checks the launched

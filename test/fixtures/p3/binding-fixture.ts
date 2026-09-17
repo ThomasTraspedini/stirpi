@@ -68,6 +68,7 @@ export function bindingFixture(build = false) {
       : join(toolRoot, "types"),
     git: realpathSync(executablePath("git")),
     docker: join(toolRoot, "docker"),
+    shell: "/bin/sh",
   };
   mkdirSync(join(tools.npmRoot, "bin"), { recursive: true });
   cpSync(
@@ -111,6 +112,10 @@ export function bindingFixture(build = false) {
     typeRoots: { treeSha256: localTreeSha256(tools.typeRoots) },
     git: { sha256: sha256(readFileSync(tools.git)) },
     docker: { sha256: sha256(readFileSync(tools.docker)) },
+    shell: {
+      locator: "/bin/sh",
+      sha256: sha256(readFileSync(tools.shell)),
+    },
   };
   contract.preparation.postgres.imageId = "sha256:" + "1".repeat(64);
   contract.preparation.postgres.platform = "linux/arm64";

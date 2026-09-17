@@ -74,6 +74,11 @@ export function checkFreezeDrafts(
       sha256:
         "9a12c3a0fdc02ce3d6040042e1b8ed257d35dba7f007f76d967995b79b82f903",
     },
+    shell: {
+      locator: "/bin/sh",
+      sha256:
+        "ad5c194b05f83bc5e793c1cd67b148a4b680467b5a5730ab1a31fe4e6460ee9f",
+    },
   });
   assert.deepEqual(contract.preparation.postgres, {
     kind: "local-image-id",

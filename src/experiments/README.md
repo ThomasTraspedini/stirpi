@@ -387,8 +387,11 @@ locations and the existing contract hash checks remain authoritative.
 
 The schema-3 preparation environment uses a dedicated external PATH with
 verified Node/npm/Git/Docker, empty user/global npm configuration, fixed registry
-and no inherited npm/Docker configuration or credentials. The executor receives
-a separate verified Node/npm/Git PATH without Docker. Local PostgreSQL
+and no inherited npm/Docker configuration or credentials. npm receives the
+separately pinned, absolute script shell `/bin/sh`; its bytes are rechecked before
+the trusted environment is exposed. `/bin` is not added to PATH and no `sh`
+symlink is created in the trusted bin. The executor receives a separate verified
+Node/npm/Git PATH without Docker, the script-shell setting, or the shell. Local PostgreSQL
 image IDs have explicit OS/architecture, are inspected, and launch without pull;
 they are never relabeled as registry digests. Baseline package/lock pins are
 checked before the solver. Candidate operations are compared with baseline
