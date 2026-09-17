@@ -90,9 +90,40 @@ invocations, 20 lineages, 200 items and 100 commands per invocation, 180000 ms
 no-progress, 900000 ms executor wall time, 300000 ms per public check, and
 concurrency 1. Retry policy remains at most one purely operational replacement
 per condition, at most six attempts total; failed tests or absent FORK never
-authorize a retry. F1 is unresolved, so these commands are documentation only.
+authorize a retry. At the historical command-inventory stage, F1 was unresolved.
+These commands remain documentation only and are not authorized to run.
 
-## P3.c binding increment (unfrozen)
+## Current gate status (2026-09-17)
+
+F1 is approved: €0 incremental spending, using only the quota included in the
+active ChatGPT account. Payment or credit requirements or exhausted included
+quota impose a stop; retries must not bypass this limit. Before each attempt,
+authentication and observable limits must be checked without invoking a model.
+When monetary telemetry is absent, record `costo monetario non disponibile`,
+never infer zero cost. This is human financial authorization and operational
+control, not native monetary enforcement.
+
+ChatGPT authentication and backend reachability were verified by the non-model
+probe of the exact pinned CLI outside the sandbox (HTTP and Responses WebSocket
+handshake 101). This does not certify the current live session or quota, and
+actual `gpt-6-astra` availability is not demonstrated. The human accepted this
+non-model limitation; `gpt-6-astra` / `medium` remain unchanged, and model
+unavailability requires an operational stop without fallback.
+
+Approved gates and acceptance of this limitation do not authorize a run.
+Prepared freeze delta, committed final runtime, distinct P, and run authorization
+remain separate stages.
+
+## Prepared freeze delta (not committed or run-authorizing)
+
+The proposed working-tree change sets only the contract status from `unfrozen`
+to `frozen` and updates the three draft contract hashes. The runtime code, pins,
+inputs, governance, limits and preparation policy are unchanged. Draft runtime
+commits remain unresolved; this does not create P or authorize execution.
+The successful R4 preflight remains evidence for the candidate's exact bytes,
+not automatically for the new contract hash or a future final runtime.
+
+## P3.c binding increment (historical unfrozen candidate)
 
 The historical preflight above remains baseline evidence. Schema-3 pilots now
 bind the public `trusted-local-contract.json` from runtime R and the exact
@@ -169,8 +200,10 @@ backend, model, run, or lineage input and records zero executor/model
 invocations and zero lineages. It is fail-closed and is not a substitute for
 committing P, freezing the contract, F1, auth/backend verification, or P4.
 
-Remaining blockers are: review and commit R; authorized successful schema-3
+At the historical launcher-preparation stage, the remaining blockers were:
+review and commit R; authorized successful schema-3
 preflight; final contract freeze and distinct pilot commit P; F1; and
-auth/backend availability. The approved candidate policy remains fail-closed:
+auth/backend availability. This historical list does not describe the current
+gate status above. The approved candidate policy remains fail-closed:
 uncovered package/lock/config changes cannot enlarge harness authority and any
 newly needed operation class returns to a scoped human decision.

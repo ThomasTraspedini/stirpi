@@ -1,6 +1,6 @@
 # P3.c H*/S*/T* freeze drafts
 
-**Status: unfrozen and unusable.** These documents authorize no run or Git
+**Status: freeze delta prepared for review, not committed and unusable.** These documents authorize no run or Git
 operation. Each schema-3 pilot has an invalid `UNRESOLVED-RUNTIME-COMMIT` and
 pins the same public trusted-local contract by ID, version, path and SHA-256.
 ID and condition are the only pilot differences. Schema 3 is separate from
@@ -24,9 +24,32 @@ general FORK; SPAWN retains its meaning in all conditions.
 
 The global CLI help parse passed with `--ask-for-approval never` before `exec`.
 The earlier incompatibility conclusion was incorrect. This establishes argv
-parsing only; authentication and backend availability remain unverified. The
-adapter approval policy has not changed.
+parsing only; at that historical help-parse stage, authentication and backend
+availability remained unverified. The adapter approval policy has not changed.
 
+Current gate status (2026-09-17): F1 is approved with €0 incremental spending
+and only the quota included in the active ChatGPT account. Payment or credit
+requirements or exhausted quota impose a stop, with no retry to bypass F1.
+Authentication and observable limits must be checked without model invocation
+before each attempt. Missing monetary telemetry is recorded as
+`costo monetario non disponibile`, never inferred as zero cost. This adds no
+native monetary enforcement.
+
+ChatGPT authentication and backend reachability were verified by the non-model
+probe of the exact pinned CLI outside the sandbox (HTTP and Responses WebSocket
+handshake 101), without certifying the current live session or quota. Actual
+`gpt-6-astra` availability is not demonstrated. The human accepted this non-model
+limitation with `gpt-6-astra` / `medium` unchanged and an operational stop on
+unavailability, without fallback. These gates authorize no run.
+
+The working-tree contract now has `status: frozen` as a proposed mechanical
+freeze delta. This is not a committed runtime authority or a completed freeze.
+R4 retains the verified `unfrozen` contract; final R must be committed before
+any final pilot can name it in a distinct P. The draft controller checks only
+document integrity; its external gate list is not an assessment of live
+auth, financial authorization, or preflight evidence.
+
+Historical candidate-stage description follows (not current working-tree status).
 Node/npm versions, executable/installation/compiler/type-root hashes, Git and
 Docker byte hashes, and the PostgreSQL platform have now been acquired locally
 and inserted in the common contract. The contract remains `unfrozen`: these are
@@ -64,10 +87,13 @@ This fail-closed policy is approved for the final freeze: candidate files remain
 editable, but their contents cannot enlarge harness authority. Any newly needed
 operation class must return to a separate, scoped human decision.
 
-Before freeze: review runtime and candidate pins, commit R when authorized, run
+At the historical candidate stage, the pre-freeze sequence was: review runtime
+and candidate pins, commit R when authorized, run
 the dedicated schema-3 preflight only when separately authorized, freeze the
 contract, prepare final pilots and commit P when authorized. Candidate input
-policy is settled; F1 and auth/backend remain separate blockers. The draft
-controller reports the pins as acquired but unfrozen and not schema-3-preflight
-verified; it is not a controller for final frozen pilots. No scheduler, funding
+policy was settled; F1 and auth/backend were separate blockers at that stage.
+That historical list is superseded by the current gate status above. The draft
+controller at that stage reported the pins as acquired but unfrozen and not
+schema-3-preflight verified; it is not a controller for final frozen pilots.
+No scheduler, funding
 enforcement or P4 is added.

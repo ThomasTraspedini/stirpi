@@ -2,7 +2,7 @@
   "kind": "p1-hst-trusted-local",
   "version": 1,
   "id": "p1-hst-common-001",
-  "status": "unfrozen",
+  "status": "frozen",
   "verificationMode": "trusted-local",
   "testcase": "booking-invariants-d032-counterfactual-001",
   "source": {

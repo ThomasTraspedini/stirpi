@@ -21,7 +21,7 @@ export function checkFreezeDrafts(
     resolve(root, "../trusted-local-contract.json"),
   );
   const contract = parseTrustedLocalContract(contractBytes, true);
-  assert.equal(contract.status, "unfrozen");
+  assert.equal(contract.status, "frozen");
   assert.equal(contract.id, "p1-hst-common-001");
   assert.equal(contract.testcase, "booking-invariants-d032-counterfactual-001");
   assert.deepEqual(contract.source, {
@@ -183,7 +183,7 @@ export function checkFreezeDrafts(
   );
   return {
     status: "draft-common-parts-pass",
-    pinState: "acquired-unfrozen-not-schema3-preflight-verified",
+    pinState: "freeze-delta-prepared-not-final-runtime-verified",
     conditions: ["H", "S", "T"],
     freezeBlockedBy: [
       "runtime-commit",

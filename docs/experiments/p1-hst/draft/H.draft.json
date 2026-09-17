@@ -9,7 +9,7 @@
     "id": "p1-hst-common-001",
     "version": 1,
     "path": "docs/experiments/p1-hst/trusted-local-contract.json",
-    "sha256": "4e0586c430836809ab24eead3b17bfc8ca753021b94894374c640978f4d46840"
+    "sha256": "207d4917ae5f4a3b708562f60c0a8193931d466b56399dd0d18ff570c176ec5e"
   },
   "hiddenEvaluationDuringRun": false
 }

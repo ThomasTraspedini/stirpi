@@ -124,10 +124,14 @@ test("closed dedicated contract rejects missing/extra/duplicates, escapes, place
         ),
       /duplicate/,
     );
+    const prepared = parseTrustedLocalContract(
+      readFileSync("docs/experiments/p1-hst/trusted-local-contract.json"),
+    );
+    assert.equal(prepared.status, "frozen");
     assert.throws(
       () =>
         parseTrustedLocalContract(
-          readFileSync("docs/experiments/p1-hst/trusted-local-contract.json"),
+          JSON.stringify({ ...prepared, status: "unfrozen" }),
         ),
       /contract is unfrozen/,
     );

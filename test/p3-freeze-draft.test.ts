@@ -50,10 +50,10 @@ function fixture() {
     },
   };
 }
-test("P3 freeze controller checks complete common documents and reports acquired unfrozen pins without obsolete CLI blocker", () => {
+test("P3 freeze controller checks prepared frozen contract without authorizing final pilots", () => {
   assert.deepEqual(checkFreezeDrafts(), {
     status: "draft-common-parts-pass",
-    pinState: "acquired-unfrozen-not-schema3-preflight-verified",
+    pinState: "freeze-delta-prepared-not-final-runtime-verified",
     conditions: ["H", "S", "T"],
     freezeBlockedBy: [
       "runtime-commit",
