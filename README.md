@@ -226,3 +226,11 @@ results do not establish general provider support or semantic correctness.
 
 See [operational events](docs/operational-events.md) for transport, classification,
 evidence, cancellation and replay details.
+
+## O2-FS design checkpoint
+
+The [O2-FS source and holdout protocol](docs/experiments/o2-fs/PROTOCOL.md) and
+[manual review checklist](docs/experiments/o2-fs/REVIEW-CHECKLIST.md) are a
+design checkpoint for a prospective evaluation surface. They are separate from
+the observed H/S/T pilot and its recorded replay, and do not constitute a new
+benchmark, frozen study, or run.
