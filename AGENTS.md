@@ -148,3 +148,19 @@ Agents must:
 
 Agents may suggest candidate decisions, but they may not mark them accepted or
 change accepted decisions unless explicitly instructed.
+
+## Steward delegation
+
+When a task is coordinated by a steward, the steward may use subagents with the
+required model and effort for already-authorized specialist phases that do not
+need a new human decision. This applies both to phases planned at cycle start
+and to bounded subtasks or debug loops discovered during the cycle, including
+fixes for gaps or bugs. Each delegation must remain attached to its parent task
+and state its reason, outcome, exit criteria, return point, scope, authority,
+and relevant evidence. The steward must verify the returned work before the
+workflow continues.
+
+Delegation does not transfer human-owned authority. A subagent may not expand
+scope, create a milestone, approve a semantic or architectural choice,
+authorize a run, or bypass a human gate. If a discovered problem requires any
+of those actions, stop that branch and request the smallest human decision.
